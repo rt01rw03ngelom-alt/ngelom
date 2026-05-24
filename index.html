@@ -3555,27 +3555,54 @@ function logout() {
     var pass = document.getElementById('regPassword').value;
 
     if (!nama || !email || !pass) {
-      return showWarning("Lengkapi data!");
+      return showWarning("Harap lengkapi semua data pendaftaran!");
     }
+
     var btn = document.getElementById('btnDaftar');
     btn.innerHTML = '<span class="loading-spinner"></span>';
     btn.disabled = true;
+
     google.script.run
       .withSuccessHandler(function(res) {
-        btn.innerHTML = "Daftar Sekarang";
+        btn.innerHTML = 'Daftar Sekarang';
         btn.disabled = false;
         if (res.status === 'success') {
           showSuccess(res.pesan).then(function() {
             tutupFormDaftar();
           });
         } else {
-          showError(res.pesan);
+          // Jika email sudah terdaftar, berikan pilihan untuk ke login
+          if (res.pesan && res.pesan.toLowerCase().includes('terdaftar')) {
+            Swal.fire({
+              icon: 'info',
+              title: 'Email Terdaftar',
+              text: res.pesan,
+              showCancelButton: true,
+              confirmButtonText: 'Masuk (Login)',
+              cancelButtonText: 'Tutup',
+              confirmButtonColor: 'var(--primary-color)'
+            }).then((result) => {
+              if (result.isConfirmed) tutupFormDaftar();
+            });
+          } else {
+            showError(res.pesan || 'Terjadi kesalahan saat mendaftar.');
+          }
         }
       })
       .withFailureHandler(function(err) {
-        btn.innerHTML = "Daftar Sekarang";
+        btn.innerHTML = 'Daftar Sekarang';
         btn.disabled = false;
-        showError('Gagal mendaftar: ' + err.message);
+        // Penanganan error network / timeout
+        Swal.fire({
+          icon: 'error',
+          title: 'Koneksi Terganggu',
+          text: 'Gagal menghubungi server. Namun, pendaftaran Anda mungkin sudah diproses. Silakan coba Login terlebih dahulu.',
+          confirmButtonText: 'Coba Login',
+          showCancelButton: true,
+          cancelButtonText: 'Tutup'
+        }).then((result) => {
+          if (result.isConfirmed) tutupFormDaftar();
+        });
       })
       .prosesDaftar(nama, email, pass);
   }
