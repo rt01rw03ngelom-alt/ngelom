@@ -1662,7 +1662,7 @@
     </p>
     
     <p style="margin-top:15px; font-size: 13px; color: var(--text-muted); padding-top: 15px; border-top: 1px dashed var(--border-color);">
-      Kendala akses? <a href="https://wa.me/6281234567890" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
+      Kendala akses? <a href="#" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
     </p>
   </div>
 </div>
@@ -3374,9 +3374,19 @@
         })
         .checkSession(savedToken);
     } else {
+      updateAdminContactLink();
       document.getElementById('loginScreen').style.display = 'flex';
     }
   });
+
+  function updateAdminContactLink() {
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.status === 'success' && res.data.admin_whatsapp) {
+        var wa = res.data.admin_whatsapp.replace(/\D/g, '');
+        document.getElementById('linkHubungiAdmin').href = "https://wa.me/" + wa;
+      }
+    }).getSettings();
+  }
 
   function doLogin() {
     var email = document.getElementById('email').value;
@@ -3575,12 +3585,11 @@ function logout() {
             tutupFormDaftar();
           });
         } else {
-          // PENANGANAN KHUSUS: Jika email sudah terdaftar (mungkin akibat interupsi jaringan sebelumnya)
-          if (res.pesan && (res.pesan.toLowerCase().includes('terdaftar') || res.pesan.toLowerCase().includes('sudah ada'))) {
+          if (res.pesan === 'akun sudah terdaftar di database') {
             Swal.fire({
-              icon: 'warning',
-              title: 'Akun Sudah Aktif',
-              text: 'Email ini sudah terdaftar di database kami. Ini bisa terjadi karena pendaftaran sebelumnya sudah berhasil namun koneksi terputus.',
+              icon: 'info',
+              title: 'Sudah Terdaftar',
+              text: res.pesan,
               showCancelButton: true,
               confirmButtonText: 'Coba Masuk (Login)',
               cancelButtonText: 'Batal',
@@ -3589,29 +3598,14 @@ function logout() {
               if (result.isConfirmed) tutupFormDaftar();
             });
           } else {
-            showError(res.pesan || 'Terjadi kesalahan saat mendaftar.');
+            showError(res.pesan);
           }
         }
       })
       .withFailureHandler(function(err) {
         btn.innerHTML = 'Daftar Sekarang';
         btn.disabled = false;
-        
-        // JIKA TIMEOUT: Jangan langsung anggap gagal, arahkan user untuk cek login
-        if (err.message.includes('fetch') || err.message.includes('Network')) {
-           Swal.fire({
-            icon: 'question',
-            title: 'Koneksi Lambat',
-            text: 'Server tidak merespon tepat waktu, namun data Anda mungkin sudah tersimpan. Silakan coba login.',
-            showCancelButton: true,
-            confirmButtonText: 'Coba Login Sekarang',
-            cancelButtonText: 'Tunggu Disini'
-          }).then((result) => {
-            if (result.isConfirmed) tutupFormDaftar();
-          });
-        } else {
-          showError('Gagal mendaftar: ' + err.message);
-        }
+        showError('gagal mendaftarkan akun');
       })
       .prosesDaftar(nama, email, pass);
   }
@@ -5071,6 +5065,9 @@ function bukaJadwal() {
     document.getElementById('kelolaUserView').style.display = 'block';
     history.pushState({view: 'kelolaUserView', tab: 'warga', onLoad: 'muatDataUser'}, '', '#kelolaUser');
     
+    // Muat pengaturan admin jika yang buka adalah admin
+    loadAdminSettingsUI();
+    
     // Muat daftar role dulu baru muat data user
     muatDaftarRole(function() {
       muatDataUser();
@@ -5294,6 +5291,27 @@ function bukaJadwal() {
           ${editHtml}
         </div>`;
     });
+  }
+
+  function simpanNomorAdmin() {
+    var val = document.getElementById('adminWaInput').value.trim();
+    if(!val) return showWarning('Nomor tidak boleh kosong!');
+    showLoading('Menyimpan pengaturan...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if(res.status === 'success') {
+        showSuccess('Nomor Admin berhasil diperbarui!');
+        updateAdminContactLink();
+      } else showError(res.pesan);
+    }).saveSettings('admin_whatsapp', val);
+  }
+
+  function loadAdminSettingsUI() {
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.status === 'success' && res.data.admin_whatsapp) {
+        document.getElementById('adminWaInput').value = res.data.admin_whatsapp;
+      }
+    }).getSettings();
   }
 
   function muatDaftarRole(callback) {
