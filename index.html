@@ -2533,7 +2533,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // GANTI URL INI dengan URL Web App Apps Script (Deployment ID terbaru)
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyjnjYs1_c71egKX2_b03T67oecW-BSf3SSgd2JkIumOuV0ZT3eXVZqp7mSah8WCmXUpQ/exec";
+  const GAS_WEB_APP_URL = "MASUKKAN_URL_WEB_APP_DARI_LANGKAH_1_DISINI";
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
@@ -3497,10 +3497,12 @@
             if (res.status === 'success') {
               Swal.fire({
                 icon: 'success',
-                title: 'Email Terkirim',
-                text: res.pesan,
-                footer: '<p style="font-size:11px; color:var(--text-muted);">Backup Password: <b>' + res.passwordBaru + '</b></p>',
-                confirmButtonColor: 'var(--primary-color)'
+                title: 'Password Berhasil Direset!',
+                html: '<p>Password baru untuk <strong>' + res.nama + '</strong></p>'
+                  + '<p style="font-size:24px; font-weight:bold; background:#f0f0f0; padding:10px; border-radius:8px;">'
+                  + res.passwordBaru + '</p>'
+                  + '<p>Silakan login dengan password di atas.</p>',
+                confirmButtonColor: '#d32f2f'
               });
             } else {
               showError(res.pesan);
