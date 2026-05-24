@@ -1,7 +1,3 @@
-// Minimal service worker for PWA shell.
-// Note: Apps Script deployments may not support full SW scope/caching.
-// Ensure SW context is available
-// Avoid referencing `self` directly at parse-time (some runtimes may not define it).
 (function() {
   var sw = (typeof self !== 'undefined') ? self : undefined;
   if (!sw) {
