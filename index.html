@@ -1662,7 +1662,7 @@
     </p>
     
     <p style="margin-top:15px; font-size: 13px; color: var(--text-muted); padding-top: 15px; border-top: 1px dashed var(--border-color);">
-      Kendala akses? <a href="#" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
+      Kendala akses? <a href="https://wa.me/6285236356569" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
     </p>
   </div>
 </div>
@@ -3382,7 +3382,8 @@
   function updateAdminContactLink() {
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'success' && res.data.admin_whatsapp) {
-        var wa = res.data.admin_whatsapp.replace(/\D/g, '');
+        // Pastikan dikonversi ke String terlebih dahulu sebelum replace
+        var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
         document.getElementById('linkHubungiAdmin').href = "https://wa.me/" + wa;
       }
     }).getSettings();
@@ -3581,15 +3582,17 @@ function logout() {
         btn.innerHTML = 'Daftar Sekarang';
         btn.disabled = false;
         if (res.status === 'success') {
-          showSuccess(res.pesan).then(function() {
+          // "akun sudah berhasil di buat"
+          Swal.fire({ icon: 'success', title: 'Berhasil', text: res.pesan, confirmButtonColor: 'var(--primary-color)' }).then(function() {
             tutupFormDaftar();
           });
         } else {
-          if (res.pesan === 'akun sudah terdaftar di database') {
+          // "akun sudah terdaftar di database"
+          if (res.pesan && res.pesan.toLowerCase().includes('terdaftar')) {
             Swal.fire({
-              icon: 'info',
+              icon: 'warning',
               title: 'Sudah Terdaftar',
-              text: res.pesan,
+              text: 'Akun ini sudah terdaftar di database. Silakan langsung login atau hubungi admin jika lupa password.',
               showCancelButton: true,
               confirmButtonText: 'Coba Masuk (Login)',
               cancelButtonText: 'Batal',
@@ -3605,7 +3608,18 @@ function logout() {
       .withFailureHandler(function(err) {
         btn.innerHTML = 'Daftar Sekarang';
         btn.disabled = false;
-        showError('gagal mendaftarkan akun');
+        
+        // JIKA TERJADI GANGGUAN JARINGAN (Timeout)
+        Swal.fire({
+          icon: 'question',
+          title: 'Cek Status Pendaftaran',
+          text: 'Koneksi lambat. Data mungkin sudah masuk tapi konfirmasi belum diterima. Silakan coba Login, jika gagal barulah coba daftar kembali.',
+          showCancelButton: true,
+          confirmButtonText: 'Coba Login',
+          cancelButtonText: 'Tetap di Sini'
+        }).then((result) => {
+          if (result.isConfirmed) tutupFormDaftar();
+        });
       })
       .prosesDaftar(nama, email, pass);
   }
