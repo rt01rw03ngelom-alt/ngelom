@@ -237,14 +237,14 @@
     }
 
     .login-box {
-      width: 92%;
+      width: 100%;
       max-width: 400px;
       background: var(--bg-surface);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      padding: 40px 30px;
-      border-radius: 28px;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      padding: 35px 25px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
       border: 1px solid var(--border-color);
       text-align: center;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -252,13 +252,13 @@
 
     .input-group {
       position: relative;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       text-align: left;
     }
 
     .input-group i:not(.toggle-password) {
       position: absolute;
-      left: 15px;
+      left: 14px;
       top: 50%;
       transform: translateY(-50%);
       color: var(--text-muted);
@@ -268,7 +268,7 @@
 
     .toggle-password {
       position: absolute;
-      right: 15px;
+      right: 14px;
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
@@ -278,8 +278,8 @@
     }
 
     .login-box input {
-      padding-left: 45px;
-      padding-right: 45px;
+      padding-left: 44px;
+      padding-right: 44px;
       margin: 0;
       height: 54px;
       background: var(--bg-surface);
@@ -515,9 +515,9 @@
       align-items: center;
       justify-content: center;
       box-shadow: var(--shadow-sm);
-      transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid var(--border-color);
-      padding: 12px;
+      padding: 15px 10px;
       text-decoration: none;
     }
 
@@ -525,7 +525,7 @@
       transform: translateY(-3px);
       box-shadow: 0 12px 20px -5px rgba(0,0,0,0.1);
       border-color: var(--primary-color);
-      background: #fffafa;
+      background: rgba(var(--primary-color-rgb), 0.03);
     }
 
     .menu-item:active {
@@ -535,13 +535,15 @@
 
     .menu-item i {
       color: var(--primary-color);
-      font-size: 42px;
-      margin-bottom: 8px;
+      font-size: 36px;
+      margin-bottom: 10px;
     }
 
     .menu-item span {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
       color: var(--text-main);
       text-align: center;
     }
@@ -749,12 +751,12 @@
 
     .card-item {
       background: var(--bg-surface);
-      padding: 1.25rem;
+      padding: 1.5rem;
       border-radius: 16px;
       margin-bottom: 1rem;
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border-color);
-      border-left: 6px solid var(--primary-color);
+      border-left: 5px solid var(--primary-color);
       transition: all 0.2s ease;
       position: relative;
     }
@@ -1644,16 +1646,15 @@
       <i class="material-icons toggle-password" onclick="togglePassword('password', this)">visibility_off</i>
     </div>
     
-    <div style="text-align: left; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-      <input type="checkbox" id="rememberMe" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
-      <label for="rememberMe" style="font-size: 14px; color: var(--text-muted); cursor: pointer; user-select: none;">Ingat Saya</label>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 14px; color: var(--text-muted);">
+        <input type="checkbox" id="rememberMe" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--primary-color);">
+        Ingat Saya
+      </label>
+      <a href="#" onclick="lupaPassword(); return false;" style="color:var(--primary-red); font-size: 14px; font-weight: 600; text-decoration: none;">Lupa Password?</a>
     </div>
 
-    <div style="text-align: right; margin-bottom: 25px;">
-      <a href="#" onclick="lupaPassword(); return false;" style="color:var(--primary-red); font-size: 13px; font-weight: 600; text-decoration: none;">Lupa Password?</a>
-    </div>
-
-    <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="height: 50px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Masuk Sekarang</button>
+    <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="height: 54px; font-size: 16px; letter-spacing: 0.5px;">Masuk Sekarang</button>
     
     <p style="margin-top:25px; font-size: 14px; color: var(--text-muted);">
       Belum punya akun? 
@@ -1728,7 +1729,7 @@
           <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo" class="header-logo">
           <div style="display:flex; flex-direction:column;">
             <span style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1.2;">Portal RT</span>
-            <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - Desa Ngelom/span>
+            <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - Desa Ngelom</span>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
@@ -1770,8 +1771,8 @@
           <i class="material-icons" style="color:var(--primary-color); font-size:32px;">waving_hand</i>
         </div>
         <div style="display:flex; flex-direction:column;">
-          <span style="font-weight:800; font-size:18px;" id="welcomeUserName">Halo, Warga!</span>
-          <span style="font-size:13px; color:var(--text-muted);">Selamat datang di portal RT01/RW03 - Desa Ngelom.</span>
+          <span style="font-weight:800; font-size:20px; letter-spacing:-0.5px;" id="welcomeUserName">Halo, Warga!</span>
+          <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
       </div>
       <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
@@ -1780,9 +1781,9 @@
             <i class="material-icons">payments</i>
           </div>
           <div class="summary-info">
-            <h3 id="labelSummary1" style="font-size:10px; text-transform:uppercase; color:var(--primary-color);">Saldo Kas</h3>
+            <h3 id="labelSummary1" style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--primary-color); letter-spacing:0.5px;">Saldo Kas</h3>
             <div style="display:flex; align-items:baseline;">
-              <span id="totalKasIuranValue" style="font-size:1.2rem; font-weight:800; color:var(--primary-dark);">0</span>
+              <span id="totalKasIuranValue" style="font-size:1.3rem; font-weight:800; color:var(--text-main);">0</span>
             </div>
           </div>
         </div>
@@ -1791,9 +1792,9 @@
             <i class="material-icons">local_florist</i>
           </div>
           <div class="summary-info">
-            <h3 id="labelSummary2" style="font-size:10px; text-transform:uppercase; color:var(--primary-color);">Kematian</h3>
+            <h3 id="labelSummary2" style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--primary-color); letter-spacing:0.5px;">Dana Kematian</h3>
             <div style="display:flex; align-items:baseline;">
-              <span id="totalKonsumsiRondaIuranValue" style="font-size:1.2rem; font-weight:800; color:var(--primary-dark);">0</span>
+              <span id="totalKonsumsiRondaIuranValue" style="font-size:1.3rem; font-weight:800; color:var(--text-main);">0</span>
             </div>
           </div>
         </div>
@@ -3789,7 +3790,7 @@ function logout() {
     var summaryContainer = document.querySelector('.welcome-banner .kas-summary');
 
     if (tabName === 'karangtaruna') {
-      if (label1) label1.innerText = 'Total Saldo Kas Karang Taruna';
+      if (label1) label1.innerText = 'Saldo Kas Karang Taruna';
       card2.style.display = 'none'; // KT biasanya hanya menampilkan satu saldo utama
       if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
       if (summaryContainer) {
