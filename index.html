@@ -1631,7 +1631,7 @@
   <div class="login-box">
     <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo Aplikasi" style="width: 80px; height: 80px; object-fit: contain; background: white; padding: 8px; border-radius: 20px; margin: 0 auto 20px; display: block; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
     <h2 style="color:var(--text-main); font-weight: 800; font-size: 24px; margin-bottom: 5px;">Selamat Datang</h2>
-    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Silakan masuk ke Portal RT01-RW03</p>
+    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Silakan masuk ke Portal RT01-RW03 Desa Ngelom</p>
     
     <div class="input-group">
       <i class="material-icons">email</i>
@@ -1728,7 +1728,7 @@
           <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo" class="header-logo">
           <div style="display:flex; flex-direction:column;">
             <span style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1.2;">Portal RT</span>
-            <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - NGELOM</span>
+            <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - Desa Ngelom/span>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
@@ -1771,7 +1771,7 @@
         </div>
         <div style="display:flex; flex-direction:column;">
           <span style="font-weight:800; font-size:18px;" id="welcomeUserName">Halo, Warga!</span>
-          <span style="font-size:13px; color:var(--text-muted);">Selamat datang di portal RT01/RW03 - NGELOM.</span>
+          <span style="font-size:13px; color:var(--text-muted);">Selamat datang di portal RT01/RW03 - Desa Ngelom.</span>
         </div>
       </div>
       <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
@@ -2533,7 +2533,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyjnjYs1_c71egKX2_b03T67oecW-BSf3SSgd2JkIumOuV0ZT3eXVZqp7mSah8WCmXUpQ/exec";
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
@@ -2549,16 +2549,14 @@
 
               return async (...args) => {
                 try {
-                  const res = await fetch(GAS_WEB_APP_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: prop, data: args }) 
-                  });
+                  const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: prop, data: args }) });
                   const text = await res.text();
                   if (!text) throw new Error("Respon kosong dari server.");
                   
                   let json;
-                  try { json = JSON.parse(text); } catch(e) { throw new Error("Format data server tidak valid."); }
+                  try { json = JSON.parse(text); } catch(e) { throw new Error("Format data server tidak valid (Bukan JSON)."); }
                   
+                  // Masukkan hasil ke success handler (biar UI yang menangani status 'success' atau 'error' di dalamnya)
                   if (handlers.success) handlers.success(json);
                 } catch (err) {
                   if (handlers.failure) handlers.failure(err);
@@ -2665,23 +2663,15 @@
 
   function triggerSystemNotification(judul, isi, targetPage) {
     if (Notification.permission === "granted") {
-      const options = {
+      var options = {
         body: isi,
-        icon: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128',
-        badge: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w96',
-        vibrate: [100, 50, 100],
-        data: { url: targetPage }
+        icon: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128'
       };
-
-      // Gunakan Service Worker untuk menampilkan notifikasi agar muncul di bilah status HP
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(function(reg) {
-          reg.showNotification(judul, options);
-        });
-      } else {
-        const n = new Notification(judul, options);
-        n.onclick = function() { window.focus(); handleNotifLihat(targetPage); };
-      }
+      var n = new Notification(judul, options);
+      n.onclick = function() {
+        window.focus();
+        handleNotifLihat(targetPage);
+      };
     }
   }
 
@@ -3334,7 +3324,8 @@
     // Inisialisasi interaksi awan
     initCloudInteraction();
 
-    var savedToken = localStorage.getItem('sessionToken');
+    // FIX: Periksa localStorage (Remember Me) DAN sessionStorage (Tab Saja)
+    var savedToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
     if (savedToken) {
       google.script.run
         .withSuccessHandler(function(res) {
@@ -3356,7 +3347,7 @@
               // ringkasan kas akan otomatis ter-update lewat updateRingkasanUI
             });
           }
-          // FIX: Pastikan polling notifikasi dijalankan setelah otomatis login
+          // Jalankan polling notifikasi setelah login berhasil
           startNotifikasiPolling();
           showSuccess('Selamat datang kembali, ' + currentUser.nama + '!');
           } else {
@@ -3368,6 +3359,7 @@
         .withFailureHandler(function(err) {
           console.error(err);
           localStorage.removeItem('sessionToken');
+          sessionStorage.removeItem('sessionToken');
           document.getElementById('loginScreen').style.display = 'flex';
           showError('Gagal memeriksa sesi: ' + err.message);
         })
@@ -7549,6 +7541,6 @@ function bukaJadwal() {
       } else { list.innerHTML = '<p>Belum ada laporan PKK.</p>'; }
     }).pkkGetLaporan();
   }
-
+  refreshNavVisibility();
 </script>
 </body>
