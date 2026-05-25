@@ -92,6 +92,11 @@
       opacity: 0.15; /* Reduce texture visibility in dark mode */
     }
 
+    /* Perbaikan Latar Belakang Paling Belakang di Mode Gelap */
+    body.dark-mode::after {
+      background: linear-gradient(-45deg, #0f172a, #1e293b, #111827, #0f172a) !important;
+    }
+
     /* Animated Background Canvas Effect */
     body::after {
       content: "";
@@ -599,6 +604,12 @@
     .nav-item.active i {
       font-weight: bold;
       text-shadow: 0 0 15px rgba(var(--primary-color-rgb), 0.4);
+    }
+
+    /* Efek Glow Ikon Navigasi di Mode Gelap */
+    body.dark-mode .nav-item.active i {
+      text-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.8), 
+                   0 0 20px rgba(var(--primary-color-rgb), 0.4);
     }
 
     /* Indikator Garis Atas yang Mengikuti Tema */
@@ -2556,7 +2567,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "hhttps://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
