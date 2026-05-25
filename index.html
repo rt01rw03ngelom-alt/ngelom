@@ -195,18 +195,6 @@
       }
     }
 
-    /* Perbaikan Responsivitas Mobile */
-    @media (max-width: 360px) {
-      .menu-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        padding: 12px;
-      }
-      .menu-item {
-        height: 100px;
-      }
-    }
-
     /* Penyesuaian Responsivitas Mobile untuk Kartu Ringkasan */
     @media (max-width: 400px) {
       .welcome-banner .kas-summary {
@@ -1502,21 +1490,29 @@
       }
 
       .menu-container {
-        gap: 12px;
-        padding: 14px;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px;
+        padding: 18px;
+        margin-top: 5px;
       }
 
       .menu-item {
-        width: 82px;
-        height: 82px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 0.85;
+        padding: 22px 12px;
+        border-radius: 28px;
       }
 
       .menu-item i {
-        font-size: 28px;
+        font-size: 42px;
+        margin-bottom: 10px;
       }
 
       .menu-item span {
-        font-size: 10px;
+        font-size: 13.5px;
+        font-weight: 800;
+        line-height: 1.2;
       }
 
       .filter-table {
