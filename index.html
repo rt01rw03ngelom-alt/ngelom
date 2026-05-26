@@ -1723,88 +1723,6 @@
       </button>
     </div>
   </div>
-
-  <!-- LAYAR PROFIL PENGGUNA -->
-  <div id="profilView" class="screen">
-    <div class="page-header">
-      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Profil Saya</h3>
-    </div>
-    
-    <div class="card-item" style="padding: 30px 20px; text-align: center; border-left: none; border-bottom: 5px solid var(--primary-color);">
-      <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
-        <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-color); border: 2px solid var(--border-color); overflow: hidden;">
-          <i class="material-icons" style="font-size: 64px;">person</i>
-        </div>
-        <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-surface);">
-          <i class="material-icons" style="font-size: 16px;">verified</i>
-        </div>
-      </div>
-      <h2 id="profNama" style="font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">-</h2>
-      <p id="profEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px; font-weight: 500;">-</p>
-      <div style="display: flex; justify-content: center;">
-        <span id="profRole" class="status-badge status-selesai" style="text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 6px 16px;">-</span>
-      </div>
-    </div>
-
-    <div class="section-title" style="margin-top: 25px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Preferensi & Keamanan</div>
-    <div class="card-item" style="padding: 0; overflow: hidden; border-left: none;">
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color);">
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <div style="background: rgba(var(--primary-color-rgb), 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-            <i class="material-icons" style="color: var(--primary-color); font-size: 20px;" id="profDarkIcon">dark_mode</i>
-          </div>
-          <span style="font-weight: 600; color: var(--text-main);">Mode Gelap</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="profilDarkToggle" onchange="toggleDarkMode()">
-          <span></span>
-        </label>
-      </div>
-      
-      <div onclick="gantiPasswordUI()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
-        <div style="background: rgba(37, 99, 235, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-          <i class="material-icons" style="color: #2563eb; font-size: 20px;">lock_reset</i>
-        </div>
-        <div style="flex: 1;">
-          <span style="font-weight: 600; color: var(--text-main); display: block;">Ubah Kata Sandi</span>
-          <span style="font-size: 11px; color: var(--text-muted);">Perbarui keamanan akun Anda</span>
-        </div>
-        <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
-      </div>
-
-      <div id="profAdminOnly" style="display: none;">
-        <div onclick="bukaKelolaUser()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
-          <div style="background: rgba(16, 185, 129, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-            <i class="material-icons" style="color: #10b981; font-size: 20px;">manage_accounts</i>
-          </div>
-          <div style="flex: 1;">
-            <span style="font-weight: 600; color: var(--text-main); display: block;">Kelola User & Role</span>
-            <span style="font-size: 11px; color: var(--text-muted);">Manajemen akses warga (Admin)</span>
-          </div>
-          <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
-        </div>
-      </div>
-
-      <div onclick="logout()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; cursor: pointer;">
-        <div style="background: rgba(239, 68, 68, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-          <i class="material-icons" style="color: #ef4444; font-size: 20px;">logout</i>
-        </div>
-        <span style="font-weight: 600; color: #ef4444;">Keluar dari Aplikasi</span>
-      </div>
-    </div>
-
-    <div style="margin-top: 30px; text-align: center;">
-      <p style="font-size: 12px; color: var(--text-muted);">
-        Portal RT Ngelom v2.5.0<br>
-        Dibuat dengan ❤️ untuk Warga RT 01
-      </p>
-      <a href="#" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--accent-blue); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
-        <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
-      </a>
-    </div>
-  </div>
-
 </div>
 
 <div id="mainApp" style="display:none;">
@@ -1926,6 +1844,90 @@
     </div>
     <div class="menu-container" id="menuContainer"></div>
   </div>
+
+    <!-- LAYAR PROFIL PENGGUNA -->
+    <div id="profilView" class="screen">
+      <div class="page-header">
+        <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
+        <h3>Profil Saya</h3>
+      </div>
+      
+      <div class="card-item" style="padding: 30px 20px; text-align: center; border-left: none; border-bottom: 5px solid var(--primary-color);">
+        <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
+          <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-color); border: 2px solid var(--border-color); overflow: hidden;">
+            <i class="material-icons" style="font-size: 64px;">person</i>
+          </div>
+          <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-surface);">
+            <i class="material-icons" style="font-size: 16px;">verified</i>
+          </div>
+        </div>
+      <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span id="profNama">-</span>
+        <i class="material-icons" style="font-size: 18px; color: var(--text-muted); cursor: pointer;" onclick="editNamaProfil()" title="Ubah Nama">edit</i>
+      </h2>
+        <p id="profEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px; font-weight: 500;">-</p>
+        <div style="display: flex; justify-content: center;">
+          <span id="profRole" class="status-badge status-selesai" style="text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 6px 16px;">-</span>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top: 25px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Preferensi & Keamanan</div>
+      <div class="card-item" style="padding: 0; overflow: hidden; border-left: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="background: rgba(var(--primary-color-rgb), 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="material-icons" style="color: var(--primary-color); font-size: 20px;" id="profDarkIcon">dark_mode</i>
+            </div>
+            <span style="font-weight: 600; color: var(--text-main);">Mode Gelap</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="profilDarkToggle" onchange="toggleDarkMode()">
+            <span></span>
+          </label>
+        </div>
+        
+        <div onclick="gantiPasswordUI()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+          <div style="background: rgba(37, 99, 235, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+            <i class="material-icons" style="color: #2563eb; font-size: 20px;">lock_reset</i>
+          </div>
+          <div style="flex: 1;">
+            <span style="font-weight: 600; color: var(--text-main); display: block;">Ubah Kata Sandi</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Perbarui keamanan akun Anda</span>
+          </div>
+          <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
+        </div>
+
+        <div id="profAdminOnly" style="display: none;">
+          <div onclick="bukaKelolaUser()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+            <div style="background: rgba(16, 185, 129, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="material-icons" style="color: #10b981; font-size: 20px;">manage_accounts</i>
+            </div>
+            <div style="flex: 1;">
+              <span style="font-weight: 600; color: var(--text-main); display: block;">Kelola User & Role</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Manajemen akses warga (Admin)</span>
+            </div>
+            <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
+          </div>
+        </div>
+
+        <div onclick="logout()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; cursor: pointer;">
+        <div style="background: rgba(99, 102, 241, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+          <i class="material-icons" style="color: #6366f1; font-size: 20px;">logout</i>
+          </div>
+        <span style="font-weight: 600; color: #6366f1;">Keluar dari Aplikasi</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 30px; text-align: center;">
+        <p style="font-size: 12px; color: var(--text-muted);">
+          Portal RT Ngelom v2.5.0<br>
+          Dibuat dengan ❤️ untuk Warga RT 01
+        </p>
+        <a href="#" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--accent-blue); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+          <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
+        </a>
+      </div>
+    </div>
 
   <div id="jadwalView" class="screen">
     <div class="page-header">
@@ -2788,18 +2790,23 @@
         vibrate: [200, 100, 200],
         tag: 'portal-rt-notif-' + Date.now(),
         renotify: true,
-        data: { 
-          url: window.location.href.split('#')[0] + '#' + (targetPage || 'warga') 
-        }
+        data: { targetPage: targetPage } // Kirim data halaman tujuan ke Service Worker
       };
 
+      var notification;
       // Gunakan Service Worker jika tersedia untuk notifikasi yang lebih stabil di latar belakang
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then(function(registration) {
           registration.showNotification(judul, options);
         });
       } else {
-        new Notification(judul, options);
+        notification = new Notification(judul, options);
+        notification.onclick = function(event) {
+          event.preventDefault(); // cegah browser fokus otomatis secara default
+          window.focus();
+          handleNotifLihat(targetPage);
+          notification.close();
+        };
       }
     }
   }
@@ -2994,7 +3001,7 @@
       .withFailureHandler(function(err) {
         console.error('muatNotifikasiSekali error', err);
       })
-      .getNotifikasiTerbaru(lastTs ? Number(lastTs) : null, currentUser.role);
+      .getNotifikasiTerbaru(lastTs ? Number(lastTs) : null, currentToken);
   }
 
   function handleNotifLihat(targetPage) {
@@ -7824,6 +7831,61 @@ function bukaJadwal() {
       } else { list.innerHTML = '<p>Belum ada laporan PKK.</p>'; }
     }).pkkGetLaporan();
   }
+
+  // Keandalan Notifikasi: Cek segera saat aplikasi kembali aktif (Foreground)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && currentToken) {
+      console.log("App visible, checking notifications...");
+      muatNotifikasiSekali(localStorage.getItem('lastNotifTs'));
+    }
+  });
+
+  // ======================== PWA INSTALL LOGIC ========================
+  let deferredPrompt;
+  const pwaBanner = document.getElementById('pwaInstallBanner');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Mencegah browser menampilkan prompt default secara otomatis
+    e.preventDefault();
+    // Simpan event agar bisa dipicu nanti melalui tombol "Instal"
+    deferredPrompt = e;
+    
+    // Cek apakah user pernah menutup banner ini sebelumnya
+    const lastDismissed = localStorage.getItem('pwaDismissedTs');
+    const now = Date.now();
+    
+    // Tampilkan banner jika belum pernah ditutup atau sudah lewat dari 3 hari (cooldown)
+    if (!lastDismissed || (now - parseInt(lastDismissed) > 3 * 24 * 60 * 60 * 1000)) {
+      if (pwaBanner) pwaBanner.style.display = 'flex';
+    }
+  });
+
+  function installPWA() {
+    if (!deferredPrompt) return;
+    // Tampilkan prompt instalasi asli dari sistem operasi (Android/iOS)
+    deferredPrompt.prompt();
+    // Tunggu jawaban dari user
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User menerima instalasi PWA');
+      }
+      deferredPrompt = null;
+      if (pwaBanner) pwaBanner.style.display = 'none';
+    });
+  }
+
+  function dismissPWAInstall() {
+    if (pwaBanner) pwaBanner.style.display = 'none';
+    // Simpan timestamp penolakan agar banner tidak muncul setiap kali aplikasi dibuka
+    localStorage.setItem('pwaDismissedTs', Date.now().toString());
+  }
+
+  window.addEventListener('appinstalled', (evt) => {
+    // Sembunyikan banner jika aplikasi akhirnya terpasang
+    if (pwaBanner) pwaBanner.style.display = 'none';
+    showSuccess("Aplikasi berhasil terpasang di layar utama!");
+  });
+
   refreshNavVisibility();
 </script>
 </body>
