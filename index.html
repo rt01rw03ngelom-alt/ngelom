@@ -24,6 +24,7 @@
       --warga-red: #ef4444;
       
       --bg-surface: #ffffff;
+      --bg-surface-rgb: 255, 255, 255;
       --bg-app: #f1f5f9;
       --text-main-rgb: 15, 23, 42;
       --accent-blue: #2563eb;
@@ -40,6 +41,7 @@
     body.dark-mode {
       --bg-app: #0f172a;
       --bg-surface: #1e293b;
+      --bg-surface-rgb: 30, 41, 59;
       --text-main: #f8fafc;
       --text-main-rgb: 248, 250, 252; /* RGB for #f8fafc */
       --text-muted: #94a3b8;
@@ -67,21 +69,6 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
     }
 
-    /* Animasi Transisi Menu FAB Navigasi */
-    .nav-menu {
-      transform: translateY(20px) scale(0.9);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      pointer-events: none;
-      display: flex; /* Override previous display:none */
-    }
-
-    .nav-menu.show {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-      pointer-events: auto;
-    }
-
     /* Overlay Latar Belakang Blur saat Menu Terbuka */
     .menu-overlay {
       position: fixed;
@@ -97,11 +84,6 @@
     .menu-overlay.active {
       display: block;
       opacity: 1;
-    }
-
-    .nav-menu-item[data-menu="profil"] {
-      background: rgba(37, 99, 235, 0.1) !important;
-      border: 1px solid rgba(37, 99, 235, 0.2);
     }
 
     /* Pertahankan indikator warna pada card-item */
@@ -659,6 +641,11 @@
       background: var(--primary-color);
       border-radius: 0 0 4px 4px;
       box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.5);
+    }
+
+    /* Styling khusus untuk menu Profil agar menonjol */
+    .nav-item#nav-profil.active i {
+      color: var(--accent-blue) !important;
     }
 
     .nav-menu-item {
@@ -1814,25 +1801,21 @@
       </div>
     </div>
 
-  <!-- New Bottom Navigation Bar -->
-  <button class="nav-fab" id="navFab" onclick="toggleMenuNavigasi()">
-    <i class="material-icons">menu</i>
-  </button>
-
-  <div id="navMenu" class="nav-menu">
-    <div class="nav-menu-item" data-menu="warga" onclick="pilihMenu('warga'); toggleMenuNavigasi();">
+  <!-- Bottom Navigation Bar (Restored & Enhanced) -->
+  <nav class="nav-bar-bottom" id="bottomNav">
+    <button class="nav-item active" onclick="pilihMenu('warga')" id="nav-warga">
       <i class="material-icons">people</i><span>Warga</span>
-    </div>
-    <div class="nav-menu-item" data-menu="pkk" onclick="pilihMenu('pkk'); toggleMenuNavigasi();">
+    </button>
+    <button class="nav-item" onclick="pilihMenu('pkk')" id="nav-pkk">
       <i class="material-icons">local_florist</i><span>PKK</span>
-    </div>
-    <div class="nav-menu-item" data-menu="karangtaruna" onclick="pilihMenu('karangtaruna'); toggleMenuNavigasi();">
+    </button>
+    <button class="nav-item" onclick="pilihMenu('karangtaruna')" id="nav-karangtaruna">
       <i class="material-icons">diversity_3</i><span>Karang Taruna</span>
-    </div>
-    <div class="nav-menu-item" data-menu="profil" onclick="tampilkanProfil(); toggleMenuNavigasi();">
-      <i class="material-icons" style="color:var(--accent-blue);">account_circle</i><span>Profil Saya</span>
-    </div>
-  </div>
+    </button>
+    <button class="nav-item" onclick="tampilkanProfil()" id="nav-profil">
+      <i class="material-icons">account_circle</i><span>Profil</span>
+    </button>
+  </nav>
 
 <div id="dashboardView">
     <div class="welcome-banner">
@@ -3816,17 +3799,6 @@
 
   // ======================== MENU NAVIGATION ========================
   function toggleMenuNavigasi() {
-    const menu = document.getElementById('navMenu');
-    const overlay = document.getElementById('menuOverlay');
-    const isVisible = menu.classList.contains('show');
-    
-    if (!isVisible) {
-      menu.classList.add('show');
-      overlay.classList.add('active');
-    } else {
-      menu.classList.remove('show');
-      overlay.classList.remove('active');
-    }
   }
 
   function initSwipeNavigation() {
@@ -3860,7 +3832,6 @@
   }
 
   function tutupMenuNavigasi() {
-    document.getElementById('navMenu').classList.remove('show');
   }
 
   // Helper untuk cek izin
@@ -3873,6 +3844,11 @@
   function pilihMenu(tabName) {
     currentTab = tabName;
     sembunyikanSemuaLayar();
+    
+    // Update Active Class on Bottom Nav
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    var activeNav = document.getElementById('nav-' + tabName.toLowerCase());
+    if(activeNav) activeNav.classList.add('active');
     
     // Update Theme Class on Body
     document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
@@ -3914,6 +3890,11 @@
   function tampilkanProfil() {
     sembunyikanSemuaLayar();
     document.getElementById('profilView').style.display = 'block';
+    
+    // Update Status Aktif pada Navigasi Bawah
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    var navProf = document.getElementById('nav-profil');
+    if(navProf) navProf.classList.add('active');
     
     history.pushState({view: 'profilView', tab: 'profil'}, '', '#profil');
     
