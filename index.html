@@ -122,6 +122,19 @@
         transform: translateY(0); 
       }
     }
+  
+  /* Animasi Pop-up Menu Navigasi */
+  @keyframes navPopUp {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .menu-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px); z-index: 998; display: none;
+    transition: opacity 0.3s ease;
+  }
+  .menu-overlay.show { display: block; }
 
     /* Theme classes */
     body.theme-warga { --primary-color: var(--warga-red); --primary-color-rgb: 239, 68, 68; --primary-dark: #b91c1c; }
@@ -585,6 +598,7 @@
 .nav-menu {
       position: fixed;
       bottom: 90px;
+      z-index: 999;
       right: 20px;
       background: var(--bg-surface);
       backdrop-filter: blur(16px);
@@ -594,41 +608,14 @@
       padding: 12px 0;
       min-width: 180px;
       z-index: 999;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 4px;
       border: 1px solid var(--border-color);
-      
-      /* Animasi Transisi Halus */
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(20px) scale(0.9);
-      transform-origin: bottom right;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      pointer-events: none;
     }
 
     .nav-menu.show {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0) scale(1);
-      pointer-events: auto;
-    }
-
-    .menu-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(2px);
-      z-index: 998;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .menu-overlay.show {
-      opacity: 1;
-      visibility: visible;
+      display: flex;
     }
 
     .nav-menu-item {
@@ -1304,13 +1291,13 @@
       left: 0;
       z-index: 30;
       background-color: var(--bg-surface) !important;
-      min-width: 150px;
-      max-width: 150px;
+      min-width: 160px;
+      max-width: 160px;
       white-space: normal;
       word-break: break-word;
       font-weight: 700;
-      font-size: 15px;
-      box-shadow: 4px 0 8px -2px rgba(0,0,0,0.2);
+      font-size: 15px; /* Nama diperbesar sesuai permintaan */
+      box-shadow: 4px 0 8px -2px rgba(0,0,0,0.15);
       border-right: 1px solid var(--border-color) !important;
     }
 
@@ -1318,11 +1305,11 @@
     .iuran-table th:nth-child(2),
     .iuran-table td:nth-child(2) {
       position: sticky !important;
-      left: 150px; /* Harus sama dengan lebar kolom pertama */
+      left: 160px; /* Sesuai lebar kolom pertama */
       z-index: 30;
       background-color: var(--bg-surface) !important;
-      min-width: 120px;
-      max-width: 120px;
+      min-width: 110px;
+      max-width: 110px;
       border-right: 2px solid var(--primary-color) !important;
       box-shadow: 4px 0 8px -2px rgba(0,0,0,0.2);
     }
@@ -1330,7 +1317,7 @@
     .iuran-table th:nth-child(1),
     .iuran-table th:nth-child(2) {
       background-color: var(--bg-app) !important;
-      z-index: 40; /* Ditingkatkan agar berada di atas sel data saat scroll */
+      z-index: 40; /* Z-index ditingkatkan agar tidak tertumpuk saat scroll */
     }
 
     body.dark-mode .iuran-table th:nth-child(1),
@@ -1388,6 +1375,16 @@
 
     .summary-card:hover {
       transform: translateY(-2px);
+    }
+
+    /* Styling khusus menu profil di Nav Bar agar menonjol */
+    #nav-profil.active {
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 12px;
+    }
+    #nav-profil.active i {
+      color: #2563eb !important;
     }
 
     .summary-icon {
@@ -1606,10 +1603,19 @@
 
     /* Highlight untuk Baris Lunas Setahun (Hijau Emerald) */
     .iuran-table tr.row-lunas td {
-      background-color: rgba(16, 185, 129, 0.25) !important; /* Warna hijau lebih mencolok */
+      background-color: rgba(16, 185, 129, 0.25) !important; /* Warna lebih mencolok */
     }
     body.dark-mode .iuran-table tr.row-lunas td {
-      background-color: rgba(16, 185, 129, 0.35) !important; /* Warna hijau lebih mencolok di mode gelap */
+      background-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    /* Memastikan sel sticky juga ikut berwarna hijau saat lunas */
+    .iuran-table tr.row-lunas td:nth-child(1),
+    .iuran-table tr.row-lunas td:nth-child(2) {
+      background-color: rgba(16, 185, 129, 0.25) !important;
+    }
+    body.dark-mode .iuran-table tr.row-lunas td:nth-child(1),
+    body.dark-mode .iuran-table tr.row-lunas td:nth-child(2) {
+      background-color: rgba(16, 185, 129, 0.35) !important;
     }
 
     /* Prefix Rp untuk Input Nominal */
@@ -1640,6 +1646,7 @@
 <div id="pullToRefresh" class="ptr-container">
   <div class="ptr-icon"><i class="material-icons">refresh</i></div>
 </div>
+<div id="menuOverlay" class="menu-overlay" onclick="tutupMenuNavigasi()"></div>
 
 <div class="lightbox-overlay" id="lightboxOverlay">
   <button class="lightbox-close" onclick="closeLightbox()">
@@ -1654,8 +1661,6 @@
     <i class="material-icons">chevron_right</i>
   </button>
 </div>
-
-<div id="menuOverlay" class="menu-overlay" onclick="tutupMenuNavigasi()"></div>
 
 <div id="loginScreen">
   <div class="login-box">
@@ -1690,7 +1695,7 @@
     </p>
     
     <p style="margin-top:15px; font-size: 13px; color: var(--text-muted); padding-top: 15px; border-top: 1px dashed var(--border-color);">
-      Kendala akses? <a href="https://wa.me/625236356569" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
+      Kendala akses? <a href="https://wa.me/6285236356569" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
     </p>
   </div>
 </div>
@@ -1791,8 +1796,8 @@
     <div class="nav-menu-item" data-menu="karangtaruna">
       <i class="material-icons">music_note</i><span>Karang Taruna</span>
     </div>
-    <div class="nav-menu-item" data-menu="profil" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); color: var(--accent-blue); margin-top: 10px; margin-bottom: 6px;">
-      <i class="material-icons" style="color: var(--accent-blue);">account_circle</i><span style="font-weight: 700;">Profil Saya</span>
+    <div class="nav-menu-item" data-menu="profil">
+      <i class="material-icons">person</i><span>Profil</span>
     </div>
   </div>
 
@@ -3360,7 +3365,6 @@
 
     // Inisialisasi interaksi awan
     initCloudInteraction();
-    initSwipeNavigation();
 
     // FIX: Periksa localStorage (Remember Me) DAN sessionStorage (Tab Saja)
     var savedToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
@@ -3408,13 +3412,19 @@
     }
   });
 
+  function formatWA(num) {
+    let wa = String(num || '').replace(/\D/g, '');
+    if (wa.startsWith('0')) wa = '62' + wa.substring(1);
+    return wa;
+  }
+
   function updateAdminContactLink() {
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'success' && res.data.admin_whatsapp) {
-        // Pastikan dikonversi ke String terlebih dahulu sebelum replace
-        var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
-        if (wa.startsWith('0')) wa = '62' + wa.substring(1); // Konversi otomatis 08 ke 628
-        document.getElementById('linkHubungiAdmin').href = "https://wa.me/" + wa;
+        const wa = formatWA(res.data.admin_whatsapp);
+        const link = "https://wa.me/" + wa;
+        if(document.getElementById('linkHubungiAdmin')) document.getElementById('linkHubungiAdmin').href = link;
+        if(document.getElementById('profAdminContact')) document.getElementById('profAdminContact').href = link;
       }
     }).getSettings();
   }
@@ -3664,18 +3674,47 @@ function logout() {
     document.getElementById('loginScreen').style.display = 'flex';
   }
 
-  // ======================== MENU NAVIGATION ========================
+  // ======================== NAVIGATION & SWIPE ========================
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const modules = ['warga', 'pkk', 'karangtaruna'];
+
+  document.getElementById('mainApp').addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+
+  document.getElementById('mainApp').addEventListener('touchend', e => {
+    // Hanya aktif di Dashboard
+    if (document.getElementById('dashboardView').style.display !== 'block') return;
+    
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, {passive: true});
+
+  function handleSwipe() {
+    const swipeDistance = touchEndX - touchStartX;
+    const threshold = 100;
+    let currentIndex = modules.indexOf(currentTab);
+
+    if (swipeDistance < -threshold) { // Geser Kiri -> Next
+      if (currentIndex < modules.length - 1) pilihMenu(modules[currentIndex + 1]);
+    } else if (swipeDistance > threshold) { // Geser Kanan -> Prev
+      if (currentIndex > 0) pilihMenu(modules[currentIndex - 1]);
+    }
+  }
+
   function toggleMenuNavigasi() {
-    var menu = document.getElementById('navMenu');
-    var overlay = document.getElementById('menuOverlay');
-    menu.classList.toggle('show');
-    if (overlay) overlay.classList.toggle('show');
+    document.getElementById('navMenu').classList.toggle('show');
+    document.getElementById('menuOverlay').classList.toggle('show');
   }
 
   function tutupMenuNavigasi() {
     document.getElementById('navMenu').classList.remove('show');
-    var overlay = document.getElementById('menuOverlay');
-    if (overlay) overlay.classList.remove('show');
+    document.getElementById('menuOverlay').classList.remove('show');
+  }
+
+  function tutupMenuNavigasi() {
+    document.getElementById('navMenu').classList.remove('show');
   }
 
   document.querySelectorAll('.nav-menu-item').forEach(function(item) {
@@ -3738,40 +3777,31 @@ function logout() {
     });
   }
 
-  /**
-   * Menampilkan popup untuk mengubah nama profil pengguna
-   */
   function editNamaProfil() {
     Swal.fire({
-      title: 'Ubah Nama Lengkap',
+      title: 'Ganti Nama Profil',
       input: 'text',
-      inputLabel: 'Masukkan nama lengkap baru Anda',
+      inputLabel: 'Nama Baru Anda',
       inputValue: currentUser.nama,
       showCancelButton: true,
-      confirmButtonText: 'Simpan Perubahan',
-      cancelButtonText: 'Batal',
+      confirmButtonText: 'Simpan',
       confirmButtonColor: 'var(--primary-color)',
-      preConfirm: (value) => {
-        if (!value || value.trim().length < 3) {
-          Swal.showValidationMessage('Nama minimal harus 3 karakter');
-          return false;
-        }
-        return value.trim();
+      preConfirm: (val) => {
+        if (!val) return Swal.showValidationMessage('Nama tidak boleh kosong');
+        return val;
       }
-    }).then((result) => {
-      if (result.isConfirmed) {
+    }).then((res) => {
+      if (res.isConfirmed) {
         showLoading('Memperbarui nama...');
-        google.script.run
-          .withSuccessHandler(function(res) {
-            Swal.close();
-            if (res.status === 'success') {
-              showSuccess(res.pesan);
-              currentUser.nama = result.value;
-              document.getElementById('welcomeUserName').innerText = 'Halo, ' + result.value + '!';
-            } else showError(res.pesan);
-          })
-          .withFailureHandler(err => { Swal.close(); showError('Gagal menghubungi server'); })
-          .ubahNama(currentUser.email, result.value, currentToken);
+        google.script.run.withSuccessHandler(function(response) {
+          Swal.close();
+          if (response.status === 'success') {
+            currentUser.nama = res.value;
+            const nameEl = document.getElementById('welcomeUserName');
+            if(nameEl) nameEl.innerText = 'Halo, ' + res.value + '!';
+            showSuccess(response.pesan);
+          } else showError(response.pesan);
+        }).ubahNama(currentUser.email, res.value, currentToken);
       }
     });
   }
@@ -3791,15 +3821,14 @@ function logout() {
       html:
         '<div style="text-align:left; padding:6px 0;">'
           + '<div style="font-size:14px; color:#64748b; margin-bottom:6px;">Akun Anda</div>'
-          + '<div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">'
-          + '  <div style="font-weight:800; font-size:18px; color:var(--text-main);">' + nama + '</div>'
-          + '  <button onclick="editNamaProfil()" style="background:rgba(var(--primary-color-rgb), 0.1); border:none; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--primary-color);">'
-          + '    <i class="material-icons" style="font-size:18px;">edit</i>'
-          + '  </button>'
-          + '</div>'
+          + '<div style="font-weight:700; margin-bottom:6px;">' + nama + '</div>'
           + '<div style="margin-bottom:4px;"><strong>Email:</strong> ' + email + '</div>'
           + '<div style="margin-bottom:4px;"><strong>Role:</strong> ' + role + '</div>'
-          + '<div style="margin-top:12px;"><a id="profAdminContact" href="https://wa.me/625236356569" target="_blank" style="color:var(--accent-blue); font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:18px;">contact_support</i> Hubungi Dukungan</a></div>'
+          + '<div style="margin-top:15px; margin-bottom:15px;">'
+          + '  <button onclick="editNamaProfil()" class="btn-action-subtle" style="width:100%; justify-content:center; background:var(--bg-app); border:1px solid var(--border-color); padding:10px; border-radius:10px;">'
+          + '    <i class="material-icons">edit</i> Ganti Nama Profil'
+          + '  </button>'
+          + '</div>'
           + '<div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--border-color);">'
           + '  <div style="display:flex; justify-content:space-between; align-items:center;">'
           + '    <span><span id="profileDarkIconCont" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-right:8px;"></span> Mode Gelap</span>'
@@ -3816,14 +3845,6 @@ function logout() {
           + '</div>'
           + '</div>',
       didOpen: function() {
-        google.script.run.withSuccessHandler(function(res) {
-          if (res.status === 'success' && res.data.admin_whatsapp) {
-            var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
-            if (wa.startsWith('0')) wa = '62' + wa.substring(1);
-            var link = document.getElementById('profAdminContact');
-            if (link) link.href = "https://wa.me/" + wa;
-          }
-        }).getSettings();
         var toggle = document.getElementById('darkToggle');
         var span = toggle.nextElementSibling;
         if(span) span.style.backgroundColor = isDark ? 'var(--primary-color)' : 'var(--border-color)'; /* Menggunakan variabel tema */
@@ -4639,22 +4660,26 @@ function bukaJadwal() {
         var daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         var todayStr = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 
-        // Helper untuk memformat daftar regu dalam satu minggu
+        function renderRondaChips(petugasStr) {
+          if (!petugasStr) return '-';
+          return petugasStr.split(/\r?\n/)
+            .filter(n => n.trim() !== '')
+            .map(nama => `<span class="ronda-chip"><i class="material-icons" style="font-size:12px;">account_circle</i>${nama.trim()}</span>`)
+            .join('');
+        }
+
         var formatMingguan = function(entries) {
           return entries.map(function(e) {
             var p = e.tanggal.split('-');
             var dObj = new Date(p[0], p[1] - 1, p[2]);
             var hari = daysIndo[dObj.getDay()];
-            var tgl = p[2];
             var isToday = (e.tanggal === todayStr);
-            var names = e.petugas ? e.petugas.split(/\r?\n/).filter(function(it){ return it.trim() !== ""; }).join(', ') : '-';
-            
+            var chips = renderRondaChips(e.petugas);
             var highlightStyle = isToday ? 'border-left:4px solid var(--primary-red); background:rgba(239,68,68,0.05);' : 'border-left:3px solid rgba(217,119,6,0.2);';
             var todayTag = isToday ? ' <span style="background:var(--primary-red); color:white; font-size:9px; padding:1px 6px; border-radius:4px; vertical-align:middle; margin-left:4px;">HARI INI</span>' : '';
-
             return '<div style="margin-bottom:10px; padding:4px 0 4px 10px; ' + highlightStyle + '">' +
-                   '<div style="font-size:12px; font-weight:800; color:var(--text-main);">' + hari + ', Tgl ' + tgl + ': ' + e.kelompok + todayTag + '</div>' +
-                   '<div style="font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:2px;">' + names + '</div>' +
+                   '<div style="font-size:12px; font-weight:800; color:var(--text-main);">' + hari + ', Tgl ' + p[2] + ': ' + e.kelompok + todayTag + '</div>' +
+                   '<div style="margin-top:4px;">' + chips + '</div>' +
                    '</div>';
           }).join('');
         };
@@ -4815,17 +4840,7 @@ function bukaJadwal() {
           rowStyle = `style="background-color: ${activeColor}15 !important; border-left: 5px solid ${activeColor} !important; font-weight: 700;"`;
         }
 
-        // Render petugas dengan tampilan Chips yang lebih rapi
-        var petugasList = '-';
-        if (item.petugas) {
-          var names = item.petugas.split(/\r?\n/).filter(function(n) { return n.trim() !== ""; });
-          petugasList = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">' + 
-            names.map(function(name) { 
-              return '<span style="background:rgba(var(--primary-color-rgb), 0.08); border:1px solid rgba(var(--primary-color-rgb), 0.15); padding:4px 12px; border-radius:12px; font-size:11.5px; color:var(--text-main); font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; box-shadow: var(--shadow-sm);"><i class="material-icons" style="font-size:14px; color:var(--primary-color);">person</i>' + name.trim() + '</span>';
-            }).join('') + 
-            '</div>';
-        }
-
+        var petugasList = renderRondaChips(item.petugas);
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div style="display:flex; gap:5px;">
             <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
@@ -5415,44 +5430,6 @@ function bukaJadwal() {
         updateAdminContactLink();
       } else showError(res.pesan);
     }).saveSettings('admin_whatsapp', val);
-  }
-
-  // ======================== SWIPE TABS NAVIGATION ========================
-  var tabTouchStartX = 0;
-  var tabTouchStartY = 0;
-  const tabList = ['warga', 'pkk', 'karangtaruna'];
-
-  /**
-   * Inisialisasi navigasi usap antar modul utama
-   */
-  function initSwipeNavigation() {
-    var app = document.getElementById('mainApp');
-    if (!app) return;
-
-    app.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) return;
-      tabTouchStartX = e.touches[0].clientX;
-      tabTouchStartY = e.touches[0].clientY;
-    }, {passive: true});
-
-    app.addEventListener('touchend', function(e) {
-      if (e.changedTouches.length > 1) return;
-      var deltaX = e.changedTouches[0].clientX - tabTouchStartX;
-      var deltaY = e.changedTouches[0].clientY - tabTouchStartY;
-
-      // Threshold: pergerakan horizontal > 80px dan lebih dominan dibanding vertikal
-      if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Hanya aktif di Dashboard (Beranda) agar tidak mengganggu fungsi scroll di layar lain
-        if (document.getElementById('dashboardView').style.display !== 'block') return;
-        
-        var curIdx = tabList.indexOf(currentTab);
-        if (deltaX < -50) { // Geser Jari ke Kiri (Pindah ke Tab Kanan/Next)
-          if (curIdx < tabList.length - 1) pilihMenu(tabList[curIdx + 1]);
-        } else if (deltaX > 50) { // Geser Jari ke Kanan (Pindah ke Tab Kiri/Prev)
-          if (curIdx > 0) pilihMenu(tabList[curIdx - 1]);
-        }
-      }
-    }, {passive: true});
   }
 
   function loadAdminSettingsUI() {
