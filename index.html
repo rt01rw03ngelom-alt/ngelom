@@ -1920,8 +1920,7 @@
 
       <div style="margin-top: 30px; text-align: center;">
         <p style="font-size: 12px; color: var(--text-muted);">
-          Portal RT Ngelom v2.5.0<br>
-          Dibuat dengan ❤️ untuk Warga RT 01
+          Portal RT01 RW03 - Desa Ngelom
         </p>
         <a href="#" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--accent-blue); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
           <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
@@ -3673,27 +3672,26 @@
     });
   }
 
-function logout() {
+  function logout() {
     showConfirm('Yakin keluar?').then(function(res) {
       if (res.isConfirmed) {
-        // stop polling notifikasi
-        try {
-          if (notifPollingHandle) {
-            clearInterval(notifPollingHandle);
-            notifPollingHandle = null;
-          }
-        } catch (e) {}
+        // Hentikan polling segera
+        stopNotifikasiPolling();
+        
+        var token = currentToken;
+
+        // Hapus semua data sesi di perangkat
         localStorage.removeItem('sessionToken');
         sessionStorage.removeItem('sessionToken');
         localStorage.removeItem('lastNotifTs');
 
-        if (currentToken) {
-          google.script.run.prosesLogout(currentToken);
+        // Beritahu server (async, tidak perlu ditunggu)
+        if (token) {
+          google.script.run.prosesLogout(token);
         }
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginScreen').style.display = 'flex';
-        currentUser = {};
-        currentToken = null;
+        
+        // Muat ulang aplikasi agar UI bersih kembali ke form login
+        location.reload();
       }
     });
   }
@@ -5419,7 +5417,7 @@ function bukaJadwal() {
             Swal.close();
             showError('Gagal memperbarui password: ' + err.message);
           })
-          .ubahPassword(currentUser.email, result.value.oldP, result.value.newP);
+          .ubahNama(currentUser.email, result.value, currentToken);
       }
     });
   }
