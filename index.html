@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <meta name="theme-color" content="#d32f2f">
   <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Portal RT">
@@ -152,6 +153,7 @@
     body.theme-warga { --primary-color: var(--warga-red); --primary-color-rgb: 239, 68, 68; --primary-dark: #b91c1c; }
     body.theme-pkk { --primary-color: var(--pkk-green); --primary-color-rgb: 16, 185, 129; --primary-dark: #059669; }
     body.theme-karangtaruna { --primary-color: var(--kt-blue); --primary-color-rgb: 56, 189, 248; --primary-dark: #0284c7; }
+    body.theme-profil { --primary-color: #f59e0b; --primary-color-rgb: 245, 158, 11; --primary-dark: #d97706; }
 
     * {
       box-sizing: border-box;
@@ -3870,7 +3872,7 @@
     sembunyikanSemuaLayar();
     
     // Update Theme Class on Body
-    document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
+    document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna', 'theme-profil');
     document.body.classList.add('theme-' + tabName.toLowerCase());
 
     // Sinkronisasi status aktif pada Navigasi Bawah
@@ -3915,6 +3917,10 @@
     sembunyikanSemuaLayar();
     document.getElementById('profilView').style.display = 'block';
     
+    // Sinkronisasi Tema Body (Kuning untuk Profil)
+    document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
+    document.body.classList.add('theme-profil');
+
     // Update Status Aktif pada Navigasi Bawah
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     var navProf = document.getElementById('nav-profil');
