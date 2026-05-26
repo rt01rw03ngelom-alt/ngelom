@@ -55,8 +55,7 @@
     body.dark-mode .welcome-banner,
     body.dark-mode .modal-kategori,
     body.dark-mode .login-box,
-    body.dark-mode .summary-card,
-    body.dark-mode .menu-item {
+    body.dark-mode .summary-card {
       /* Menggunakan warna surface dengan transparansi agar blur terlihat */
       background: rgba(30, 41, 59, 0.65) !important; 
       backdrop-filter: blur(12px) saturate(180%);
@@ -90,11 +89,6 @@
 
     body.dark-mode::before {
       opacity: 0.15; /* Reduce texture visibility in dark mode */
-    }
-
-    /* Perbaikan Latar Belakang Paling Belakang di Mode Gelap */
-    body.dark-mode::after {
-      background: linear-gradient(-45deg, #0f172a, #1e293b, #111827, #0f172a) !important;
     }
 
     /* Animated Background Canvas Effect */
@@ -155,8 +149,6 @@
     .welcome-banner, 
     .menu-item, 
     .card-item, 
-    .page-header h3,
-    h4,
     .summary-card, 
     .crud-form, 
     .table-container, 
@@ -200,6 +192,18 @@
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
         gap: 30px !important;
         padding: 30px !important;
+      }
+    }
+
+    /* Perbaikan Responsivitas Mobile */
+    @media (max-width: 360px) {
+      .menu-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 12px;
+      }
+      .menu-item {
+        height: 100px;
       }
     }
 
@@ -327,7 +331,6 @@
     }
 
     body.theme-warga .header-clouds,
-    body.theme-pkk .header-clouds,
     body.theme-karangtaruna .header-clouds {
       opacity: 0.6;
       animation: cloudDrift 90s linear infinite;
@@ -545,83 +548,87 @@
       text-align: center;
     }
 
-    /* Bottom Navigation Bar Styles */
-    .nav-bar-bottom {
+    .nav-fab {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 75px;
-      background: rgba(var(--bg-surface-rgb), 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      bottom: 20px;
+      right: 20px;
+      background: rgba(var(--primary-color-rgb), 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
       display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 1px solid var(--border-color);
-      padding-bottom: env(safe-area-inset-bottom);
-      z-index: 1000;
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-    }
-
-    body.dark-mode .nav-bar-bottom {
-      background: rgba(30, 41, 59, 0.9);
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-    }
-
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      color: var(--text-muted);
-      text-decoration: none;
+      box-shadow: var(--shadow-lg);
       cursor: pointer;
+      z-index: 1000;
+      transition: all 0.2s ease;
+    }
+
+    .nav-fab:hover {
+      transform: scale(1.05);
+      background: var(--primary-dark);
+    }
+
+    .nav-fab:active {
+      transform: scale(0.95);
+    }
+
+    .nav-fab i {
+      font-size: 28px;
+    }
+
+.nav-menu {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      padding: 12px 0;
+      min-width: 180px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border: 1px solid var(--border-color);
+      
+      /* Animasi Transisi Halus */
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px) scale(0.9);
+      transform-origin: bottom right;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+
+    .nav-menu.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(2px);
+      z-index: 998;
+      opacity: 0;
+      visibility: hidden;
       transition: all 0.3s ease;
-      background: transparent;
-      border: none;
-      outline: none;
     }
 
-    .nav-item i {
-      font-size: 26px;
-      transition: color 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .nav-item span {
-      font-size: 10px;
-      font-weight: 700;
-      transition: color 0.4s ease;
-    }
-
-    .nav-item.active {
-      color: var(--primary-color) !important;
-      transform: translateY(-2px);
-    }
-
-    .nav-item.active i {
-      font-weight: bold;
-      text-shadow: 0 0 15px rgba(var(--primary-color-rgb), 0.4);
-    }
-
-    /* Efek Glow Ikon Navigasi di Mode Gelap */
-    body.dark-mode .nav-item.active i {
-      text-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.8), 
-                   0 0 20px rgba(var(--primary-color-rgb), 0.4);
-    }
-
-    /* Indikator Garis Atas yang Mengikuti Tema */
-    .nav-item.active::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      width: 24px;
-      height: 4px;
-      background: var(--primary-color);
-      border-radius: 0 0 4px 4px;
-      box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.5);
+    .menu-overlay.show {
+      opacity: 1;
+      visibility: visible;
     }
 
     .nav-menu-item {
@@ -1062,7 +1069,7 @@
 
     .screen {
       display: none;
-      padding: 1rem 1rem 100px; /* Padding bawah disesuaikan untuk Bottom Nav */
+      padding: 1rem 1rem 160px; /* Padding bawah lebih besar untuk FAB */
       min-height: 100vh;
       width: 100%;
     }
@@ -1323,7 +1330,7 @@
     .iuran-table th:nth-child(1),
     .iuran-table th:nth-child(2) {
       background-color: var(--bg-app) !important;
-      z-index: 21;
+      z-index: 40; /* Ditingkatkan agar berada di atas sel data saat scroll */
     }
 
     body.dark-mode .iuran-table th:nth-child(1),
@@ -1500,7 +1507,7 @@
       font-size: 11px;
       font-weight: 600;
       background: var(--bg-app);
-      color: var(--text-main);
+      color: #475569;
     }
 
     @media (max-width: 640px) {
@@ -1523,29 +1530,21 @@
       }
 
       .menu-container {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 16px;
-        padding: 18px;
-        margin-top: 5px;
+        gap: 12px;
+        padding: 14px;
       }
 
       .menu-item {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1 / 0.85;
-        padding: 22px 12px;
-        border-radius: 28px;
+        width: 82px;
+        height: 82px;
       }
 
       .menu-item i {
-        font-size: 42px;
-        margin-bottom: 10px;
+        font-size: 28px;
       }
 
       .menu-item span {
-        font-size: 13.5px;
-        font-weight: 800;
-        line-height: 1.2;
+        font-size: 10px;
       }
 
       .filter-table {
@@ -1553,12 +1552,22 @@
         align-items: stretch;
       }
 
+      .nav-menu {
+        right: 12px;
+        min-width: 170px;
+      }
+
+      .nav-fab,
       .fab {
         right: 14px;
       }
 
+      .nav-fab {
+        bottom: 18px;
+      }
+
       .fab {
-        bottom: 95px; /* Sesuaikan posisi FAB di atas Bottom Nav */
+        bottom: 98px;
       }
     }
 
@@ -1595,24 +1604,12 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Divider Bulan di Ronda */
-    .month-divider {
-      background: var(--bg-app) !important;
-      color: var(--primary-color) !important;
-      font-weight: 800;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 10px 15px !important;
-      border-bottom: 2px solid var(--primary-color);
-    }
-
     /* Highlight untuk Baris Lunas Setahun (Hijau Emerald) */
     .iuran-table tr.row-lunas td {
-      background-color: rgba(16, 185, 129, 0.12) !important;
+      background-color: rgba(16, 185, 129, 0.25) !important; /* Warna hijau lebih mencolok */
     }
     body.dark-mode .iuran-table tr.row-lunas td {
-      background-color: rgba(16, 185, 129, 0.22) !important;
+      background-color: rgba(16, 185, 129, 0.35) !important; /* Warna hijau lebih mencolok di mode gelap */
     }
 
     /* Prefix Rp untuk Input Nominal */
@@ -1678,7 +1675,10 @@
     </div>
     
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
-      <div style="font-size: 14px; color: var(--text-muted); font-style: italic;">Sesi login tersimpan otomatis</div>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 14px; color: var(--text-muted);">
+        <input type="checkbox" id="rememberMe" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--primary-color);">
+        Ingat Saya
+      </label>
       <a href="#" onclick="lupaPassword(); return false;" style="color:var(--primary-red); font-size: 14px; font-weight: 600; text-decoration: none;">Lupa Password?</a>
     </div>
 
@@ -1690,7 +1690,7 @@
     </p>
     
     <p style="margin-top:15px; font-size: 13px; color: var(--text-muted); padding-top: 15px; border-top: 1px dashed var(--border-color);">
-      Kendala akses? <a href="https://wa.me/6285236356569" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
+      Kendala akses? <a href="https://wa.me/625236356569" id="linkHubungiAdmin" target="_blank" style="color:var(--accent-blue); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="material-icons" style="font-size:16px;">contact_support</i> Hubungi Admin</a>
     </p>
   </div>
 </div>
@@ -1777,21 +1777,24 @@
       </div>
     </div>
 
-  <!-- New Bottom Navigation Bar -->
-  <nav class="nav-bar-bottom" id="bottomNav">
-    <button class="nav-item active" onclick="pilihMenu('warga')" id="nav-warga">
+  <button class="nav-fab" id="navFab" onclick="toggleMenuNavigasi()">
+    <i class="material-icons">menu</i>
+  </button>
+
+  <div id="navMenu" class="nav-menu">
+    <div class="nav-menu-item" data-menu="warga">
       <i class="material-icons">people</i><span>Warga</span>
-    </button>
-    <button class="nav-item" onclick="pilihMenu('pkk')" id="nav-pkk">
+    </div>
+    <div class="nav-menu-item" data-menu="pkk">
       <i class="material-icons">local_florist</i><span>PKK</span>
-    </button>
-    <button class="nav-item" onclick="pilihMenu('karangtaruna')" id="nav-karangtaruna">
-      <i class="material-icons">diversity_3</i><span>Karang Taruna</span>
-    </button>
-    <button class="nav-item" onclick="tampilkanProfil()" id="nav-profil">
-      <i class="material-icons">person</i><span>Profil</span>
-    </button>
-  </nav>
+    </div>
+    <div class="nav-menu-item" data-menu="karangtaruna">
+      <i class="material-icons">music_note</i><span>Karang Taruna</span>
+    </div>
+    <div class="nav-menu-item" data-menu="profil" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); color: var(--accent-blue); margin-top: 10px; margin-bottom: 6px;">
+      <i class="material-icons" style="color: var(--accent-blue);">account_circle</i><span style="font-weight: 700;">Profil Saya</span>
+    </div>
+  </div>
 
 <div id="dashboardView">
     <div class="welcome-banner">
@@ -1846,89 +1849,6 @@
     </div>
     <div class="menu-container" id="menuContainer"></div>
   </div>
-
-    <!-- LAYAR PROFIL PENGGUNA -->
-    <div id="profilView" class="screen">
-      <div class="page-header">
-        <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-        <h3>Profil Saya</h3>
-      </div>
-      
-      <div class="card-item" style="padding: 30px 20px; text-align: center; border-left: none; border-bottom: 5px solid var(--primary-color);">
-        <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
-          <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-color); border: 2px solid var(--border-color); overflow: hidden;">
-            <i class="material-icons" style="font-size: 64px;">person</i>
-          </div>
-          <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-surface);">
-            <i class="material-icons" style="font-size: 16px;">verified</i>
-          </div>
-        </div>
-      <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span id="profNama">-</span>
-        <i class="material-icons" style="font-size: 18px; color: var(--text-muted); cursor: pointer;" onclick="editNamaProfil()" title="Ubah Nama">edit</i>
-      </h2>
-        <p id="profEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px; font-weight: 500;">-</p>
-        <div style="display: flex; justify-content: center;">
-          <span id="profRole" class="status-badge status-selesai" style="text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 6px 16px;">-</span>
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top: 25px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Preferensi & Keamanan</div>
-      <div class="card-item" style="padding: 0; overflow: hidden; border-left: none;">
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color);">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <div style="background: rgba(var(--primary-color-rgb), 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-              <i class="material-icons" style="color: var(--primary-color); font-size: 20px;" id="profDarkIcon">dark_mode</i>
-            </div>
-            <span style="font-weight: 600; color: var(--text-main);">Mode Gelap</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="profilDarkToggle" onchange="toggleDarkMode()">
-            <span></span>
-          </label>
-        </div>
-        
-        <div onclick="gantiPasswordUI()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
-          <div style="background: rgba(37, 99, 235, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-            <i class="material-icons" style="color: #2563eb; font-size: 20px;">lock_reset</i>
-          </div>
-          <div style="flex: 1;">
-            <span style="font-weight: 600; color: var(--text-main); display: block;">Ubah Kata Sandi</span>
-            <span style="font-size: 11px; color: var(--text-muted);">Perbarui keamanan akun Anda</span>
-          </div>
-          <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
-        </div>
-
-        <div id="profAdminOnly" style="display: none;">
-          <div onclick="bukaKelolaUser()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer;">
-            <div style="background: rgba(16, 185, 129, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-              <i class="material-icons" style="color: #10b981; font-size: 20px;">manage_accounts</i>
-            </div>
-            <div style="flex: 1;">
-              <span style="font-weight: 600; color: var(--text-main); display: block;">Kelola User & Role</span>
-              <span style="font-size: 11px; color: var(--text-muted);">Manajemen akses warga (Admin)</span>
-            </div>
-            <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">chevron_right</i>
-          </div>
-        </div>
-
-        <div onclick="logout()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; cursor: pointer;">
-        <div style="background: rgba(99, 102, 241, 0.1); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-          <i class="material-icons" style="color: #6366f1; font-size: 20px;">logout</i>
-          </div>
-        <span style="font-weight: 600; color: #6366f1;">Keluar dari Aplikasi</span>
-        </div>
-      </div>
-
-      <div style="margin-top: 30px; text-align: center;">
-        <p style="font-size: 12px; color: var(--text-muted);">
-          Portal RT01 RW03- Desa Ngelom
-        </p>
-        <a href="#" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--accent-blue); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
-          <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
-        </a>
-      </div>
-    </div>
 
   <div id="jadwalView" class="screen">
     <div class="page-header">
@@ -2016,7 +1936,7 @@
   <div id="ktKasView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Laporan Kas Karang Taruna</h3>
+      <h3>Laporan Kas KT</h3>
     </div>
     <div class="kas-summary">
       <div class="summary-card">
@@ -2036,7 +1956,6 @@
           <option value="2026" selected>2026</option>
         </select>
         <button class="btn-small" onclick="ktMuatGrafikKas()">Update Grafik</button>
-        <button class="btn-small success" onclick="ktCetakLaporanKas()">Cetak Laporan</button>
       </div>
     </div>
 
@@ -2089,8 +2008,8 @@
       <input type="hidden" id="ktGaleriId">
       <input type="text" id="ktGaleriJudul" placeholder="Judul Kegiatan">
       <select id="ktGaleriType" onchange="toggleGaleriType('kt')">
-        <option value="image">Upload File Gambar</option>
-        <option value="video">Link Media (Gambar/Video)</option>
+        <option value="image">Gambar (Upload)</option>
+        <option value="video">Video (Link Medsos)</option>
       </select>
       <div id="ktGaleriFileContainer">
       <input type="file" id="ktGaleriFile" accept="image/*">
@@ -2098,7 +2017,7 @@
       </div>
       <div id="ktGaleriVideoContainer" style="display:none;">
         <input type="text" id="ktGaleriVideoLink" placeholder="Link YouTube/TikTok/Instagram">
-        <p class="muted" style="font-size:11px;">Contoh: Link YouTube atau Link Foto (Google Drive/Lainnya)</p>
+        <p class="muted" style="font-size:11px;">Contoh: https://www.youtube.com/watch?v=xxx</p>
       </div>
       <textarea id="ktGaleriDeskripsi" rows="3" placeholder="Deskripsi Singkat"></textarea>
       <div id="ktPreviewGaleri"></div>
@@ -2175,7 +2094,7 @@
         </button>
       </div>
       
-      <div id="uPermissionContainer" style="text-align:left; margin-top:15px; border:1px solid var(--border-color); padding:10px; border-radius:12px;">
+      <div id="uPermissionContainer" style="text-align:left; margin-top:15px; border:1px solid #e2e8f0; padding:10px; border-radius:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <label style="font-weight:700; font-size:12px; color:var(--text-muted); display:block; margin:0;">HAK AKSES FITUR:</label>
           <label style="font-size:11px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; color:var(--primary-color);">
@@ -2356,8 +2275,8 @@
       <input type="hidden" id="pkkGaleriId">
       <input type="text" id="pkkGaleriCaption" placeholder="Caption / Deskripsi Foto">
       <select id="pkkGaleriType" onchange="toggleGaleriType('pkk')">
-        <option value="image">Upload File Gambar</option>
-        <option value="video">Link Media (Gambar/Video)</option>
+        <option value="image">Gambar (Upload)</option>
+        <option value="video">Video (Link Medsos)</option>
       </select>
       <div id="pkkGaleriFileContainer">
       <input type="file" id="pkkGaleriFile" accept="image/*">
@@ -2365,7 +2284,6 @@
       </div>
       <div id="pkkGaleriVideoContainer" style="display:none;">
         <input type="text" id="pkkGaleriVideoLink" placeholder="Link YouTube/TikTok/Instagram">
-        <p class="muted" style="font-size:11px;">Bisa berupa link foto atau link video</p>
       </div>
       <button class="btn-primary" onclick="pkkUploadGaleri()">Upload</button>
       <button class="btn-secondary" onclick="tutupForm('formPkkCrudGaleri','pkkWrapListGaleri')">Batal</button>
@@ -2623,8 +2541,8 @@
       <input type="hidden" id="galeriId">
       <input type="text" id="galeriCaption" placeholder="Caption / Deskripsi Foto">
       <select id="galeriType" onchange="toggleGaleriType('rt')">
-        <option value="image">Upload File Gambar</option>
-        <option value="video">Link Media (Gambar/Video)</option>
+        <option value="image">Gambar (Upload)</option>
+        <option value="video">Video (Link Medsos)</option>
       </select>
       <div id="rtGaleriFileContainer">
       <input type="file" id="galeriFile" accept="image/*">
@@ -2632,7 +2550,6 @@
       </div>
       <div id="rtGaleriVideoContainer" style="display:none;">
         <input type="text" id="galeriVideoLink" placeholder="Link YouTube/TikTok/Instagram">
-        <p class="muted" style="font-size:11px;">Bisa berupa link foto atau link video</p>
       </div>
       <button class="btn-primary" onclick="uploadGaleri()">Upload</button>
       <button class="btn-secondary" onclick="tutupForm('formCrudGaleri','wrapListGaleri')">Batal</button>
@@ -2757,58 +2674,37 @@
   }
 
   // ======================== MEDIA HELPERS ========================
-  function checkAndRequestNotificationPermission(silent) {
+  function requestNotificationPermission() {
     if (!("Notification" in window)) {
-      if (!silent) bukaNotifikasi(); 
+      bukaNotifikasi(); // Fallback ke popup biasa
       return;
     }
 
     if (Notification.permission === "granted") {
-      if (!silent) bukaNotifikasi();
+      bukaNotifikasi();
     } else if (Notification.permission !== "denied") {
       Notification.requestPermission().then(function (permission) {
         if (permission === "granted") {
-          if (silent) console.log("Notifikasi sistem diaktifkan otomatis.");
-          else showSuccess("Notifikasi sistem diaktifkan!");
+          showSuccess("Notifikasi sistem diaktifkan!");
         }
-        if (!silent) bukaNotifikasi();
+        bukaNotifikasi();
       });
     } else {
-      if (!silent) bukaNotifikasi();
+      bukaNotifikasi();
     }
-  }
-
-  function requestNotificationPermission() {
-    checkAndRequestNotificationPermission(false);
   }
 
   function triggerSystemNotification(judul, isi, targetPage) {
     if (Notification.permission === "granted") {
-      const options = {
+      var options = {
         body: isi,
-        icon: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128',
-        badge: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128',
-        vibrate: [200, 100, 200],
-        tag: 'portal-rt-notif-' + Date.now(),
-        renotify: true,
-        data: { targetPage: targetPage } // Kirim data halaman tujuan ke Service Worker
+        icon: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128'
       };
-
-      var notification;
-      // Gunakan Service Worker jika tersedia untuk notifikasi yang lebih stabil di latar belakang
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(function(registration) {
-          registration.showNotification(judul, options);
-        });
-      } else {
-        notification = new Notification(judul, options);
-        notification.onclick = function(event) {
-          event.preventDefault(); // cegah browser fokus otomatis secara default
-          window.focus();
-          handleNotifLihat(targetPage);
-          notification.close();
-        };
-      }
+      var n = new Notification(judul, options);
+      n.onclick = function() {
+        window.focus();
+        handleNotifLihat(targetPage);
+      };
     }
   }
 
@@ -3002,7 +2898,7 @@
       .withFailureHandler(function(err) {
         console.error('muatNotifikasiSekali error', err);
       })
-      .getNotifikasiTerbaru(lastTs ? Number(lastTs) : null, currentToken);
+      .getNotifikasiTerbaru(lastTs ? Number(lastTs) : null, currentUser.role);
   }
 
   function handleNotifLihat(targetPage) {
@@ -3184,11 +3080,10 @@
     if (document.getElementById('dashboardView').style.display === 'block') {
       if (currentTab === 'karangtaruna') {
         google.script.run.withSuccessHandler(function(res) {
-          if (res.status === 'success' && currentTab === 'karangtaruna') {
-            var el = document.getElementById('totalKasIuranValue');
-            if (el) el.innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
+          if (res.status === 'success') {
+            document.getElementById('totalKasIuranValue').innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
+            if(callback) callback();
           }
-          if(callback) callback();
         }).ktGetKas();
       } else {
         muatDataKas(callback);
@@ -3327,7 +3222,7 @@
           + '  <div class="bbx-spinner" aria-hidden="true"></div>'
           + '  <div style="text-align:left;">'
           + '    <div style="font-weight:700; color:var(--primary-dark); margin-bottom:4px;">Memproses...</div>'
-          + '    <div style="color:var(--text-muted); font-size:13px; line-height:1.35;">' + (msg || '') + '</div>'
+          + '    <div style="color:#64748b; font-size:13px; line-height:1.35;">' + (msg || '') + '</div>'
           + '  </div>'
           + '</div>',
       allowOutsideClick: false,
@@ -3465,20 +3360,11 @@
 
     // Inisialisasi interaksi awan
     initCloudInteraction();
+    initSwipeNavigation();
 
-    // Otomatis Log In: Periksa token yang tersimpan di perangkat
-    var savedToken = localStorage.getItem('sessionToken');
+    // FIX: Periksa localStorage (Remember Me) DAN sessionStorage (Tab Saja)
+    var savedToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
     if (savedToken) {
-      // Tampilkan indikator loading saat memverifikasi sesi otomatis
-      var loginBox = document.querySelector('.login-box');
-      if (loginBox) {
-        loginBox.innerHTML = '<div style="padding:40px; text-align:center;">' +
-          '<div class="bbx-spinner" style="margin:0 auto 20px;"></div>' +
-          '<div style="font-weight:700; color:var(--primary-color); font-size:16px;">Memulihkan Sesi...</div>' +
-          '<div style="color:var(--text-muted); font-size:13px; margin-top:8px;">Menghubungkan ke server</div>' +
-          '</div>';
-      }
-
       google.script.run
         .withSuccessHandler(function(res) {
           if (res && res.status === 'success') {
@@ -3499,19 +3385,21 @@
               // ringkasan kas akan otomatis ter-update lewat updateRingkasanUI
             });
           }
-          checkAndRequestNotificationPermission(true); // Aktifkan izin notifikasi sistem
           // Jalankan polling notifikasi setelah login berhasil
           startNotifikasiPolling();
           showSuccess('Selamat datang kembali, ' + currentUser.nama + '!');
           } else {
             localStorage.removeItem('sessionToken');
-            location.reload(); // Sesi tidak valid, kembali ke tampilan awal
+            sessionStorage.removeItem('sessionToken');
+            document.getElementById('loginScreen').style.display = 'flex';
           }
         })
         .withFailureHandler(function(err) {
           console.error(err);
           localStorage.removeItem('sessionToken');
-          location.reload();
+          sessionStorage.removeItem('sessionToken');
+          document.getElementById('loginScreen').style.display = 'flex';
+          showError('Gagal memeriksa sesi: ' + err.message);
         })
         .checkSession(savedToken);
     } else {
@@ -3523,55 +3411,18 @@
   function updateAdminContactLink() {
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'success' && res.data.admin_whatsapp) {
+        // Pastikan dikonversi ke String terlebih dahulu sebelum replace
         var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
-        if (wa.startsWith('0')) wa = '62' + wa.substring(1);
+        if (wa.startsWith('0')) wa = '62' + wa.substring(1); // Konversi otomatis 08 ke 628
         document.getElementById('linkHubungiAdmin').href = "https://wa.me/" + wa;
       }
     }).getSettings();
   }
 
-  /**
-   * Menampilkan popup untuk mengubah nama profil pengguna
-   */
-  function editNamaProfil() {
-    Swal.fire({
-      title: 'Ubah Nama Lengkap',
-      input: 'text',
-      inputLabel: 'Masukkan nama lengkap baru Anda',
-      inputValue: currentUser.nama,
-      showCancelButton: true,
-      confirmButtonText: 'Simpan Perubahan',
-      cancelButtonText: 'Batal',
-      confirmButtonColor: 'var(--primary-color)',
-      preConfirm: (value) => {
-        if (!value || value.trim().length < 3) {
-          Swal.showValidationMessage('Nama minimal harus 3 karakter');
-          return false;
-        }
-        return value.trim();
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        showLoading('Memperbarui nama...');
-        google.script.run
-          .withSuccessHandler(function(res) {
-            Swal.close();
-            if (res.status === 'success') {
-              showSuccess(res.pesan);
-              currentUser.nama = result.value;
-              document.getElementById('welcomeUserName').innerText = 'Halo, ' + result.value + '!';
-              document.getElementById('profNama').innerText = result.value;
-            } else showError(res.pesan);
-          })
-          .withFailureHandler(err => { Swal.close(); showError('Gagal menghubungi server'); })
-          .ubahNama(currentUser.email, result.value, currentToken);
-      }
-    });
-  }
-
   function doLogin() {
     var email = document.getElementById('email').value;
     var pass = document.getElementById('password').value;
+    var remember = document.getElementById('rememberMe').checked;
     if (!email || !pass) {
       return showWarning("Email dan Password harus diisi!");
     }
@@ -3589,7 +3440,11 @@
           var nameEl = document.getElementById('welcomeUserName');
           if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
 
-          localStorage.setItem('sessionToken', res.token);
+          if (remember) {
+            localStorage.setItem('sessionToken', res.token);
+          } else {
+            sessionStorage.setItem('sessionToken', res.token);
+          }
 
           document.getElementById('loginScreen').style.display = 'none';
           document.getElementById('mainApp').style.display = 'block';
@@ -3624,12 +3479,12 @@
       headerBtn.innerHTML = isDark ? moonSVG : sunSVG;
     }
 
-    var profDarkIcon = document.getElementById('profDarkIcon');
-    if (profDarkIcon) {
-      profDarkIcon.innerText = isDark ? 'light_mode' : 'dark_mode';
+    var profileImgIconCont = document.getElementById('profileDarkIconCont');
+    if (profileImgIconCont) {
+      profileImgIconCont.innerHTML = isDark ? moonSVG.replace('fill="white"', 'fill="var(--primary-color)"') : sunSVG.replace('fill="#fbbf24"', 'fill="var(--text-muted)"');
     }
 
-    var profileToggle = document.getElementById('profilDarkToggle');
+    var profileToggle = document.getElementById('darkToggle');
     if (profileToggle) {
       profileToggle.checked = isDark;
       var span = profileToggle.nextElementSibling;
@@ -3713,26 +3568,27 @@
     });
   }
 
-  function logout() {
+function logout() {
     showConfirm('Yakin keluar?').then(function(res) {
       if (res.isConfirmed) {
-        // Hentikan polling segera
-        stopNotifikasiPolling();
-        
-        var token = currentToken;
-
-        // Hapus semua data sesi di perangkat
+        // stop polling notifikasi
+        try {
+          if (notifPollingHandle) {
+            clearInterval(notifPollingHandle);
+            notifPollingHandle = null;
+          }
+        } catch (e) {}
         localStorage.removeItem('sessionToken');
         sessionStorage.removeItem('sessionToken');
         localStorage.removeItem('lastNotifTs');
 
-        // Beritahu server (async, tidak perlu ditunggu)
-        if (token) {
-          google.script.run.prosesLogout(token);
+        if (currentToken) {
+          google.script.run.prosesLogout(currentToken);
         }
-        
-        // Muat ulang aplikasi agar UI bersih kembali ke form login
-        location.reload();
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        currentUser = {};
+        currentToken = null;
       }
     });
   }
@@ -3810,12 +3666,29 @@
 
   // ======================== MENU NAVIGATION ========================
   function toggleMenuNavigasi() {
-    document.getElementById('navMenu').classList.toggle('show');
+    var menu = document.getElementById('navMenu');
+    var overlay = document.getElementById('menuOverlay');
+    menu.classList.toggle('show');
+    if (overlay) overlay.classList.toggle('show');
   }
 
   function tutupMenuNavigasi() {
     document.getElementById('navMenu').classList.remove('show');
+    var overlay = document.getElementById('menuOverlay');
+    if (overlay) overlay.classList.remove('show');
   }
+
+  document.querySelectorAll('.nav-menu-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var menu = this.getAttribute('data-menu');
+      tutupMenuNavigasi();
+      if (menu === 'profil') {
+        tampilkanProfil();
+      } else {
+        pilihMenu(menu);
+      }
+    });
+  });
 
   // Helper untuk cek izin
   function hasPermission(permKey) {
@@ -3827,11 +3700,6 @@
   function pilihMenu(tabName) {
     currentTab = tabName;
     sembunyikanSemuaLayar();
-    
-    // Update Active Class on Bottom Nav
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    var activeNav = document.getElementById('nav-' + tabName.toLowerCase());
-    if(activeNav) activeNav.classList.add('active');
     
     // Update Theme Class on Body
     document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
@@ -3870,46 +3738,134 @@
     });
   }
 
-  function tampilkanProfil() {
-    sembunyikanSemuaLayar();
-    document.getElementById('profilView').style.display = 'block';
-    
-    // Update Status Aktif pada Navigasi Bawah
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    var navProf = document.getElementById('nav-profil');
-    if(navProf) navProf.classList.add('active');
-    
-    history.pushState({view: 'profilView', tab: 'profil'}, '', '#profil');
-    
-    // Isi data user
-    document.getElementById('profNama').innerText = currentUser.nama || '-';
-    document.getElementById('profEmail').innerText = currentUser.email || '-';
-    document.getElementById('profRole').innerText = currentUser.role ? currentUser.role.toUpperCase() : '-';
-    
-    // Tampilkan menu khusus admin jika perlu
-    if (currentUser.role === 'admin') {
-      document.getElementById('profAdminOnly').style.display = 'block';
-    } else {
-      document.getElementById('profAdminOnly').style.display = 'none';
-    }
-
-    // Sinkronisasi status toggle mode gelap
-    var isDark = document.body.classList.contains('dark-mode');
-    var toggle = document.getElementById('profilDarkToggle');
-    if (toggle) {
-      toggle.checked = isDark;
-      var span = toggle.nextElementSibling;
-      if (span) span.style.backgroundColor = isDark ? 'var(--primary-color)' : 'var(--border-color)';
-    }
-    
-    // Muat Link Hubungi Admin
-    google.script.run.withSuccessHandler(function(res) {
-      if (res.status === 'success' && res.data.admin_whatsapp) {
-        var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
-        if (wa.startsWith('0')) wa = '62' + wa.substring(1);
-        document.getElementById('profAdminContact').href = "https://wa.me/" + wa;
+  /**
+   * Menampilkan popup untuk mengubah nama profil pengguna
+   */
+  function editNamaProfil() {
+    Swal.fire({
+      title: 'Ubah Nama Lengkap',
+      input: 'text',
+      inputLabel: 'Masukkan nama lengkap baru Anda',
+      inputValue: currentUser.nama,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Perubahan',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--primary-color)',
+      preConfirm: (value) => {
+        if (!value || value.trim().length < 3) {
+          Swal.showValidationMessage('Nama minimal harus 3 karakter');
+          return false;
+        }
+        return value.trim();
       }
-    }).getSettings();
+    }).then((result) => {
+      if (result.isConfirmed) {
+        showLoading('Memperbarui nama...');
+        google.script.run
+          .withSuccessHandler(function(res) {
+            Swal.close();
+            if (res.status === 'success') {
+              showSuccess(res.pesan);
+              currentUser.nama = result.value;
+              document.getElementById('welcomeUserName').innerText = 'Halo, ' + result.value + '!';
+            } else showError(res.pesan);
+          })
+          .withFailureHandler(err => { Swal.close(); showError('Gagal menghubungi server'); })
+          .ubahNama(currentUser.email, result.value, currentToken);
+      }
+    });
+  }
+
+  function tampilkanProfil() {
+    var nama = currentUser && currentUser.nama ? currentUser.nama : '-';
+    var email = currentUser && currentUser.email ? currentUser.email : '-';
+    var role = currentUser && currentUser.role ? String(currentUser.role).toUpperCase() : '-';
+    var isDark = document.body.classList.contains('dark-mode');
+
+    // Hanya Admin yang bisa edit role
+    var canEditRole = currentUser && currentUser.role === 'admin';
+
+    Swal.fire({
+      title: 'Profil Pengguna',
+      background: 'var(--bg-surface)',
+      html:
+        '<div style="text-align:left; padding:6px 0;">'
+          + '<div style="font-size:14px; color:#64748b; margin-bottom:6px;">Akun Anda</div>'
+          + '<div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">'
+          + '  <div style="font-weight:800; font-size:18px; color:var(--text-main);">' + nama + '</div>'
+          + '  <button onclick="editNamaProfil()" style="background:rgba(var(--primary-color-rgb), 0.1); border:none; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--primary-color);">'
+          + '    <i class="material-icons" style="font-size:18px;">edit</i>'
+          + '  </button>'
+          + '</div>'
+          + '<div style="margin-bottom:4px;"><strong>Email:</strong> ' + email + '</div>'
+          + '<div style="margin-bottom:4px;"><strong>Role:</strong> ' + role + '</div>'
+          + '<div style="margin-top:12px;"><a id="profAdminContact" href="https://wa.me/625236356569" target="_blank" style="color:var(--accent-blue); font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:18px;">contact_support</i> Hubungi Dukungan</a></div>'
+          + '<div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--border-color);">'
+          + '  <div style="display:flex; justify-content:space-between; align-items:center;">'
+          + '    <span><span id="profileDarkIconCont" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-right:8px;"></span> Mode Gelap</span>'
+          + '    <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px;">'
+          + '      <input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDarkMode()" style="opacity:0; width:0; height:0;">'
+          + '      <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:24px;"></span>'
+          + '    </label>'
+          + '  </div>'
+          + '</div>'
+          + '<div style="margin-top:15px;">'
+          + '  <button onclick="gantiPasswordUI()" style="width:100%; padding:12px; background:rgba(var(--primary-color-rgb), 0.08); color:var(--primary-color); border:1px solid rgba(var(--primary-color-rgb), 0.2); font-weight:700; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; transition:0.2s; font-family:inherit;">'
+          + '    <i class="material-icons" style="font-size:20px;">lock_reset</i> Ubah Password'
+          + '  </button>'
+          + '</div>'
+          + '</div>',
+      didOpen: function() {
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.status === 'success' && res.data.admin_whatsapp) {
+            var wa = String(res.data.admin_whatsapp).replace(/\D/g, '');
+            if (wa.startsWith('0')) wa = '62' + wa.substring(1);
+            var link = document.getElementById('profAdminContact');
+            if (link) link.href = "https://wa.me/" + wa;
+          }
+        }).getSettings();
+        var toggle = document.getElementById('darkToggle');
+        var span = toggle.nextElementSibling;
+        if(span) span.style.backgroundColor = isDark ? 'var(--primary-color)' : 'var(--border-color)'; /* Menggunakan variabel tema */
+        toggle.addEventListener('change', function() {
+          span.style.backgroundColor = this.checked ? 'var(--primary-color)' : 'var(--border-color)'; /* Menggunakan variabel tema */
+        });
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Logout',
+      cancelButtonText: 'Tutup',
+      confirmButtonColor: '#d32f2f',
+      cancelButtonColor: '#64748b',
+      showDenyButton: canEditRole,
+      denyButtonText: 'Edit Role Saya',
+      denyButtonColor: '#3b82f6'
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        logout();
+      } else if (result.isDenied) {
+        // edit role self: pakai popup sederhana
+        var nextRole = role === 'WARGA' ? 'pengurus rt' : 'warga';
+        Swal.fire({
+          title: 'Konfirmasi Edit Role',
+          text: 'Ubah role saya menjadi: ' + nextRole + '?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Ya, ubah',
+          cancelButtonText: 'Batal',
+          confirmButtonColor: '#d32f2f'
+        }).then(function(r2) {
+          if (!r2.isConfirmed) return;
+          // Simpan perubahan role (backend: simpanUser masih dipakai untuk admin)
+          // Untuk role saya, kita pakai endpoint simpanUser dengan id=email tidak ada—jadi butuh implementasi khusus.
+          // Sementara: tampilkan pesan bahwa edit role hanya via menu Kelola User.
+          Swal.fire({
+            icon: 'info',
+            title: 'Edit Role',
+            text: 'Gunakan menu "Kelola User" untuk mengubah role warga (fitur ini hanya UI profil).'
+          });
+        });
+      }
+    });
   }
 
   // Fungsi untuk memfilter Bottom FAB Navigasi berdasarkan Role
@@ -3981,7 +3937,7 @@
       val1.innerText = '0000000';
       google.script.run.withSuccessHandler(function(res) {
         val1.classList.remove('skeleton-text');
-        if (res.status === 'success' && currentTab === 'karangtaruna') {
+        if (res.status === 'success') {
           val1.innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
         }
       }).ktGetKas();
@@ -4338,85 +4294,6 @@
         }).ktHapusKas(id);
       }
     });
-  }
-
-  function ktCetakLaporanKas() {
-    var tahun = document.getElementById('ktTahunKasSelect').value;
-    var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    
-    var dataBulanan = Array.from({ length: 12 }, (_, i) => ({
-      namaBulan: bulanIndo[i],
-      pemasukan: 0,
-      pengeluaran: 0,
-      keterangan: []
-    }));
-
-    ktAllKasData.forEach(item => {
-      var d = item.tanggal.split('-');
-      if (d[0] == tahun) {
-        var mIdx = parseInt(d[1]) - 1;
-        if (item.jenis === 'Pemasukan') dataBulanan[mIdx].pemasukan += item.nominal;
-        else dataBulanan[mIdx].pengeluaran += item.nominal;
-        if (item.keterangan) dataBulanan[mIdx].keterangan.push(item.keterangan);
-      }
-    });
-
-    var total = { p: 0, g: 0 };
-    var tableRows = dataBulanan.map(b => {
-      if (b.pemasukan === 0 && b.pengeluaran === 0) return '';
-      total.p += b.pemasukan; total.g += b.pengeluaran;
-      return `<tr>
-        <td>${b.namaBulan}</td>
-        <td align="right">${b.pemasukan.toLocaleString('id-ID')}</td>
-        <td align="right">${b.pengeluaran.toLocaleString('id-ID')}</td>
-        <td><small>${b.keterangan.slice(0,3).join(', ')}</small></td>
-      </tr>`;
-    }).join('');
-
-    var printWin = window.open('', '_blank');
-    printWin.document.write(`
-      <html><head><title>Laporan Kas Karang Taruna</title>
-      <style>
-        body { font-family: sans-serif; padding: 40px; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 10px; font-size: 13px; }
-        th { background: #f2f2f2; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
-      </style></head><body>
-      <div class="header">
-        <h2>LAPORAN KEUANGAN KARANG TARUNA</h2>
-        <p>RT 01 RW 03 - Desa Ngelom</p>
-        <p>Tahun Anggaran: ${tahun}</p>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Bulan</th>
-            <th>Pemasukan (Rp)</th>
-            <th>Pengeluaran (Rp)</th>
-            <th>Keterangan Kegiatan</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-          <tr style="font-weight:bold; background:#f2f2f2;">
-            <td>TOTAL TAHUNAN</td>
-            <td align="right">${total.p.toLocaleString('id-ID')}</td>
-            <td align="right">${total.g.toLocaleString('id-ID')}</td>
-            <td>Saldo Akhir: Rp ${(total.p - total.g).toLocaleString('id-ID')}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="footer">
-        <p>Ngelom, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
-        <p>Bendahara Karang Taruna</p>
-        <br><br><br>
-        <p><strong>( .................... )</strong></p>
-      </div>
-      </body></html>`);
-    printWin.document.close();
-    printWin.print();
   }
 
   function ktMuatGrafikKas() {
@@ -4938,7 +4815,17 @@ function bukaJadwal() {
           rowStyle = `style="background-color: ${activeColor}15 !important; border-left: 5px solid ${activeColor} !important; font-weight: 700;"`;
         }
 
-        var petugasList = item.petugas ? item.petugas.replace(/\n/g, '<br>') : '-';
+        // Render petugas dengan tampilan Chips yang lebih rapi
+        var petugasList = '-';
+        if (item.petugas) {
+          var names = item.petugas.split(/\r?\n/).filter(function(n) { return n.trim() !== ""; });
+          petugasList = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">' + 
+            names.map(function(name) { 
+              return '<span style="background:rgba(var(--primary-color-rgb), 0.08); border:1px solid rgba(var(--primary-color-rgb), 0.15); padding:4px 12px; border-radius:12px; font-size:11.5px; color:var(--text-main); font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; box-shadow: var(--shadow-sm);"><i class="material-icons" style="font-size:14px; color:var(--primary-color);">person</i>' + name.trim() + '</span>';
+            }).join('') + 
+            '</div>';
+        }
+
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div style="display:flex; gap:5px;">
             <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
@@ -5528,6 +5415,44 @@ function bukaJadwal() {
         updateAdminContactLink();
       } else showError(res.pesan);
     }).saveSettings('admin_whatsapp', val);
+  }
+
+  // ======================== SWIPE TABS NAVIGATION ========================
+  var tabTouchStartX = 0;
+  var tabTouchStartY = 0;
+  const tabList = ['warga', 'pkk', 'karangtaruna'];
+
+  /**
+   * Inisialisasi navigasi usap antar modul utama
+   */
+  function initSwipeNavigation() {
+    var app = document.getElementById('mainApp');
+    if (!app) return;
+
+    app.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) return;
+      tabTouchStartX = e.touches[0].clientX;
+      tabTouchStartY = e.touches[0].clientY;
+    }, {passive: true});
+
+    app.addEventListener('touchend', function(e) {
+      if (e.changedTouches.length > 1) return;
+      var deltaX = e.changedTouches[0].clientX - tabTouchStartX;
+      var deltaY = e.changedTouches[0].clientY - tabTouchStartY;
+
+      // Threshold: pergerakan horizontal > 80px dan lebih dominan dibanding vertikal
+      if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Hanya aktif di Dashboard (Beranda) agar tidak mengganggu fungsi scroll di layar lain
+        if (document.getElementById('dashboardView').style.display !== 'block') return;
+        
+        var curIdx = tabList.indexOf(currentTab);
+        if (deltaX < -50) { // Geser Jari ke Kiri (Pindah ke Tab Kanan/Next)
+          if (curIdx < tabList.length - 1) pilihMenu(tabList[curIdx + 1]);
+        } else if (deltaX > 50) { // Geser Jari ke Kanan (Pindah ke Tab Kiri/Prev)
+          if (curIdx > 0) pilihMenu(tabList[curIdx - 1]);
+        }
+      }
+    }, {passive: true});
   }
 
   function loadAdminSettingsUI() {
@@ -7871,61 +7796,6 @@ function bukaJadwal() {
       } else { list.innerHTML = '<p>Belum ada laporan PKK.</p>'; }
     }).pkkGetLaporan();
   }
-
-  // Keandalan Notifikasi: Cek segera saat aplikasi kembali aktif (Foreground)
-  document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'visible' && currentToken) {
-      console.log("App visible, checking notifications...");
-      muatNotifikasiSekali(localStorage.getItem('lastNotifTs'));
-    }
-  });
-
-  // ======================== PWA INSTALL LOGIC ========================
-  let deferredPrompt;
-  const pwaBanner = document.getElementById('pwaInstallBanner');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Mencegah browser menampilkan prompt default secara otomatis
-    e.preventDefault();
-    // Simpan event agar bisa dipicu nanti melalui tombol "Instal"
-    deferredPrompt = e;
-    
-    // Cek apakah user pernah menutup banner ini sebelumnya
-    const lastDismissed = localStorage.getItem('pwaDismissedTs');
-    const now = Date.now();
-    
-    // Tampilkan banner jika belum pernah ditutup atau sudah lewat dari 3 hari (cooldown)
-    if (!lastDismissed || (now - parseInt(lastDismissed) > 3 * 24 * 60 * 60 * 1000)) {
-      if (pwaBanner) pwaBanner.style.display = 'flex';
-    }
-  });
-
-  function installPWA() {
-    if (!deferredPrompt) return;
-    // Tampilkan prompt instalasi asli dari sistem operasi (Android/iOS)
-    deferredPrompt.prompt();
-    // Tunggu jawaban dari user
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User menerima instalasi PWA');
-      }
-      deferredPrompt = null;
-      if (pwaBanner) pwaBanner.style.display = 'none';
-    });
-  }
-
-  function dismissPWAInstall() {
-    if (pwaBanner) pwaBanner.style.display = 'none';
-    // Simpan timestamp penolakan agar banner tidak muncul setiap kali aplikasi dibuka
-    localStorage.setItem('pwaDismissedTs', Date.now().toString());
-  }
-
-  window.addEventListener('appinstalled', (evt) => {
-    // Sembunyikan banner jika aplikasi akhirnya terpasang
-    if (pwaBanner) pwaBanner.style.display = 'none';
-    showSuccess("Aplikasi berhasil terpasang di layar utama!");
-  });
-
   refreshNavVisibility();
 </script>
 </body>
