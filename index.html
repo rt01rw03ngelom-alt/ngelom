@@ -643,13 +643,17 @@
       box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.5);
     }
 
-    /* Styling khusus untuk menu Profil agar menonjol */
+    /* Styling khusus untuk menu Profil agar memiliki identitas warna sendiri (Amber/Gold) */
     .nav-item#nav-profil.active i {
-      color: #fbbf24 !important;
+      color: #f59e0b !important;
+      text-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
     }
-
+    .nav-item#nav-profil.active span {
+      color: #f59e0b !important;
+    }
     .nav-item#nav-profil.active::before {
-      background: #fbbf24;
+      background: #f59e0b;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.5);
     }
 
     .nav-menu-item {
@@ -3265,6 +3269,7 @@
   var currentRondaData = [];
   var rondaChart = null;
   let touchStartX = 0;
+  let touchEndX = 0;
 
   var originalPemasukanList = [];
   var originalPengeluaranList = [];
@@ -3833,8 +3838,9 @@
     }, {passive: true});
 
     mainApp.addEventListener('touchend', e => {
-      // Swipe hanya aktif jika sedang di dashboard untuk menghindari konflik scroll form/tabel
-      if (document.getElementById('dashboardView').style.display !== 'block') return;
+      // Swipe aktif di dashboard atau layar profil
+      if (document.getElementById('dashboardView').style.display !== 'block' && 
+          document.getElementById('profilView').style.display !== 'block') return;
       
       touchEndX = e.changedTouches[0].screenX;
       handleSwipe();
@@ -3843,24 +3849,31 @@
 
   function handleSwipe() {
     const deltaX = touchEndX - touchStartX;
-    const threshold = 70; // Mengurangi threshold agar lebih responsif
-    const modules = ['warga', 'pkk', 'karangtaruna', 'profil']; // Tambahkan 'profil'
+    const threshold = 70; 
+    const modules = ['warga', 'pkk', 'karangtaruna', 'profil']; 
     let currentIdx = modules.indexOf(currentTab);
+    
+    // Cek apakah saat ini sedang di layar profil
     if (document.getElementById('profilView').style.display === 'block') {
-        currentIdx = modules.indexOf('profil'); // Jika profil aktif, set currentIdx ke profil
+        currentIdx = modules.indexOf('profil');
     }
 
-    if (currentIdx === -1) {
-        // Jika tidak berada di salah satu modul utama atau profil, abaikan swipe
-        return;
-    }
+    if (currentIdx === -1) return;
 
+    let targetIdx = -1;
     if (deltaX > threshold && currentIdx > 0) {
-      // Geser Kanan (Ke modul sebelumnya)
-      pilihMenu(modules[currentIdx - 1]);
+      targetIdx = currentIdx - 1; // Geser Kanan (Mundur)
     } else if (deltaX < -threshold && currentIdx < modules.length - 1) {
-      // Geser Kiri (Ke modul berikutnya)
-      pilihMenu(modules[currentIdx + 1]);
+      targetIdx = currentIdx + 1; // Geser Kiri (Maju)
+    }
+
+    if (targetIdx !== -1) {
+      const targetModule = modules[targetIdx];
+      if (targetModule === 'profil') {
+        tampilkanProfil();
+      } else {
+        pilihMenu(targetModule);
+      }
     }
   }
 
@@ -3881,6 +3894,11 @@
   function pilihMenu(tabName) {
     currentTab = tabName;
     sembunyikanSemuaLayar();
+    
+    // Sinkronisasi Status Aktif pada Navigasi Bawah
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    var activeNav = document.getElementById('nav-' + tabName.toLowerCase());
+    if(activeNav) activeNav.classList.add('active');
     
     // Update Theme Class on Body
     document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
