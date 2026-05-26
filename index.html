@@ -2882,8 +2882,7 @@
 
   // HELPER: Image Compression (Resize & Compress to < 1MB)
   function compressImage(file, callback, maxDim) {
-    showLoading('Mengompresi gambar...');
-    updateProgress(5, 'Membaca file...');
+    updateProgress(5, 'Menyiapkan kompresi...');
     
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -3874,6 +3873,11 @@
     document.body.classList.remove('theme-warga', 'theme-pkk', 'theme-karangtaruna');
     document.body.classList.add('theme-' + tabName.toLowerCase());
 
+    // Sinkronisasi status aktif pada Navigasi Bawah
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    var navActive = document.getElementById('nav-' + tabName.toLowerCase());
+    if (navActive) navActive.classList.add('active');
+
     document.getElementById('dashboardView').style.display = 'block';
     history.pushState({view: 'dashboardView', tab: tabName}, '', '#' + tabName);
     renderMenu(tabName);
@@ -4235,8 +4239,9 @@
     if (!n) return showWarning('Nama wajib diisi!');
 
     var processSave = function(dataFile, mimeType, fileName) {
-      showLoading('Menyimpan data anggota...');
+      if (!dataFile) showLoading('Menyimpan data...');
       google.script.run.withSuccessHandler(function(res) {
+        clearInterval(progressInterval);
         Swal.close();
         if (res.status === 'success') {
           showSuccess(res.pesan);
@@ -4251,7 +4256,9 @@
     if (fInput && fInput.files.length > 0) {
       var file = fInput.files[0];
       if (file.size > 10 * 1024 * 1024) return showWarning('Ukuran file maksimal 10MB!');
+      showLoading('Memproses foto...');
       compressImage(file, function(base64, mime) {
+        startSimulatedUpload('Mengunggah kader Karang Taruna...');
         processSave(base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg");
       }, 800); // Profile photos only need 800px
     } else {
@@ -4544,15 +4551,17 @@
     if (type === 'video') {
       if (!vLink) return showWarning('Link video wajib diisi!');
       showLoading('Menyimpan Video Karang Taruna...');
-      google.script.run.withSuccessHandler(function(res){ 
+      google.script.run.withSuccessHandler(function(res) {
         Swal.close(); 
         if(res && res.status === 'success') {
           showSuccess(res.pesan || 'Tersimpan!'); 
           tutupForm('ktFormCrudGaleri','ktWrapListGaleri'); 
           ktMuatDataGaleri(); 
         } else {
-          showError(res ? res.pesan : 'Gagal menyimpan data');
+          showError(res.pesan);
         }
+      }).withFailureHandler(function(err) {
+        Swal.close(); showError('Gagal simpan video KT: ' + err.message);
       }).ktSimpanGaleri(id, j, null, '', '', d, vLink);
       return;
     }
@@ -4876,6 +4885,7 @@ function bukaJadwal() {
           ? 'Jadwal Ronda ' + months[nextWeekDate.getMonth()] 
           : 'Jadwal Ronda Minggu Depan';
 
+        var formattedW2 = formatMingguan(entriesW2);
         rondaSlides.push({
           title: slide2Title,
           content: formattedW2.html,
@@ -5357,7 +5367,9 @@ function bukaJadwal() {
     btn.disabled = true;
 
     var saveProcess = function(dataFile, mimeType, fileName) {
+      if (!dataFile) showLoading('Menyimpan kontak...');
       google.script.run.withSuccessHandler(function(res) {
+        clearInterval(progressInterval);
         btn.innerHTML = old;
         btn.disabled = false;
         if (res.status === 'success') {
@@ -5951,6 +5963,7 @@ function bukaJadwal() {
     if (fileInput.files.length) {
       var file = fileInput.files[0];
       compressImage(file, function(base64, mime) {
+        startSimulatedUpload('Mengunggah laporan...');
         obj.dataFile = base64;
         obj.mimeType = mime;
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
@@ -7396,18 +7409,26 @@ function bukaJadwal() {
     var btn = document.querySelector('#formCrudGaleri .btn-primary');
     btn.innerHTML = '<span class="loading-spinner"></span>';
     btn.disabled = true;
+    showLoading('Menyiapkan gambar...');
 
     compressImage(file, function(base64, mime) {
+      startSimulatedUpload('Mengirim dokumentasi...');
       google.script.run.withSuccessHandler(function(res) {
+        clearInterval(progressInterval);
         btn.innerHTML = 'Upload';
         btn.disabled = false;
         if (res.status === 'success') {
+          Swal.close();
           showSuccess(res.pesan);
           tutupForm('formCrudGaleri', 'wrapListGaleri');
           muatDataGaleri();
         } else {
-          showError(res.pesan);
+          Swal.close(); showError(res.pesan);
         }
+      }).withFailureHandler(function(err) {
+        clearInterval(progressInterval); Swal.close();
+        btn.innerHTML = 'Upload'; btn.disabled = false;
+        showError('Gagal terhubung ke server: ' + err.message);
       }).simpanGaleriKegiatan(id, caption, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", "");
     });
   }
@@ -7750,7 +7771,6 @@ function bukaJadwal() {
     var btn = document.querySelector('#pkkKirimLaporanView .btn-primary');
     btn.innerHTML = '<span class="loading-spinner"></span>';
     btn.disabled = true;
-    showLoading('Mengirim laporan...'); // Added loading indicator
     var obj = {
       pelapor: currentUser.nama,
       judul: judul,
@@ -7764,6 +7784,7 @@ function bukaJadwal() {
     if (fileInput.files.length) {
       var file = fileInput.files[0];
       compressImage(file, function(base64, mime) {
+        startSimulatedUpload('Mengirim laporan...');
         obj.dataFile = base64;
         obj.mimeType = mime;
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
@@ -7788,8 +7809,12 @@ function bukaJadwal() {
           kembaliKeDashboard();
         });
       } else {
-        showError(res.pesan);
+        Swal.close(); showError(res.pesan);
       }
+    }).withFailureHandler(function(err) {
+      clearInterval(progressInterval); Swal.close();
+      btn.innerHTML = 'Kirim'; btn.disabled = false;
+      showError('Gagal mengirim laporan: ' + err.message);
     }).pkkKirimLaporan(obj);
   }
 
@@ -7907,10 +7932,12 @@ function bukaJadwal() {
     if(file && file.size > 10 * 1024 * 1024) return showWarning('File terlalu besar (Maks 10MB)');
     
     if (!fileInput.files.length && id) {
-      // Update caption saja tanpa ganti gambar
       showLoading('Mengupdate data...');
       google.script.run.withSuccessHandler(function(res){
-        Swal.close(); showSuccess(res.pesan); tutupForm('formPkkCrudGaleri','pkkWrapListGaleri'); pkkMuatDataGaleri();
+        Swal.close(); showSuccess(res.pesan); 
+        tutupForm('formPkkCrudGaleri','pkkWrapListGaleri'); pkkMuatDataGaleri();
+      }).withFailureHandler(function(err) {
+        Swal.close(); showError('Gagal update: ' + err.message);
       }).pkkSimpanGaleri(id, caption, null, '', '', "");
       return;
     }
