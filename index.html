@@ -1954,7 +1954,7 @@
         <p style="font-size: 12px; color: var(--text-muted);">
           Portal RT01 RW03 - Desa Ngelom
         </p>
-        <a href="#" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #f59e0b; text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <a href="https://wa.me/6285236356569" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #f59e0b; text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
           <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
         </a>
       </div>
@@ -3557,14 +3557,18 @@
   });
 
   function updateAdminContactLink() {
+    var defaultWa = '6285236356569';
     google.script.run.withSuccessHandler(function(res) {
-      if (res.status === 'success' && res.data.admin_whatsapp) {
-        // Pastikan dikonversi ke String terlebih dahulu sebelum replace
-        var wa = String(res.data.admin_whatsapp).trim().replace(/\D/g, '');
-        // Logika otomatis ubah 08 -> 628
+      var wa = defaultWa;
+      if (res.status === 'success' && res.data && res.data.admin_whatsapp) {
+        wa = String(res.data.admin_whatsapp).trim().replace(/\D/g, '');
         if (wa.startsWith('0')) wa = '62' + wa.substring(1);
-        document.getElementById('linkHubungiAdmin').href = "https://wa.me/" + wa;
+        if (!wa) wa = defaultWa;
       }
+      var link = document.getElementById('linkHubungiAdmin');
+      var profLink = document.getElementById('profAdminContact');
+      if (link) link.href = 'https://wa.me/' + wa;
+      if (profLink) profLink.href = 'https://wa.me/' + wa;
     }).getSettings();
   }
 
