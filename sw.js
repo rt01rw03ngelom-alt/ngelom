@@ -1,9 +1,19 @@
 // Minimal service worker for PWA shell.
-// Note: Apps Script deployments may not support full SW scope/caching.
-// Ensure SW context is available
-// Avoid referencing `self` directly at parse-time (some runtimes may not define it).
+
+const CACHE_NAME = 'portal-rt-v1';
+const ASSETS_TO_CACHE = [
+  './',
+  './index.html',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  'https://fonts.googleapis.com/icon?family=Material+Icons'
+];
+
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS_TO_CACHE))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
