@@ -318,7 +318,7 @@
     .header-clouds {
       position: absolute;
       inset: 0;
-      background-image: url('https://www.transparenttextures.com/patterns/clouds.png');
+      background-image: url('https://www.transparenttextures.com/patterns/cloud.png');
       opacity: 0;
       pointer-events: none;
       z-index: 0;
@@ -1831,7 +1831,7 @@
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <div class="header-toggle-btn" id="headerDarkIcon" onclick="toggleDarkMode()" title="Ganti Tema"></div>
-          <div class="header-toggle-btn" onclick="requestNotificationPermission()" title="Notifikasi" style="position:relative;">
+          <div class="header-toggle-btn" onclick="bukaNotifikasi()" title="Notifikasi" style="position:relative;">
             <i class="material-icons">notifications</i>
             <span id="notifBadge" style="display:none; position:absolute; top:8px; right:8px; background:#fbbf24; width:8px; height:8px; border-radius:50%; border:2px solid var(--primary-color);"></span>
           </div>
@@ -2962,6 +2962,20 @@
     return (match && match[2].length == 11) ? match[2] : null;
   }
 
+  async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      try {
+        // Pastikan file 'sw.js' ada di folder yang sama dengan file ini
+        const registration = await navigator.serviceWorker.register('sw.js');
+        console.log('Service Worker registered with scope:', registration.scope);
+        return registration;
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+        throw error;
+      }
+    }
+  }
+
   // HELPER: Image Compression (Resize & Compress to < 1MB)
   function compressImage(file, callback, maxDim) {
     showLoading('Mengompresi gambar...');
@@ -3205,13 +3219,13 @@
         var role = (currentUser.role || '').toLowerCase();
         var isManagement = role === 'admin' || role.includes('pengurus');
 
-        var html = '<div style="text-align:left; max-height:400px; overflow-y:auto; padding-right:5px;">';
+        var html = '<div style="text-align:left; max-height:65vh; overflow-y:auto; padding-right:5px;">';
         list.forEach(function(it) {
           if (it.timestamp > latestInHistory) latestInHistory = it.timestamp;
           
           var dateStr = new Date(Number(it.timestamp)).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
           var aksiButtons = isManagement ? `
-            <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:8px;">
+            <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid var(--border-color); padding-top:8px;">
               <button class="btn-action-subtle" onclick="editNotifikasiUI('${it.id}')">
                 <i class="material-icons" style="font-size:16px;">edit</i> Edit
               </button>
@@ -3222,7 +3236,7 @@
 
           html += `
             <div class="card-item" style="padding:12px; margin-bottom:10px; border-left-width:4px;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:4px;">
                 <div style="font-weight:800; color:var(--primary-color); font-size:14px;">${it.judul}</div>
                 <div style="font-size:10px; color:var(--text-muted); font-weight:600;">${dateStr}</div>
               </div>
@@ -3390,7 +3404,8 @@
       showConfirmButton: false,
       showCloseButton: true,
       padding: '0',
-      width: '350px',
+      width: '90%',
+      maxWidth: '350px',
       background: 'transparent',
       html: `
         <div style="background:var(--bg-surface); border-radius:28px; overflow:hidden; box-shadow:var(--shadow-lg); border:1px solid var(--border-color);">
@@ -3474,7 +3489,8 @@
       showConfirmButton: false,
       showCancelButton: false,
       background: 'var(--bg-surface)',
-      width: 420,
+      width: 'calc(100% - 40px)',
+      maxWidth: '420px',
       padding: '16px',
       customClass: {
         popup: 'swal2-modern-loading'
