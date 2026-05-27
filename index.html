@@ -265,7 +265,6 @@
       text-align: center;
       transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-
     .input-group {
       position: relative;
       margin-bottom: 18px;
@@ -498,13 +497,13 @@
 
 
     .welcome-banner {
-      background: var(--bg-surface);
+      background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left;
       padding: clamp(15px, 5vw, 25px);
       border-radius: 20px;
       margin: -25px auto 0;
-      width: calc(100% - clamp(24px, 8vw, 40px));
+      width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-lg);
       position: relative;
       transition: background-color 0.3s ease;
@@ -517,9 +516,9 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: clamp(12px, 4vw, 20px);
-      justify-content: center;
-      align-items: stretch;
-      width: 100%;
+      justify-content: center; /* Centers the grid itself */
+      align-items: stretch; /* Ensures items stretch to fill height */
+      width: 100%; /* Ensures it takes full width */
       margin-top: 10px;
     }
 
@@ -528,8 +527,8 @@
       background: var(--bg-surface);
       border-radius: 24px;
       width: 100%;
-      aspect-ratio: auto;
-      min-height: 105px;
+      aspect-ratio: auto; /* Removed fixed aspect ratio */
+      min-height: 105px; /* Added min-height */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -560,9 +559,9 @@
     }
 
     .menu-item span {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
+      font-size: clamp(11.5px, 3.5vw, 13px);
+      font-weight: 800;
+      letter-spacing: -0.3px;
       line-height: 1.2;
       color: var(--text-main);
       text-align: center;
@@ -807,6 +806,9 @@
     }
 
     .card-item {
+      margin: 0 auto 1rem; /* Centered */
+      width: 100%; /* Full width */
+
       background: var(--bg-surface);
       padding: 1.5rem;
       border-radius: 16px;
@@ -1100,7 +1102,7 @@
 
     .screen {
       display: none;
-      padding: 1rem 1rem 100px; /* Padding bawah disesuaikan untuk Bottom Nav */
+      padding: 1rem 12px 100px; /* Padding bawah disesuaikan untuk Bottom Nav */
       min-height: 100vh;
       width: 100%;
     }
@@ -1563,19 +1565,12 @@
 
     @media (max-width: 640px) {
       #mainApp {
-        padding: 0 0 100px;
-        width: 100vw;
-      }
-
-      .screen {
-        padding: 1rem 12px 100px;
-        width: 100%;
+        padding: 12px 0 140px;
       }
 
       .filter-bar {
         flex-direction: column;
         align-items: stretch;
-        margin: 0 clamp(10px, 4vw, 20px) 1.5rem;
       }
 
       .filter-group select,
@@ -1586,7 +1581,6 @@
       .kas-summary {
         grid-template-columns: 1fr;
       }
-
       .menu-container {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: clamp(10px, 3.5vw, 16px);
@@ -1604,7 +1598,7 @@
       }
 
       .menu-item i {
-        font-size: 42px;
+        font-size: clamp(32px, 10vw, 42px);
         margin-bottom: 10px;
       }
 
@@ -1614,12 +1608,6 @@
         line-height: 1.2;
       }
 
-      .card-item {
-        margin: 0 auto 1rem;
-        width: 100%;
-        padding: 1.25rem 1rem;
-      }
-
       .filter-table {
         flex-direction: column;
         align-items: stretch;
@@ -1627,6 +1615,11 @@
 
       .fab {
         right: 14px;
+      }
+      .card-item {
+        margin: 0 auto 1rem;
+        width: 100%;
+        padding: 1.25rem 1rem;
       }
 
       .fab {
@@ -4165,7 +4158,7 @@
       if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
       if (summaryContainer) {
         summaryContainer.style.display = 'grid';
-        summaryContainer.style.gridTemplateColumns = 'repeat(auto-fit, minmax(100%, 1fr))';
+        summaryContainer.style.gridTemplateColumns = '1fr';
       }
       if (val1) val1.style.fontSize = '1.6rem';
       val1.classList.add('skeleton-text');
@@ -4184,7 +4177,7 @@
       if (rb) { rb.style.display = 'flex'; muatRondaHariIni(); }
       if (summaryContainer) {
         summaryContainer.style.display = 'grid';
-        summaryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        summaryContainer.style.gridTemplateColumns = '1fr 1fr';
       }
       if (val1) val1.style.fontSize = '1.2rem';
       // Kembalikan ke nilai kas RT yang sudah ada di memori
@@ -8424,4 +8417,3 @@ function bukaJadwal() {
 
   refreshNavVisibility();
 </script>
-      const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k'; // Diisi dari key yang Anda hasilkan
