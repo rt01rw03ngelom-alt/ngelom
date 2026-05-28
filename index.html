@@ -2152,6 +2152,8 @@
     <div id="ktFormCrudGaleri" class="crud-form">
       <h4>Upload Dokumentasi Karang Taruna</h4>
       <input type="hidden" id="ktGaleriId">
+      <label class="muted" style="display:block; margin-bottom:4px; font-size:12px; font-weight:700;">TANGGAL KEGIATAN:</label>
+      <input type="date" id="ktGaleriTanggal" style="margin-bottom:12px;">
       <input type="text" id="ktGaleriJudul" placeholder="Judul Kegiatan">
       <select id="ktGaleriType" onchange="toggleGaleriType('kt')">
         <option value="image">Upload File Gambar</option>
@@ -2171,6 +2173,17 @@
       <button class="btn-secondary" onclick="tutupForm('ktFormCrudGaleri','ktWrapListGaleri')">Batal</button>
     </div>
     <div id="ktWrapListGaleri">
+      <div class="filter-bar" style="margin-bottom:1.5rem; background:rgba(56,189,248,0.06); border:1px solid var(--border-color);">
+        <div class="filter-group" style="flex:1;">
+          <label style="font-size:10px; font-weight:800; color:var(--kt-blue); letter-spacing:0.5px;">ARSIP TAHUN</label>
+          <select id="ktGaleriTahunFilter" onchange="ktFilterDataGaleri()" style="margin:0; height:44px; font-weight:600;">
+            <option value="all">📅 Semua Dokumentasi</option>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </div>
       <div id="ktListGaleri" class="galeri-grid"></div>
       <button id="ktBtnTambahGaleri" class="fab" onclick="ktBukaFormGaleri()">
         <i class="material-icons">add_a_photo</i>
@@ -2424,6 +2437,8 @@
     <div id="formPkkCrudGaleri" class="crud-form">
       <h4>Tambah Foto ke Galeri PKK</h4>
       <input type="hidden" id="pkkGaleriId">
+      <label class="muted" style="display:block; margin-bottom:4px; font-size:12px; font-weight:700;">TANGGAL KEGIATAN:</label>
+      <input type="date" id="pkkGaleriTanggal" style="margin-bottom:12px;">
       <input type="text" id="pkkGaleriCaption" placeholder="Caption / Deskripsi Foto">
       <select id="pkkGaleriType" onchange="toggleGaleriType('pkk')">
         <option value="image">Upload File Gambar</option>
@@ -2441,6 +2456,17 @@
       <button class="btn-secondary" onclick="tutupForm('formPkkCrudGaleri','pkkWrapListGaleri')">Batal</button>
     </div>
     <div id="pkkWrapListGaleri">
+      <div class="filter-bar" style="margin-bottom:1.5rem; background:rgba(16,185,129,0.06); border:1px solid var(--border-color);">
+        <div class="filter-group" style="flex:1;">
+          <label style="font-size:10px; font-weight:800; color:var(--pkk-green); letter-spacing:0.5px;">LIHAT TAHUN</label>
+          <select id="pkkGaleriTahunFilter" onchange="pkkFilterDataGaleri()" style="margin:0; height:44px; font-weight:600;">
+            <option value="all">🌸 Seluruh Galeri</option>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </div>
       <div id="pkkListGaleri" class="galeri-grid"></div>
       <button id="pkkBtnTambahGaleri" class="fab" onclick="pkkBukaFormGaleri()">
         <i class="material-icons">add</i>
@@ -2691,6 +2717,8 @@
     <div id="formCrudGaleri" class="crud-form">
       <h4 id="judulFormGaleri">Upload Dokumentasi</h4>
       <input type="hidden" id="galeriId">
+      <label class="muted" style="display:block; margin-bottom:4px; font-size:12px; font-weight:700;">TANGGAL KEGIATAN:</label>
+      <input type="date" id="galeriTanggal" style="margin-bottom:12px;">
       <input type="text" id="galeriCaption" placeholder="Caption / Deskripsi Foto">
       <select id="galeriType" onchange="toggleGaleriType('rt')">
         <option value="image">Upload File Gambar</option>
@@ -2708,6 +2736,17 @@
       <button class="btn-secondary" onclick="tutupForm('formCrudGaleri','wrapListGaleri')">Batal</button>
     </div>
 <div id="wrapListGaleri">
+      <div class="filter-bar" style="margin-bottom:1.5rem; background:rgba(var(--primary-color-rgb), 0.04); border:1px solid var(--border-color);">
+        <div class="filter-group" style="flex:1;">
+          <label style="font-size:10px; font-weight:800; color:var(--primary-red); letter-spacing:0.5px;">URUTKAN TAHUN</label>
+          <select id="galeriTahunFilter" onchange="filterDataGaleri()" style="margin:0; height:44px; font-weight:600;">
+            <option value="all">📅 Semua Tahun</option>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </div>
       <div id="listGaleri" class="galeri-grid"></div>
 <button id="btnTambahGaleri" class="fab" onclick="bukaFormGaleri()" style="display:flex !important;">
         <i class="material-icons">add</i>
@@ -2777,6 +2816,9 @@
   var currentToken = null;
   var allUsers = []; // Global variable to store all user data
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
+  var rtGaleriDataGlobal = [];
+  var ktGaleriDataGlobal = [];
+  var pkkGaleriDataGlobal = [];
 
   // Global Loading Spinner Component
   const SPINNER_HTML = '<div style="display:flex; justify-content:center; padding:40px; width:100%;"><div class="bbx-spinner"></div></div>';
@@ -3130,8 +3172,8 @@
             toast: true,
             position: 'top-end',
             icon: 'info',
-            title: it.judul || 'Notifikasi',
-            html: it.isi ? String(it.isi).replace(/\n/g, '<br>') : '',
+            title: '<span style="font-weight:800; color:var(--primary-dark);">' + (it.judul || 'Notifikasi') + '</span>',
+            html: it.isi ? '<div style="text-align:left; font-size:13px; line-height:1.4;">' + String(it.isi).replace(/\n/g, '<br>') + '</div>' : '',
             showConfirmButton: true,
             confirmButtonText: 'Lihat',
             showCancelButton: false,
@@ -3569,9 +3611,6 @@
       document.getElementById('dashboardView').style.display = 'block';
       renderMenu(currentTab);
       updateNavActiveState(currentTab);
-    }
-    if (history.state && history.state.view === 'profilView') {
-      setAdminContactLinks(adminWhatsappNumber);
     }
   });
 
@@ -4077,10 +4116,7 @@
     updateNavActiveState('profil');
     
     history.pushState({view: 'profilView', tab: 'profil'}, '', '#profil');
-    
-    // Reset nomor WhatsApp profil sebelum memuat data lagi
-    setAdminContactLinks(adminWhatsappNumber);
-    
+
     // Isi data user
     document.getElementById('profNama').innerText = currentUser.nama || '-';
     document.getElementById('profEmail').innerText = currentUser.email || '-';
@@ -4102,9 +4138,7 @@
       if (span) span.style.backgroundColor = isDark ? 'var(--primary-color)' : 'var(--border-color)';
     }
     
-    // Muat Link Hubungi Admin
-    var profFallback = document.getElementById('profAdminContact');
-    if (profFallback) profFallback.href = 'https://wa.me/6285236356569';
+    // Selalu paksa refresh nomor admin dari server setiap kali profil dibuka
     updateAdminContactLink();
   }
 
@@ -4374,9 +4408,10 @@
     bukaFormMode('ktFormCrudKader', 'ktWrapListKader');
   }
 
-  function ktEditGaleri(id, judul, url, deskripsi) {
+  function ktEditGaleri(id, judul, url, deskripsi, tanggal) {
     document.getElementById('ktGaleriId').value = id;
     document.getElementById('ktGaleriJudul').value = judul;
+    document.getElementById('ktGaleriTanggal').value = tanggal || '';
     document.getElementById('ktGaleriDeskripsi').value = deskripsi;
     document.getElementById('ktGaleriVideoLink').value = isVideoLink(url) ? url : '';
     document.getElementById('ktGaleriType').value = isVideoLink(url) ? 'video' : 'image';
@@ -4682,6 +4717,7 @@
   function ktBukaFormGaleri() {
     if(!hasPermission('kt_galeri_crud')) return;
     document.getElementById('ktGaleriId').value = '';
+    document.getElementById('ktGaleriTanggal').value = new Date().toISOString().slice(0,10);
     document.getElementById('ktGaleriJudul').value = '';
     document.getElementById('ktGaleriFile').value = '';
     document.getElementById('ktGaleriVideoLink').value = '';
@@ -4693,6 +4729,7 @@
   function ktUploadGaleri() {
     var id = document.getElementById('ktGaleriId').value;
     var j = document.getElementById('ktGaleriJudul').value;
+    var tgl = document.getElementById('ktGaleriTanggal').value;
     var d = document.getElementById('ktGaleriDeskripsi').value;
     var type = document.getElementById('ktGaleriType').value;
     var fInput = document.getElementById('ktGaleriFile');
@@ -4712,7 +4749,7 @@
         } else {
           showError(res ? res.pesan : 'Gagal menyimpan data');
         }
-      }).ktSimpanGaleri(id, j, null, '', '', d, vLink);
+      }).ktSimpanGaleri(id, j, null, '', '', d, vLink, tgl);
       return;
     }
 
@@ -4730,7 +4767,7 @@
           tutupForm('ktFormCrudGaleri','ktWrapListGaleri');
           ktMuatDataGaleri();
         } else { showError(res ? res.pesan : 'Gagal upload'); }
-      }).ktSimpanGaleri(id, j, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", d, "");
+      }).ktSimpanGaleri(id, j, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", d, "", tgl);
     });
   }
 
@@ -4748,23 +4785,58 @@
         list.innerHTML = '<p class="muted">Gagal mengambil data dari database.</p>';
         return;
       }
-      if (res.data && res.data.length) {
-        var allMedia = res.data.map(function(it){ return it.url; });
-        res.data.forEach(function(item, idx) {
+      ktGaleriDataGlobal = res.data || [];
+      ktFilterDataGaleri();
+    }).ktGetGaleri();
+  }
+
+  function ktFilterDataGaleri() {
+    var tahun = document.getElementById('ktGaleriTahunFilter').value;
+    var filtered = ktGaleriDataGlobal;
+    if (tahun !== 'all') {
+      filtered = ktGaleriDataGlobal.filter(function(item) {
+        return item.tanggal && item.tanggal.includes(tahun);
+      });
+    }
+    ktRenderGaleriGrid(filtered);
+  }
+
+  function ktRenderGaleriGrid(data) {
+    var list = document.getElementById('ktListGaleri');
+    list.innerHTML = '';
+    if (data && data.length) {
+        var allMedia = data.map(function(it){ return it.url; });
+        data.forEach(function(item, idx) {
           var safeJudul = escapeHtml(item.judul || '-');
           var safeTanggal = escapeHtml(item.tanggal || '-');
+          var safeTanggalRaw = escapeJsString(item.tanggalRaw || '');
           var safeDescription = escapeJsString(item.deskripsi || '');
           var safeUrl = escapeJsString(item.url);
           var safeItemId = escapeJsString(item.id);
-          var del = hasPermission('kt_galeri_crud') ? '<div class="hr-light"></div><button class="btn-small" onclick="ktEditGaleri(\'' + safeItemId + '\',\'' + escapeJsString(item.judul || '') + '\',\'' + safeUrl + '\',\'' + safeDescription + '\')">Edit</button><button class="btn-small danger" onclick="ktHapusGaleri(\'' + safeItemId + '\')">Hapus</button>' : '';
+          var del = hasPermission('kt_galeri_crud') ? '<div class="hr-light"></div><button class="btn-small" onclick="ktEditGaleri(\'' + safeItemId + '\',\'' + escapeJsString(item.judul || '') + '\',\'' + safeUrl + '\',\'' + safeDescription + '\',\'' + safeTanggalRaw + '\')">Edit</button><button class="btn-small danger" onclick="ktHapusGaleri(\'' + safeItemId + '\')">Hapus</button>' : '';
           var thumb = getMediaThumbnail(item.url);
           var icon = isVideoLink(item.url) ? '<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center;"><i class="material-icons" style="font-size:18px;">play_arrow</i></div>' : '';
-          list.innerHTML += '<div class="galeri-card" style="position:relative;">'+icon+'<img src="'+thumb+'" class="galeri-img" onclick="openLightbox(\''+safeUrl+'\','+JSON.stringify(allMedia).replace(/"/g,'&quot;')+','+idx+')"><div style="padding:12px;"><div style="font-weight:600; color:var(--text-main);">'+safeJudul+'</div><div style="font-size:12px; color:#64748b; margin-top:4px;">'+safeTanggal+'</div><div style="margin-top:8px; color:var(--text-main); font-size:14px;">'+escapeHtml(item.deskripsi || '-')+'</div>'+del+'</div></div>';
+          list.innerHTML += `
+            <div class="galeri-card" style="position:relative; display:flex; flex-direction:column; height:100%;">
+              ${icon}
+              <img src="${thumb}" class="galeri-img" onclick="openLightbox('${safeUrl}', ${JSON.stringify(allMedia).replace(/"/g,'&quot;')}, ${idx})" style="aspect-ratio:16/9; object-fit:cover;">
+              <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
+                <div style="font-weight:800; font-size:15px; color:var(--text-main); line-height:1.4; margin-bottom:4px;">${safeJudul}</div>
+                <div style="font-size:11px; font-weight:600; color:var(--kt-blue); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
+                  <i class="material-icons" style="font-size:14px;">event</i> ${safeTanggal}
+                </div>
+                <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:12px; flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
+                  ${escapeHtml(item.deskripsi || 'Tidak ada deskripsi kegiatan.')}
+                </div>
+                <div style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border-color);">
+                  ${del}
+                </div>
+              </div>
+            </div>`;
         });
       } else {
         list.innerHTML = '<p>Belum ada dokumentasi Karang Taruna.</p>';
       }
-    }).ktGetGaleri();
   }
 
   // ======================== JADWAL ========================
@@ -5277,27 +5349,51 @@ function bukaJadwal() {
 
   function muatTahunRondaList() {
     google.script.run.withSuccessHandler(function(res) {
+      // Logika Deteksi Akhir Bulan (Otomatis Transisi ke Bulan Depan)
+      var now = new Date();
+      var currentYear = now.getFullYear();
+      var currentMonth = now.getMonth() + 1; // 1-12
+      var dayOfMonth = now.getDate();
+      var lastDay = new Date(currentYear, currentMonth, 0).getDate();
+      
+      var targetMonth = currentMonth;
+      var targetYear = currentYear;
+
+      // Jika sudah masuk 3 hari terakhir bulan ini (Contoh: tgl 29, 30, 31)
+      if (lastDay - dayOfMonth < 3) {
+        targetMonth = currentMonth + 1;
+        if (targetMonth > 12) {
+          targetMonth = 1;
+          targetYear++;
+        }
+      }
+
       if (res.status === 'success' && res.data.length > 0) {
         rondaFilterTahunSelect.innerHTML = '';
-        res.data.forEach(function(tahun) {
+        var years = res.data;
+        // Tambahkan targetYear ke pilihan jika belum ada di database (misal saat transisi tahun baru)
+        if (years.indexOf(targetYear) === -1) {
+          years.push(targetYear);
+          years.sort((a,b) => b-a);
+        }
+        years.forEach(function(tahun) {
           var option = document.createElement('option');
           option.value = tahun;
           option.text = tahun;
           rondaFilterTahunSelect.appendChild(option);
         });
-        rondaFilterTahunSelect.value = new Date().getFullYear(); // Default ke tahun sekarang
+        rondaFilterTahunSelect.value = targetYear;
       } else {
         rondaFilterTahunSelect.innerHTML = '';
-        var currentYear = new Date().getFullYear();
         for (var y = currentYear - 2; y <= currentYear + 2; y++) {
           var option = document.createElement('option');
           option.value = y;
           option.text = y;
           rondaFilterTahunSelect.appendChild(option);
         }
-        rondaFilterTahunSelect.value = currentYear;
+        rondaFilterTahunSelect.value = targetYear;
       }
-      rondaFilterBulanSelect.value = new Date().getMonth() + 1; // Default ke bulan sekarang
+      rondaFilterBulanSelect.value = targetMonth;
       // Ensure button visibility is updated here too
       document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
       muatDataRonda();
@@ -5921,8 +6017,9 @@ function bukaJadwal() {
 
   function loadAdminSettingsUI() {
     google.script.run.withSuccessHandler(function(res) {
-      if (res.status === 'success' && res.data.admin_whatsapp) {
-        document.getElementById('adminWaInput').value = res.data.admin_whatsapp;
+      const input = document.getElementById('adminWaInput');
+      if (res && res.status === 'success' && res.data.admin_whatsapp && input) {
+        input.value = res.data.admin_whatsapp;
       }
     }).getSettings();
   }
@@ -7601,46 +7698,62 @@ function bukaJadwal() {
     container.innerHTML = '<p>Memuat galeri...</p>';
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = ''; // Clear previous content
-      if (res.data && res.data.length) {
-        var allMedia = [];
-        var allImgs = [];
-        for (var i = 0; i < res.data.length; i++) {
-          allMedia.push(res.data[i].imageUrl);
-          if (res.data[i].imageUrl) {
-            allImgs.push(getDirectUrl(res.data[i].imageUrl));
-          }
-        }
-        for (var j = 0; j < res.data.length; j++) {
-          var item = res.data[j];
-          var thumb = getMediaThumbnail(item.imageUrl);
-          var isVideo = isVideoLink(item.imageUrl); // Check if it's a video link
-          var safeCaption = escapeHtml(item.caption || '-');
-          var safeTanggal = escapeHtml(item.tanggal || '-');
-          var safeImageUrl = escapeJsString(item.imageUrl);
-          var safeItemId = escapeJsString(item.id);
-          var aksiButtons = '';
-          if (hasPermission('rt_galeri_crud')) {
-            aksiButtons = '<button class="btn-small" onclick="editGaleri(\'' + safeItemId + '\',\'' + escapeJsString(item.caption || '') + '\',\'' + safeImageUrl + '\')">Edit</button>'
-                        + '<button class="btn-small danger" onclick="hapusGaleri(\'' + safeItemId + '\')">Hapus</button>';
-          }
-          var videoIcon = isVideo ? '<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center;"><i class="material-icons" style="font-size:18px;">play_arrow</i></div>' : '';
-          container.innerHTML += '<div class="galeri-card" style="position:relative;">'
-            + videoIcon
-            + '<img src="' + thumb + '" class="galeri-img" onclick="openLightbox(\'' + safeImageUrl + '\', '
-            + JSON.stringify(allMedia).replace(/"/g, '&quot;') + ',' + j + ')">'
-            + '<div style="padding:12px;">'
-            + '<div style="font-weight:600;">' + safeCaption + '</div>'
-            + '<div style="font-size:12px; color:#64748b; margin-top:4px;">📅 ' + safeTanggal + '</div>'
-            + '<div style="margin-top:10px;">' + aksiButtons + '</div>'
-            + '</div></div>';
-        }
-      } else {
-        container.innerHTML = '<p>Belum ada foto di galeri.</p>';
-      }
+      rtGaleriDataGlobal = res.data || [];
+      filterDataGaleri();
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat galeri: ' + err.message);
     }).getGaleriKegiatan();
+  }
+
+  function filterDataGaleri() {
+    var tahun = document.getElementById('galeriTahunFilter').value;
+    var filtered = rtGaleriDataGlobal;
+    if (tahun !== 'all') {
+      filtered = rtGaleriDataGlobal.filter(function(item) {
+        return item.tanggal && item.tanggal.includes(tahun);
+      });
+    }
+    renderGaleriGrid(filtered);
+  }
+
+  function renderGaleriGrid(data) {
+    var container = document.getElementById('listGaleri');
+    container.innerHTML = '';
+    if (data && data.length) {
+      var allMedia = data.map(function(it) { return it.imageUrl; });
+      for (var j = 0; j < data.length; j++) {
+        var item = data[j];
+        var thumb = getMediaThumbnail(item.imageUrl);
+        var isVideo = isVideoLink(item.imageUrl);
+        var safeCaption = escapeHtml(item.caption || '-');
+        var safeTanggal = escapeHtml(item.tanggal || '-');
+        var safeTanggalRaw = escapeJsString(item.tanggalRaw || '');
+        var safeImageUrl = escapeJsString(item.imageUrl);
+        var safeItemId = escapeJsString(item.id);
+        var aksiButtons = hasPermission('rt_galeri_crud') ? 
+          '<button class="btn-small" onclick="editGaleri(\'' + safeItemId + '\',\'' + escapeJsString(item.caption || '') + '\',\'' + safeImageUrl + '\',\'' + safeTanggalRaw + '\')">Edit</button>' +
+          '<button class="btn-small danger" onclick="hapusGaleri(\'' + safeItemId + '\')">Hapus</button>' : '';
+        var videoIcon = isVideo ? '<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center;"><i class="material-icons" style="font-size:18px;">play_arrow</i></div>' : '';
+        container.innerHTML += `
+          <div class="galeri-card" style="position:relative; display:flex; flex-direction:column; height:100%;">
+            ${videoIcon}
+            <img src="${thumb}" class="galeri-img" onclick="openLightbox('${safeImageUrl}', ${JSON.stringify(allMedia).replace(/"/g, '&quot;')}, ${j})" style="aspect-ratio:16/9; object-fit:cover;">
+            <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
+              <div style="font-weight:800; font-size:15px; color:var(--text-main); line-height:1.4; margin-bottom:4px;">${safeCaption}</div>
+              <div style="font-size:11px; font-weight:600; color:var(--primary-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
+                <i class="material-icons" style="font-size:14px;">calendar_today</i> ${safeTanggal}
+              </div>
+              <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:12px; flex:1;">
+                Dokumentasi kegiatan warga RT01/RW03.
+              </div>
+              <div style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border-color);">
+                ${aksiButtons}
+              </div>
+            </div>
+          </div>`;
+      }
+    } else { container.innerHTML = '<p>Belum ada foto di galeri.</p>'; }
   }
 
   function bukaFormGaleri() {
@@ -7681,6 +7794,7 @@ function bukaJadwal() {
     if (!hasPermission('rt_galeri_crud')) { showError('Anda tidak memiliki izin untuk mengupload foto galeri.'); return; }
     var id = document.getElementById('galeriId').value;
     var caption = document.getElementById('galeriCaption').value;
+    var tgl = document.getElementById('galeriTanggal').value;
     var type = document.getElementById('galeriType').value;
     var fileInput = document.getElementById('galeriFile');
     var vLink = document.getElementById('galeriVideoLink').value;
@@ -7695,7 +7809,7 @@ function bukaJadwal() {
       // No progress bar for video link as no file upload
       google.script.run.withSuccessHandler(function(res) {
         Swal.close(); showSuccess('Tersimpan!'); tutupForm('formCrudGaleri', 'wrapListGaleri'); muatDataGaleri();
-      }).simpanGaleriKegiatan(id, caption, null, '', '', vLink);
+      }).simpanGaleriKegiatan(id, caption, null, '', '', vLink, tgl);
       return;
     }
 
@@ -7719,7 +7833,7 @@ function bukaJadwal() {
         } else {
           showError(res.pesan);
         }
-      }).simpanGaleriKegiatan(id, caption, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", "");
+      }).simpanGaleriKegiatan(id, caption, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", "", tgl);
     });
   }
 
@@ -8198,6 +8312,7 @@ function bukaJadwal() {
   function pkkBukaFormGaleri() {
     if (!hasPermission('pkk_galeri_crud')) { showError('Anda tidak memiliki izin untuk menambah foto galeri PKK.'); return; }
     document.getElementById('pkkGaleriId').value = '';
+    document.getElementById('pkkGaleriTanggal').value = new Date().toISOString().slice(0,10);
     document.getElementById('pkkGaleriCaption').value = '';
     document.getElementById('pkkGaleriFile').value = '';
     document.getElementById('pkkGaleriVideoLink').value = '';
@@ -8209,6 +8324,7 @@ function bukaJadwal() {
     if (!hasPermission('pkk_galeri_crud')) { showError('Anda tidak memiliki izin untuk mengupload foto galeri PKK.'); return; }
     var id = document.getElementById('pkkGaleriId').value;
     var caption = document.getElementById('pkkGaleriCaption').value;
+    var tgl = document.getElementById('pkkGaleriTanggal').value;
     var type = document.getElementById('pkkGaleriType').value;
     var fileInput = document.getElementById('pkkGaleriFile');
     var vLink = document.getElementById('pkkGaleriVideoLink').value;
@@ -8227,7 +8343,7 @@ function bukaJadwal() {
         } else {
           showError(res && res.pesan ? res.pesan : 'Gagal menyimpan video');
         }
-      }).pkkSimpanGaleri(id, caption, null, '', '', vLink);
+      }).pkkSimpanGaleri(id, caption, null, '', '', vLink, tgl);
       return;
     }
 
@@ -8240,7 +8356,7 @@ function bukaJadwal() {
       showLoading('Mengupdate data...');
       google.script.run.withSuccessHandler(function(res){
         Swal.close(); showSuccess(res.pesan); tutupForm('formPkkCrudGaleri','pkkWrapListGaleri'); pkkMuatDataGaleri();
-      }).pkkSimpanGaleri(id, caption, null, '', '', "");
+      }).pkkSimpanGaleri(id, caption, null, '', '', "", tgl);
       return;
     }
     
@@ -8259,7 +8375,7 @@ function bukaJadwal() {
           tutupForm('formPkkCrudGaleri', 'pkkWrapListGaleri');
           pkkMuatDataGaleri();
         } else { showError(res.pesan); }
-      }).pkkSimpanGaleri(id, caption, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", null);
+      }).pkkSimpanGaleri(id, caption, base64, mime, file.name.replace(/\.[^/.]+$/, "") + ".jpg", null, tgl);
     });
   }
 
