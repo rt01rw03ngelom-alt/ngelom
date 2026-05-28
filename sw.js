@@ -33,7 +33,6 @@ self.addEventListener('push', (event) => {
   if (event.data) {
     try {
       data = event.data.json();
-      // Jika payload dari Cloudflare/GAS terbungkus dalam properti 'payload'
       if (data.payload) data = data.payload;
     } catch (e) {
       data.body = event.data.text();
@@ -41,10 +40,11 @@ self.addEventListener('push', (event) => {
   }
 
   const options = {
-    body: data.body || 'Ada informasi terbaru untuk warga.',
+    body: data.body || 'Ketuk untuk melihat informasi terbaru.',
     icon: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128',
     badge: 'https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w128',
-    vibrate: [100, 50, 100],
+    vibrate: [200, 100, 200], // Vibrasi lebih terasa
+    timestamp: Date.now(),
     data: {
       targetPage: data.targetPage || '',
       url: self.location.origin + (data.targetPage ? '#' + data.targetPage : '')
@@ -54,31 +54,25 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Portal RT Ngelom', options) // Judul default jika kosong
+    self.registration.showNotification(data.title || 'Portal RT Ngelom', options)
   );
 });
 
 // Handler klik notifikasi
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const notificationData = event.notification.data;
-  const targetPage = notificationData.targetPage || '';
+  const targetUrl = event.notification.data.url;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Jika aplikasi sudah terbuka, fokus dan navigasi
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          if (targetPage) {
-            client.postMessage({ action: 'navigate', page: targetPage });
-          }
+        if (client.url === targetUrl && 'focus' in client) {
           return client.focus();
         }
       }
-      // Jika belum terbuka, buka jendela baru dengan hash halaman tujuan
-      let url = '/';
-      if (targetPage) url += '#' + targetPage;
-      if (self.clients.openWindow) return self.clients.openWindow(url);
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
     })
   );
 });
