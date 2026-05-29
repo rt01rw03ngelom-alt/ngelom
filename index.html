@@ -153,8 +153,13 @@
     body.theme-warga { --primary-color: var(--warga-red); --primary-color-rgb: 239, 68, 68; --primary-dark: #b91c1c; }
     body.theme-pkk { --primary-color: var(--pkk-green); --primary-color-rgb: 16, 185, 129; --primary-dark: #059669; }
     body.theme-karangtaruna { --primary-color: var(--kt-blue); --primary-color-rgb: 56, 189, 248; --primary-dark: #0284c7; }
-    /* Tambahkan tema khusus profil */
+    /* Perbaikan Masalah 1: Tema Profil Kuning (Amber) */
     body.theme-profil { --primary-color: #f59e0b; --primary-color-rgb: 245, 158, 11; --primary-dark: #d97706; }
+    body.theme-profil #profileMainCard {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-bottom: 5px solid var(--primary-color);
+    }
 
     * {
       box-sizing: border-box;
@@ -1941,7 +1946,7 @@
         <h3>Profil Saya</h3>
       </div>
       
-      <div class="card-item" style="padding: 30px 20px; text-align: center; border-left: none; border-bottom: 5px solid var(--primary-color);">
+      <div id="profileMainCard" class="card-item" style="padding: 30px 20px; text-align: center; border-left: none;">
         <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
           <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-color); border: 2px solid var(--border-color); overflow: hidden;">
             <i class="material-icons" style="font-size: 64px;">person</i>
@@ -2011,7 +2016,8 @@
         <p style="font-size: 12px; color: var(--text-muted);">
           Portal RT01 RW03 - Desa Ngelom
         </p>
-        <a href="https://wa.me/6285236356569" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #f59e0b; text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <!-- Perbaikan Masalah 2: WhatsApp Deep-link -->
+        <a href="https://wa.me/6285236356569" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--primary-dark); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
           <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
         </a>
       </div>
@@ -4287,10 +4293,9 @@
     
     // Selalu paksa refresh nomor admin dari server setiap kali profil dibuka
     updateAdminContactLink();
-    
-    // Tambahan: Pastikan href link di profil di-hard reset secara eksplisit 
-    // untuk mencegah data leakage dari manipulasi DOM di modul lain
-    setAdminContactLinks(DEFAULT_ADMIN_WA);
+    // Force reset ke nomor dukungan resmi jika admin_whatsapp kosong
+    const contactEl = document.getElementById('profAdminContact');
+    if (contactEl) contactEl.href = "https://wa.me/6285236356569";
   }
 
   window.addEventListener('load', function() {
@@ -4996,6 +5001,7 @@
     document.getElementById('rondaView').style.display = 'block';
     history.pushState({view: 'rondaView', tab: 'warga', onLoad: 'muatTahunRondaList'}, '', '#ronda');
     muatTahunRondaList();
+    muatDataRonda(); // Perbaikan Masalah 3: Panggilan eksplisit saat tab dibuka
     // Muat Slide Ronda untuk fitur Salin WhatsApp
     muatRondaHariIni();
     // Control visibility of the new button
