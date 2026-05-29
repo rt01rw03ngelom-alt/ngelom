@@ -5190,22 +5190,22 @@ function bukaJadwal() {
 
     info.innerHTML = `<div style="display:flex; justify-content:center; padding:15px;"><div class="bbx-spinner" style="width:24px; height:24px; border-width:2.5px;"></div></div>`;
 
-    const today = new Date();
-    const currentMonth = today.getMonth() + 1;
-    const currentYear = today.getFullYear();
+    const hariIni = new Date();
+    const bulanSekarang = hariIni.getMonth() + 1;
+    const tahunSekarang = hariIni.getFullYear();
 
-    // LOGIKA TRANSISI AKHIR BULAN: H-4
-    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-    const isNearMonthEnd = (lastDayOfMonth - today.getDate()) <= 4;
+    // LOGIKA TRANSISI AKHIR BULAN: Hanya aktif jika sisa 3 hari atau kurang
+    const lastDayOfMonth = new Date(tahunSekarang, bulanSekarang, 0).getDate();
+    const isNearMonthEnd = (lastDayOfMonth - hariIni.getDate()) <= 3;
 
     try {
       const fetchTasks = [
-        google.script.run.getRonda(currentMonth, currentYear)
+        google.script.run.getRonda(bulanSekarang, tahunSekarang)
       ];
 
       if (isNearMonthEnd) {
-        let nMonth = currentMonth + 1;
-        let nYear = currentYear;
+        let nMonth = bulanSekarang + 1;
+        let nYear = tahunSekarang;
         if (nMonth > 12) { nMonth = 1; nYear++; }
         fetchTasks.push(google.script.run.getRonda(nMonth, nYear));
       }
@@ -5229,6 +5229,18 @@ function bukaJadwal() {
   function prosesDataJadwalRonda(data) {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
+
+    if (!data || data.length === 0) {
+      const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      const currentMonthName = months[new Date().getMonth()];
+      info.innerHTML = `
+        <div style="text-align:center; padding:15px; background:rgba(var(--primary-color-rgb), 0.05); border-radius:12px; border:1px dashed var(--primary-color);">
+          <i class="material-icons" style="color:var(--primary-color); font-size:32px;">notification_important</i>
+          <div style="color:var(--text-main); font-size:13px; font-weight:700; margin-top:8px;">Jadwal Ronda Bulan ${currentMonthName} Belum Dirilis oleh Pengurus RT</div>
+        </div>`;
+      return;
+    }
+
     rondaSlides = [];
 
     const now = new Date();
@@ -5483,13 +5495,13 @@ function bukaJadwal() {
     // 1. AMBIL ELEMENT LOKAL & SET REAL-TIME SEGERA (Hapus logika H-3 agar sesuai real-time)
     const filterBulan = document.getElementById('rondaFilterBulan');
     const filterTahun = document.getElementById('rondaFilterTahun');
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // 1-12
+    const hariIni = new Date();
+    const tahunSekarang = hariIni.getFullYear();
+    const bulanSekarang = hariIni.getMonth() + 1;
 
     // Set Default Visual Segera
     if (filterBulan) {
-      filterBulan.value = String(currentMonth);
+      filterBulan.value = String(bulanSekarang);
     }
 
     showLoading('Menginisialisasi filter...');
@@ -5499,8 +5511,8 @@ function bukaJadwal() {
       
       // 2. LOGIKA INJEKSI TAHUN DINAMIS (Point 2: Dynamic Year Injection)
       // Pastikan currentYear ada di daftar
-      if (!years.includes(currentYear) && !years.includes(Number(currentYear))) {
-        years.push(currentYear);
+      if (!years.includes(tahunSekarang) && !years.includes(Number(tahunSekarang))) {
+        years.push(tahunSekarang);
       }
       
       // Render Dropdown Tahun dengan Casting Eksplisit
@@ -5510,8 +5522,8 @@ function bukaJadwal() {
       });
 
       // 4. FINAL LOCK-IN & FETCH DATA
-      filterTahun.value = String(currentYear);
-      filterBulan.value = String(currentMonth);
+      filterTahun.value = String(tahunSekarang);
+      filterBulan.value = String(bulanSekarang);
 
       // Ensure button visibility is updated here too
       document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
