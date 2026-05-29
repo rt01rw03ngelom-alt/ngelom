@@ -6,6 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#d32f2f">
   <link rel="manifest" href="manifest.json">
+  
+  <script>
+    // ==== App version checker (hard update) ====
+    const APP_VERSION = '1.2.0';
+    (function () {
+      try {
+        const key = 'rt-app-version';
+        const last = localStorage.getItem(key);
+        if (last !== APP_VERSION) {
+          localStorage.setItem(key, APP_VERSION);
+          // Clean all SW caches so new shell is used immediately
+          if ('caches' in window) {
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(()=>{});
+          }
+          // Force hard reload with cache-busting param
+          const url = new URL(window.location.href);
+          url.searchParams.set('v', String(Date.now()));
+          window.location.replace(url.toString());
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Portal RT">
@@ -1926,7 +1950,7 @@
           <i class="material-icons">security</i>
         </div>
         <div class="summary-info" id="rondaBannerContent" style="transition: opacity 0.3s ease; flex:1;">
-          <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706;">Ronda Malam Minggu Ini</h3>
+          <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706;">Jadwal Ronda Malam</h3>
           <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;">Memuat jadwal...</div>
           <!-- Dot indicators -->
           <div style="display:flex; gap:4px; margin-top:8px;">
@@ -2801,7 +2825,7 @@
       }
     }
   }
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec" + Date.now();
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
@@ -2858,6 +2882,8 @@
   var currentToken = null;
   var allUsers = []; // Global variable to store all user data
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
+  var currentThisWeekEntries = []; // Storage untuk Share WA
+  var currentNextWeekEntries = []; // Storage untuk Share WA
   var rtGaleriDataGlobal = [];
   var ktGaleriDataGlobal = [];
   var pkkGaleriDataGlobal = [];
@@ -3983,7 +4009,7 @@
 
     // Refresh tampilan banner ronda agar warnanya sinkron saat tema diubah
     if (typeof muatRondaMingguIni === 'function' && document.getElementById('rondaTodayBanner')) {
-      muatRondaMingguIni();
+      muatRondaHariIni(false);
     }
   }
 
@@ -4382,7 +4408,7 @@
       if (label2) label2.innerText = 'Total Uang Kematian';
       card2.style.display = 'flex';
       var rb = document.getElementById('rondaTodayBanner');
-      if (rb) { rb.style.display = 'flex'; muatRondaMingguIni(); }
+      if (rb) { rb.style.display = 'flex'; muatRondaHariIni(false); }
       if (summaryContainer) {
         summaryContainer.style.display = 'grid';
         summaryContainer.style.gridTemplateColumns = '1fr 1fr';
@@ -5003,7 +5029,7 @@
     document.getElementById('rondaView').style.display = 'block';
     muatTahunRondaList();
     // Muat Slide Ronda untuk fitur Salin WhatsApp
-    muatRondaMingguIni();
+    muatRondaHariIni(false);
     history.pushState({view: 'rondaView', tab: 'warga', onLoad: 'muatTahunRondaList'}, '', '#ronda');
     // Control visibility of the new button
     document.getElementById('btnSalinRondaWa').style.display = 'flex';
@@ -5175,128 +5201,98 @@ function bukaJadwal() {
   }
 
   // ======================== OPTIMASI BANNER RONDA (10XTHINK REWRITE) ========================
-  var rondaSlides = [];
-  var currentRondaSlideIdx = 0;
-
   /**
-   * Fungsi utama memuat data ronda untuk dashboard dengan Dual-Fetch Automation
+   * Fungsi utama memuat data ronda untuk dashboard dengan Strategi Dual-Fetch Parallel
    */
-  async function muatRondaMingguIni(isManualRefresh = false) {
+  async function muatRondaHariIni(isManualRefresh = false) {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
 
     info.innerHTML = `<div style="display:flex; justify-content:center; padding:15px;"><div class="bbx-spinner" style="width:24px; height:24px; border-width:2.5px;"></div></div>`;
 
-    const hariIni = new Date();
-    hariIni.setHours(0,0,0,0);
+    const now = new Date();
+    const curMonth = now.getMonth() + 1;
+    const curYear = now.getFullYear();
 
-    const bulanSekarang = hariIni.getMonth() + 1;
-    const tahunSekarang = hariIni.getFullYear();
-
-    // KOREKSI A: LOGIKA TRANSISI AKHIR BULAN (Cek sampai 14 hari ke depan untuk widget Minggu Depan)
-    const duaMingguLagi = new Date(hariIni);
-    duaMingguLagi.setDate(hariIni.getDate() + 14);
-    const isNearMonthEnd = (duaMingguLagi.getMonth() !== hariIni.getMonth());
+    // Hitung Bulan Depan
+    let nextMonth = curMonth + 1;
+    let nextYear = curYear;
+    if (nextMonth > 12) { nextMonth = 1; nextYear++; }
 
     try {
+      // TARIK DATA 2 BULAN SECARA PARALEL (ANTI-BLANK)
       const fetchTasks = [
-        google.script.run.getRonda(bulanSekarang, tahunSekarang)
+        google.script.run.getRonda(curMonth, curYear),
+        google.script.run.getRonda(nextMonth, nextYear)
       ];
 
-      if (isNearMonthEnd) {
-        let nMonth = bulanSekarang + 1;
-        let nYear = tahunSekarang;
-        if (nMonth > 12) { nMonth = 1; nYear++; }
-        fetchTasks.push(google.script.run.getRonda(nMonth, nYear));
-      }
-
-      // Parallel fetch untuk performa maksimal
       const results = await Promise.all(fetchTasks.map(p => p.catch(e => ({ status: 'error', pesan: e }))));
       let combinedData = [];
 
-      let validResults = 0;
-      results.forEach((res, idx) => {
+      results.forEach(res => {
         if (res && res.status === 'success' && res.data) {
           combinedData = combinedData.concat(res.data);
-          validResults++;
         }
       });
 
-      if (validResults === 0 && results.length > 0) throw new Error("Gagal memuat database ronda");
+      // Urutkan combined data berdasarkan tanggal yyyy-mm-dd
+      combinedData.sort((a, b) => a.tanggal.localeCompare(b.tanggal));
 
       prosesDataJadwalRonda(combinedData);
       if (isManualRefresh) Swal.fire({ toast: true, position: 'top', timer: 1200, showConfirmButton: false, icon: 'success', title: 'Data Diperbarui' });
     } catch (e) {
       console.error("Ronda Dashboard Error:", e);
-      info.innerHTML = `<div style="text-align:center; padding:10px; color:#ef4444; font-size:12px;">
-        <i class="material-icons" style="font-size:16px; vertical-align:middle;">error_outline</i> Gagal Memuat Jadwal. Tarik untuk coba lagi.
-      </div>`;
+      info.innerHTML = `<div class="muted" style="text-align:center; font-size:12px;">Gagal sinkronisasi jadwal ronda.</div>`;
     }
   }
 
+  var rondaSlides = [];
+  var currentRondaSlideIdx = 0;
+
   /**
-   * Mengelompokkan data ke Slide 1 (Minggu Ini) dan Slide 2 (Minggu Depan)
+   * Filter data murni berdasarkan rentang Minggu Berjalan (Ahad - Sabtu)
    */
   function prosesDataJadwalRonda(data) {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
 
-    // PERBAIKAN B: VALIDASI DATA KOSONG (BELUM DIRILIS)
-    if (!data || data.length === 0 || (Array.isArray(data) && data.length === 0)) {
-      const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-      const currentMonthName = months[new Date().getMonth()];
-      info.innerHTML = `
-        <div style="text-align:center; padding:15px; background:rgba(var(--primary-color-rgb), 0.05); border-radius:12px; border:1px dashed var(--primary-color);">
-          <i class="material-icons" style="color:var(--primary-color); font-size:32px;">notification_important</i>
-          <div style="color:var(--text-main); font-size:13px; font-weight:700; margin-top:8px;">Jadwal Ronda Bulan ${currentMonthName} Belum Dirilis oleh Pengurus RT</div>
-        </div>`;
+    if (!data || data.length === 0) {
+      info.innerHTML = `<div class="muted" style="text-align:center; padding:10px;">Belum ada jadwal ronda yang dirilis.</div>`;
       return;
     }
 
     rondaSlides = [];
-
     const now = new Date();
     now.setHours(0,0,0,0);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Helper parsing tanggal lokal agar tidak bergeser timezone UTC
-    const parseLocalDate = (ds) => {
-      const p = ds.split('-');
-      return new Date(p[0], p[1] - 1, p[2]);
-    };
+    const parseLocalDate = (ds) => { const p = ds.split('-'); return new Date(p[0], p[1] - 1, p[2]); };
 
     // LOGIKA REAL-TIME FILTER MINGGUAN (Sun-Sat)
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setHours(0,0,0,0);
 
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
-    const nextWeekStart = new Date(endOfWeek);
-    nextWeekStart.setDate(endOfWeek.getDate() + 1);
-    nextWeekStart.setHours(0,0,0,0);
-
-    const nextWeekEnd = new Date(nextWeekStart);
-    nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
-    nextWeekEnd.setHours(23,59,59,999);
+    // Slides Categorization
+    currentThisWeekEntries = data.filter(it => { const d = parseLocalDate(it.tanggal); return d >= startOfWeek && d <= endOfWeek; });
+    currentNextWeekEntries = data.filter(it => { const d = parseLocalDate(it.tanggal); return d > endOfWeek; }).slice(0, 7); // Ambil 7 hari kedepan setelah minggu ini
 
     const formatContent = (entries) => {
       if (!entries || entries.length === 0) return null;
       return entries.map(it => {
         const itemDate = parseLocalDate(it.tanggal);
         const isToday = it.tanggal === todayStr;
-        // SCRIPT ANTI-CRASH MAPPING: Pecah string \n menjadi chips personal
         const petugasRaw = Array.isArray(it.petugas) ? it.petugas.join("\n") : String(it.petugas || "");
         const chips = petugasRaw.split(/\r?\n/).filter(p => p.trim() !== "").map(p => 
           `<span style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; display:inline-block; margin:2px 2px 0 0;">${p}</span>`
         ).join("");
 
         // Format Hari untuk kejelasan (Misal: Sen, 12 Mei)
-        const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        const dayName = days[itemDate.getDay()];
-
+        const dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][itemDate.getDay()];
         return `
           <div style="margin-bottom:10px; border-left:4px solid ${isToday ? 'var(--primary-color)' : 'rgba(var(--primary-color-rgb), 0.15)'}; padding-left:10px;">
             <div style="font-size:11.5px; font-weight:800; color:var(--text-main);">${dayName}, ${it.tanggal.split('-')[2]} • ${it.kelompok}</div>
@@ -5305,37 +5301,14 @@ function bukaJadwal() {
       }).join("");
     };
 
-    const formatPlainText = (entries) => {
-      if (!entries || entries.length === 0) return "- Belum ada jadwal / Libur";
-      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-      return entries.map(it => {
-        const d = parseLocalDate(it.tanggal);
-        const petugasRaw = Array.isArray(it.petugas) ? it.petugas.join("\n") : String(it.petugas || "");
-        const names = petugasRaw.split(/\r?\n/).filter(p => p.trim() !== "").join(", ");
-        return `${days[d.getDay()]}, ${it.tanggal.split('-')[2]}: ${it.kelompok} (${names || 'Ditiadakan'})`;
-      }).join("\n");
-    };
-
-    const thisWeekHtml = formatContent(data.filter(it => { const d = parseLocalDate(it.tanggal); return d >= startOfWeek && d <= endOfWeek; }));
-    const nextWeekHtml = formatContent(data.filter(it => { const d = parseLocalDate(it.tanggal); return d >= nextWeekStart && d <= nextWeekEnd; }));
-
-    // UI FALLBACK CARD: Render pesan elegan jika data kosong
     const fallbackHtml = `
       <div style="text-align:center; padding:15px 10px; opacity:0.7;">
         <i class="material-icons" style="font-size:32px; color:var(--text-muted); margin-bottom:5px;">event_busy</i>
-        <div style="font-size:12px; font-weight:600; color:var(--text-muted);">Belum ada jadwal ronda yang dirilis untuk minggu ini.</div>
+        <div style="font-size:12px; font-weight:600; color:var(--text-muted);">Belum ada jadwal / Libur Ronda.</div>
       </div>`;
 
-    rondaSlides.push({ 
-      title: "⚡ Ronda Minggu Ini", 
-      html: thisWeekHtml || fallbackHtml,
-      plainTextContent: formatPlainText(data.filter(it => { const d = parseLocalDate(it.tanggal); return d >= startOfWeek && d <= endOfWeek; }))
-    });
-    rondaSlides.push({ 
-      title: "📅 Ronda Selanjutnya", 
-      html: nextWeekHtml || fallbackHtml,
-      plainTextContent: formatPlainText(data.filter(it => { const d = parseLocalDate(it.tanggal); return d >= nextWeekStart && d <= nextWeekEnd; }))
-    });
+    rondaSlides.push({ title: "⚡ Jadwal Ronda Minggu Ini", html: formatContent(currentThisWeekEntries) || fallbackHtml });
+    rondaSlides.push({ title: "📅 Jadwal Ronda Selanjutnya", html: formatContent(currentNextWeekEntries) || fallbackHtml });
 
     currentRondaSlideIdx = 0;
     displayRondaSlide(0);
@@ -5390,7 +5363,7 @@ function bukaJadwal() {
 
       // PULL DOWN DETECTED (Threshold 60px)
       if (deltaY > 60 && Math.abs(deltaX) < 30) {
-        muatRondaMingguIni(true);
+        muatRondaHariIni(true);
         return;
       }
 
@@ -5612,26 +5585,45 @@ function bukaJadwal() {
   }
 
   function salinJadwalRondaToWhatsApp() {
-    if (!rondaSlides || rondaSlides.length === 0) {
-      return showWarning('Tidak ada jadwal ronda yang bisa disalin.');
+    if (!currentThisWeekEntries.length && !currentNextWeekEntries.length) {
+      return showWarning('Data jadwal tidak tersedia untuk dibagikan.');
     }
 
+    const daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const monthsIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const today = new Date();
-    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    const formattedDate = today.toLocaleDateString('id-ID', options);
+    const dayName = daysIndo[today.getDay()];
+    const monthName = monthsIndo[today.getMonth()];
+    const nextMonthName = monthsIndo[(today.getMonth() + 1) % 12];
 
-    let message = `*Jadwal Ronda Malam RT01/RW03*\n_Diperbarui: ${formattedDate}_\n\n`;
+    let message = `*Jadwal Ronda Malam RT01/RW03*\n`;
+    message += `_Diperbarui: ${dayName}, ${today.getDate()} ${monthName} ${today.getFullYear()}_\n\n`;
 
-    rondaSlides.forEach((slide) => {
-      // Bersihkan icon emoji dari judul untuk teks WA
-      const cleanTitle = slide.title.replace('⚡ ', '').replace('📅 ', '');
-      message += `*${cleanTitle}*\n`;
-      message += (slide.plainTextContent || '- Belum ada jadwal') + '\n\n';
-    });
+    const formatWAEntries = (entries) => {
+      if (!entries.length) return "_Tidak ada jadwal / LIBUR_\n";
+      return entries.map(it => {
+        const p = it.tanggal.split('-');
+        const dObj = new Date(p[0], p[1] - 1, p[2]);
+        const h = daysIndo[dObj.getDay()];
+        const petugasRaw = Array.isArray(it.petugas) ? it.petugas.join("\n") : String(it.petugas || "");
+        const isLibur = (it.kelompok || "").toLowerCase().includes("libur") || petugasRaw.toLowerCase().includes("ditiadakan");
+        const listPetugas = isLibur ? "Ditiadakan" : petugasRaw.split(/\r?\n/).filter(x => x.trim() !== "").join(", ");
+        
+        return `${h}, Tgl ${p[2]} - ${it.kelompok}\n  Petugas: ${listPetugas}`;
+      }).join("\n\n");
+    };
+
+    // Seksi 1
+    message += `*Jadwal Ronda Minggu Ini*\n`;
+    message += formatWAEntries(currentThisWeekEntries) + `\n\n`;
+
+    // Seksi 2
+    message += `*Jadwal Ronda ${nextMonthName}*\n`;
+    message += formatWAEntries(currentNextWeekEntries) + `\n\n`;
 
     message += `_Informasi ini dibagikan melalui Portal RT01/RW03._`;
 
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   }
   function updateStatusPkkLaporan(id) {
