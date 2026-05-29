@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+<base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <meta name="theme-color" content="#d32f2f">
   <link rel="manifest" href="manifest.json">
@@ -1827,20 +1827,17 @@
         </div>
       </div>
       <!-- Banner Ronda Malam Hari Ini -->
-      <div id="rondaTodayBanner" class="summary-card" style="margin-top:12px; width:100%; display:none; padding:12px; border-radius:15px; background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.2); position:relative; overflow:hidden; cursor:pointer; user-select:none;">
-        <div class="summary-icon" style="width:36px; height:36px; background:rgba(251,191,36,0.1); color:#d97706;">
-          <i class="material-icons">security</i>
-        </div>
-        <div class="summary-info" id="rondaBannerContent" style="transition: opacity 0.3s ease; flex:1;">
-          <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706;">Ronda Malam Hari Ini</h3>
-          <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;">Memuat jadwal...</div>
-          <!-- Dot indicators -->
-          <div style="display:flex; gap:4px; margin-top:8px;">
-            <div class="ronda-dot active" style="width:12px; height:4px; border-radius:2px; background:#d97706; transition:0.3s;"></div>
-            <div class="ronda-dot" style="width:6px; height:4px; border-radius:2px; background:rgba(217,119,6,0.2); transition:0.3s;"></div>
-          </div>
+    <div id="rondaTodayBanner" class="summary-card" style="margin-top:12px; width:100%; display:none; padding:12px; border-radius:15px; background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.2); position:relative; overflow:hidden; cursor:pointer; user-select:none;">
+      <div class="summary-icon" style="width:36px; height:36px; background:rgba(251,191,36,0.1); color:#d97706;"><i class="material-icons">security</i></div>
+      <div class="summary-info" id="rondaBannerContent" style="transition: opacity 0.3s ease; flex:1;">
+        <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706; font-weight:700;">Jadwal Ronda</h3>
+        <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;">Memuat jadwal...</div>
+        <div style="display:flex; gap:4px; margin-top:8px;">
+          <div class="ronda-dot active" style="width:12px; height:4px; border-radius:2px; background:#d97706; transition:0.3s;"></div>
+          <div class="ronda-dot" style="width:6px; height:4px; border-radius:2px; background:rgba(217,119,6,0.2); transition:0.3s;"></div>
         </div>
       </div>
+    </div>
     </div>
     <div class="menu-container" id="menuContainer"></div>
   </div>
@@ -4686,98 +4683,99 @@ function bukaJadwal() {
   var rondaTouchX = 0;
 
   // Fungsi untuk memuat petugas ronda hari ini di Dashboard Beranda
-  function muatRondaHariIni() {
-    var info = document.getElementById('rondaTodayInfo');
-    var banner = document.getElementById('rondaTodayBanner');
+  async function muatRondaHariIni() {
+    const info = document.getElementById('rondaTodayInfo');
+    const banner = document.getElementById('rondaTodayBanner');
     if (!info || !banner) return;
-    
-    // Gunakan status tema aplikasi, bukan berdasarkan jam otomatis
-    var isNight = document.body.classList.contains('dark-mode');
-    
-    if (isNight) {
-      banner.style.background = '#1e293b'; // Slate Dark
-      banner.style.borderColor = 'rgba(251,191,36,0.4)';
-      banner.querySelector('.summary-icon').style.background = 'rgba(251,191,36,0.2)';
-      banner.querySelector('.summary-icon').style.color = '#fbbf24';
-      document.getElementById('rondaBannerTitle').style.color = '#fbbf24';
-      info.style.color = '#f8fafc';
-    } else {
-      banner.style.background = 'rgba(251,191,36,0.1)';
-      banner.style.borderColor = 'rgba(251,191,36,0.2)';
-      banner.querySelector('.summary-icon').style.background = 'rgba(251,191,36,0.1)';
-      banner.querySelector('.summary-icon').style.color = '#d97706';
-      document.getElementById('rondaBannerTitle').style.color = '#d97706';
-      info.style.color = 'var(--text-main)';
-    }
-
-    // Dapatkan waktu hari ini
-    var d = new Date();
-    var months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-
-    // Cek apakah 7 hari lagi sudah masuk bulan baru
-    var nextWeekDate = new Date(d);
-    nextWeekDate.setDate(d.getDate() + 7);
-
-    google.script.run.withSuccessHandler(function(res) { // SPESIFIKASI 3: Robust try-catch
-      if (res.status === 'success' && res.data) {
-        rondaSlides = [];
-        var curWeek = Math.ceil(d.getDate() / 7);
-        var daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        var todayStr = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-
-        // Helper untuk memformat daftar regu dalam satu minggu
-        var formatMingguan = function(entries) {
-          return entries.map(function(e) {
-            var p = e.tanggal.split('-');
-            var dObj = new Date(p[0], p[1] - 1, p[2]);
-            var hari = daysIndo[dObj.getDay()];
-            var tgl = p[2];
-            var isToday = (e.tanggal === todayStr);
-            var names = e.petugas ? e.petugas.split(/\r?\n/).filter(function(it){ return it.trim() !== ""; }).join(', ') : '-';
-            
-            var highlightStyle = isToday ? 'border-left:4px solid var(--primary-red); background:rgba(239,68,68,0.05);' : 'border-left:3px solid rgba(217,119,6,0.2);';
-            var todayTag = isToday ? ' <span style="background:var(--primary-red); color:white; font-size:9px; padding:1px 6px; border-radius:4px; vertical-align:middle; margin-left:4px;">HARI INI</span>' : '';
-
-            return '<div style="margin-bottom:10px; padding:4px 0 4px 10px; ' + highlightStyle + '">' +
-                   '<div style="font-size:12px; font-weight:800; color:var(--text-main);">' + hari + ', Tgl ' + tgl + ': ' + e.kelompok + todayTag + '</div>' +
-                   '<div style="font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:2px;">' + names + '</div>' +
-                   '</div>';
-          }).join('');
-        };
-
-        // Slide 1: Minggu Ini
-        var entriesW1 = res.data.filter(function(it) {
-          var p = it.tanggal.split('-');
-          return Math.ceil(parseInt(p[2]) / 7) === curWeek;
-        });
-
-        rondaSlides.push({
-          title: 'Jadwal Ronda Minggu Ini',
-          content: entriesW1.length ? formatMingguan(entriesW1) : '<span style="color:var(--primary-red); font-weight:800;">🚨 LIBUR RONDA MINGGU INI</span>'
-        });
-
-        // Slide 2: Minggu Depan
-        var entriesW2 = res.data.filter(function(it) {
-          var p = it.tanggal.split('-');
-          return Math.ceil(parseInt(p[2]) / 7) === curWeek + 1;
-        });
-
-        var slide2Title = (nextWeekDate.getMonth() !== d.getMonth()) 
-          ? 'Jadwal Ronda ' + months[nextWeekDate.getMonth()] 
-          : 'Jadwal Ronda Minggu Depan';
-
-        rondaSlides.push({
-          title: slide2Title,
-          content: entriesW2.length ? formatMingguan(entriesW2) : '<span style="color:var(--text-muted);">Belum ada jadwal / Libur</span>'
-        });
-
-        displayRondaSlide(0);
-        initRondaSwipe();
-      } else {
-        info.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">Gagal memuat jadwal.</span>';
+    const d = new Date(), currentMonth = d.getMonth() + 1, currentYear = d.getFullYear();
+    const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+    const isNearEnd = d.getDate() >= lastDay - 3;
+    const fetchData = (m, y) => new Promise(res => google.script.run.withSuccessHandler(res).getRonda(m, y));
+    try {
+      const reqs = [fetchData(currentMonth, currentYear)];
+      if (isNearEnd) {
+        // Ambil data bulan berikutnya secara aman
+        // new Date(year, month, 1) akan otomatis rollover akhir bulan.
+        const next = new Date(currentYear, currentMonth, 1);
+        reqs.push(fetchData(next.getMonth() + 1, next.getFullYear()));
       }
-    }).getRonda(d.getMonth() + 1, d.getFullYear());
-  } // End of old muatRondaHariIni
+      const results = await Promise.all(reqs);
+      let data = [];
+      results.forEach(r => { if(r && r.status === 'success') data = data.concat(r.data || []); });
+      if (!data.length) { info.innerText = "Belum ada jadwal."; return; }
+      rondaSlides = [];
+      const todayStr = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().split('T')[0];
+
+      function safeYMD(dateLike) {
+        try {
+          // expected: YYYY-MM-DD
+          if (!dateLike) return null;
+          var s = String(dateLike);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+          // fallback
+          var dd = new Date(dateLike);
+          if (isNaN(dd.getTime())) return null;
+          return new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).toISOString().split('T')[0];
+        } catch (e) {
+          return null;
+        }
+      }
+
+
+      const normalizePetugasToArray = (petugas) => {
+        if (Array.isArray(petugas)) return petugas;
+        if (petugas === null || petugas === undefined) return ['Ditiadakan'];
+        if (typeof petugas === 'string') {
+          const s = petugas.trim();
+          if (!s) return ['Ditiadakan'];
+          const sl = s.toLowerCase();
+          if (sl === 'ditiadakan' || sl === 'libur') return ['Ditiadakan'];
+          return [s];
+        }
+        return [String(petugas)];
+      };
+
+const format = (title, entries) => {
+        let html = (entries || []).map(e => {
+          const rawTanggal = e && e.tanggal ? e.tanggal : '';
+          const tanggalStr = safeYMD(rawTanggal) || rawTanggal;
+          const isToday = String(tanggalStr || '') === todayStr;
+
+          const petugasArr = normalizePetugasToArray(e?.petugas);
+          const kelompokLower = String(e?.kelompok || '').toLowerCase().trim();
+
+          // amankan status kelompok LIBUR/Ditiadakan agar tampilan konsisten
+          const isDit = (petugasArr.length === 1 && String(petugasArr[0] || '').toLowerCase() === 'ditiadakan') ||
+                        kelompokLower === 'libur' || kelompokLower === 'ditiadakan';
+
+          const pStr = isDit ? 'Ditiadakan' : petugasArr.join(', ');
+          const style = isToday ? 'border-left:4px solid #ef4444; background:rgba(239,68,68,0.05);' : 'border-left:3px solid rgba(217,119,6,0.1);';
+          return `<div style="margin-bottom:8px; padding:4px 10px; ${style}">
+            <div style="font-size:12px; font-weight:800;">${e?.kelompok || ''} ${isToday ? '<span style="color:#ef4444; font-size:9px;">[HARI INI]</span>' : ''}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${pStr}</div>
+          </div>`;
+        }).join('');
+        return { title, content: html || 'Tidak ada jadwal.' };
+      };
+
+      const s1Data = data.filter(e => {
+        const diff = (new Date(e.tanggal) - new Date(todayStr)) / 86400000;
+        return diff >= 0 && diff <= 1;
+      });
+      rondaSlides.push(format("Ronda Hari Ini & Besok", s1Data));
+
+      const s2Data = data.filter(e => {
+        const diff = (new Date(e.tanggal) - new Date(todayStr)) / 86400000;
+        return diff > 1 && diff <= 7;
+      });
+      rondaSlides.push(format("Jadwal 7 Hari ke Depan", s2Data));
+
+      displayRondaSlide(0);
+      initRondaSwipe();
+      banner.style.display = 'flex';
+    } catch (err) { info.innerText = "Gagal memuat jadwal."; }
+  } // End of muatRondaHariIni (patched)
+
 
   function displayRondaSlide(idx) {
     var title = document.getElementById('rondaBannerTitle');
@@ -4864,9 +4862,39 @@ function bukaJadwal() {
       5: '#8b5cf6'  // Ungu (Minggu 5)
     };
     
+    function normalizePetugasForSearch(petugas) {
+      // petugas bisa: string | array<string> | array<object> | object
+      try {
+        if (Array.isArray(petugas)) {
+          // array string / array object
+          return petugas
+            .map(function(x) {
+              if (x === null || x === undefined) return '';
+              if (typeof x === 'string') return x;
+              if (typeof x === 'object') {
+                return (x.nama || x.name || x.petugas || x.value || '').toString();
+              }
+              return String(x);
+            })
+            .join(', ');
+        }
+        if (petugas === null || petugas === undefined) return '';
+        if (typeof petugas === 'string') return petugas;
+        if (typeof petugas === 'object') {
+          return (petugas.nama || petugas.name || petugas.petugas || petugas.value || '').toString();
+        }
+        return String(petugas);
+      } catch (e) {
+        return '';
+      }
+    }
+
     var filtered = currentRondaData.filter(function(item) {
-      return (item.petugas || '').toLowerCase().includes(keyword) || 
-             (item.kelompok || '').toLowerCase().includes(keyword);
+      var petugasStr = normalizePetugasForSearch(item && item.petugas);
+      var kelompokStr = (item && item.kelompok) ? String(item.kelompok) : '';
+
+      return petugasStr.toLowerCase().includes(keyword) ||
+             kelompokStr.toLowerCase().includes(keyword);
     });
 
     list.innerHTML = '';
