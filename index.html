@@ -5190,7 +5190,8 @@ function bukaJadwal() {
    * Menunggu hingga proses login selesai sebelum memicu fetch data.
    */
   /**
-   * SPESIFIKASI 2 & 3: fetchJadwalRonda dengan Race Condition Check & Dual-Fetch
+   * REFACTORING WIDGET BERANDA WARGA (MINGGU INI & MINGGU DEPAN)
+   * Logic Transisi Tanggal Dua Bulan (Dual-Fetch) pada H-4
    */
   async function muatRondaHariIni(isManualRefresh = false) {
     const info = document.getElementById('rondaTodayInfo');
@@ -5199,44 +5200,41 @@ function bukaJadwal() {
 
     const isDark = document.body.classList.contains('dark-mode');
     banner.style.background = isDark ? '#1e293b' : 'rgba(251,191,36,0.1)';
-
-    // Animasi Loading Lokal
     info.innerHTML = `<div style="display:flex; justify-content:center; padding:10px;"><div class="bbx-spinner" style="width:22px; height:22px; border-width:2px;"></div></div>`;
 
-    // ANTISIPASI RACE CONDITION: Tunggu hingga login siap
     await loginReadyPromise;
 
-    const d = new Date();
-    const currentMonth = d.getMonth() + 1;
-    const currentYear = d.getFullYear();
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
     
-    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-    const isNearMonthEnd = (lastDayOfMonth - d.getDate()) <= 3;
+    // Logika Akhir Bulan (H-4): Deteksi transisi bulan untuk user experience yang mulus
+    const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+    const isNearMonthEnd = (lastDay - today.getDate()) <= 4;
 
     try {
       const fetchTasks = [
         new Promise(resolve => google.script.run
           .withSuccessHandler(resolve)
-          .withFailureHandler(() => resolve({ status: 'offline', targetBulan: 'CURRENT' })) // Pastikan targetBulan ada untuk konsistensi
+          .withFailureHandler(() => resolve({ status: 'error', data: [] }))
           .getRonda(currentMonth, currentYear)
         )
       ];
 
       if (isNearMonthEnd) {
-        const nextM = currentMonth === 12 ? 1 : currentMonth + 1;
-        const nextY = currentMonth === 12 ? currentYear + 1 : currentYear;
+        const nextDate = new Date(currentYear, currentMonth, 1);
         fetchTasks.push(
           new Promise(resolve => google.script.run
             .withSuccessHandler(resolve)
-            .withFailureHandler(() => resolve({ status: 'offline', targetBulan: 'NEXT' })) // Pastikan targetBulan ada untuk konsistensi
-            .getRonda(nextM, nextY)
+            .withFailureHandler(() => resolve({ status: 'error', data: [] }))
+            .getRonda(nextDate.getMonth() + 1, nextDate.getFullYear())
           )
         );
       }
 
       const results = await Promise.all(fetchTasks);
       let combinedData = [];
-      results.forEach(res => { if (res.data) combinedData = combinedData.concat(res.data); });
+      results.forEach(res => { if (res && res.data) combinedData = combinedData.concat(res.data); });
 
       prosesDataJadwalRonda(combinedData, results);
       if (isManualRefresh) Swal.fire({ toast: true, position: 'top', timer: 1000, showConfirmButton: false, icon: 'success', title: 'Jadwal Diperbarui' });
@@ -5482,6 +5480,7 @@ function bukaJadwal() {
   }
 
   function filterRonda() {
+    try {
     var keyword = document.getElementById('rondaSearchInput').value.toLowerCase();
     var list = document.getElementById('listRonda');
     var isYearly = document.getElementById('rondaFilterBulan').value == "0";
@@ -5509,12 +5508,6 @@ function bukaJadwal() {
       5: '#8b5cf6'  // Ungu (Minggu 5)
     };
     
-    var filtered = currentRondaData.filter(function(item) {
-      var p = String(item.petugas || "").toLowerCase();
-      var k = String(item.kelompok || "").toLowerCase();
-      return p.includes(keyword) || k.includes(keyword);
-    });
-
     list.innerHTML = '';
     if (filtered.length > 0) {
       var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>';
@@ -5538,14 +5531,13 @@ function bukaJadwal() {
           }
         }
 
-        // Cek apakah ini minggu yang sedang bertugas sekarang
-        var isCurrentWeek = (itemDate >= currentWeekStart && itemDate < currentWeekEnd);
+        // Active Week Highlighter: Real-time date comparison
+        var isCurrentWeek = (itemDate >= currentWeekStart && itemDate < currentWeekEnd); 
         var rowStyle = "";
         
         if (isCurrentWeek) {
-          var activeColor = weekColors[iWeek] || '#ef4444';
-          // Tambahkan background transparan dan border kiri tebal sesuai warna minggunya
-          rowStyle = `style="background-color: ${activeColor}15 !important; border-left: 5px solid ${activeColor} !important; font-weight: 700;"`;
+          var activeColor = weekColors[iWeek] || 'var(--primary-color)';
+          rowStyle = `style="background-color: ${activeColor}12 !important; border-left: 6px solid ${activeColor} !important; font-weight: 700;"`;
         }
 
         // Tampilan Jadwal Ronda Lebih Bagus (Chips)
@@ -5579,6 +5571,10 @@ function bukaJadwal() {
           <div style="font-size:20px; font-weight:800; color:var(--primary-red); letter-spacing:2px; text-transform:uppercase;">LIBUR RONDA</div>
           <p class="muted" style="font-size:13px; margin-top:8px;">Tidak ditemukan jadwal ronda untuk periode atau pencarian ini.</p>
         </div>`;
+    }
+    } catch (e) {
+      console.error("FilterRonda Logic Error:", e);
+      list.innerHTML = '<div class="muted">Terdapat kesalahan tipe data pada database Ronda.</div>';
     }
   }
 
