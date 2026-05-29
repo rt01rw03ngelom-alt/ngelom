@@ -9,7 +9,7 @@
   
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.0';
+    const APP_VERSION = '1.2.1';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -2825,7 +2825,7 @@
       }
     }
   }
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec" + Date.now();
+  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
@@ -2849,7 +2849,16 @@
                 }
 
                 try {
-                  const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: prop, data: args }) });
+                  // Smart URL Appender: Deteksi apakah URL sudah memiliki query string
+                  const separator = GAS_BASE_URL.indexOf('?') !== -1 ? '&' : '?';
+                  const requestUrl = `${GAS_BASE_URL}${separator}v=${Date.now()}`;
+                  
+                  const res = await fetch(requestUrl, { 
+                    method: 'POST', 
+                    mode: 'cors', 
+                    // Jangan tambahkan header Content-Type agar tetap menjadi "Simple Request"
+                    body: JSON.stringify({ action: prop, data: args }) 
+                  });
                   const text = await res.text();
                   if (!text) throw new Error("Respon kosong dari server.");
 
