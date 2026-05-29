@@ -5202,8 +5202,6 @@ function bukaJadwal() {
     banner.style.background = isDark ? '#1e293b' : 'rgba(251,191,36,0.1)';
     info.innerHTML = `<div style="display:flex; justify-content:center; padding:10px;"><div class="bbx-spinner" style="width:22px; height:22px; border-width:2px;"></div></div>`;
 
-    await loginReadyPromise;
-
     const today = new Date();
     const currentMonth = today.getMonth() + 1;
     const currentYear = today.getFullYear();
@@ -5599,51 +5597,38 @@ function bukaJadwal() {
   }
 
   function muatTahunRondaList() {
-    // 1. KALKULASI REAL-TIME SEGERA (Point 3: Set Default Sebelum Fetching)
+    // 1. AMBIL ELEMENT LOKAL & SET REAL-TIME SEGERA (Hapus logika H-3 agar sesuai real-time)
+    const filterBulan = document.getElementById('rondaFilterBulan');
+    const filterTahun = document.getElementById('rondaFilterTahun');
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1; // 1-12
-    const dayOfMonth = now.getDate();
-    const lastDay = new Date(currentYear, currentMonth, 0).getDate();
-    
-    let targetMonth = currentMonth;
-    let targetYear = currentYear;
 
-    // Logika Deteksi Akhir Bulan (Otomatis Transisi ke Bulan Depan jika H-3)
-    if (lastDay - dayOfMonth < 3) {
-      targetMonth = currentMonth + 1;
-      if (targetMonth > 12) {
-        targetMonth = 1;
-        targetYear++;
-      }
-    }
-
-    // Set Dropdown Bulan Langsung (Point 1: Bulletproof Casting)
-    if (rondaFilterBulanSelect) {
-      rondaFilterBulanSelect.value = String(targetMonth);
+    // Set Default Visual Segera
+    if (filterBulan) {
+      filterBulan.value = String(currentMonth);
     }
 
     showLoading('Menginisialisasi filter...');
-
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       let years = (res && res.status === 'success') ? res.data : [];
       
       // 2. LOGIKA INJEKSI TAHUN DINAMIS (Point 2: Dynamic Year Injection)
-      // Pastikan targetYear ada di daftar meskipun database server belum diperbarui
-      if (!years.includes(targetYear) && !years.includes(Number(targetYear))) {
-        years.push(targetYear);
+      // Pastikan currentYear ada di daftar
+      if (!years.includes(currentYear) && !years.includes(Number(currentYear))) {
+        years.push(currentYear);
       }
       
       // Render Dropdown Tahun dengan Casting Eksplisit
       rondaFilterTahunSelect.innerHTML = '';
       [...new Set(years)].sort((a, b) => b - a).forEach(function(y) {
-        rondaFilterTahunSelect.options.add(new Option(y, String(y)));
+        filterTahun.options.add(new Option(y, String(y)));
       });
 
       // 4. FINAL LOCK-IN & FETCH DATA
-      rondaFilterTahunSelect.value = String(targetYear);
-      rondaFilterBulanSelect.value = String(targetMonth);
+      filterTahun.value = String(currentYear);
+      filterBulan.value = String(currentMonth);
 
       // Ensure button visibility is updated here too
       document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
