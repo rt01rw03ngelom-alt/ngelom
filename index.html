@@ -153,11 +153,11 @@
     body.theme-warga { --primary-color: var(--warga-red); --primary-color-rgb: 239, 68, 68; --primary-dark: #b91c1c; }
     body.theme-pkk { --primary-color: var(--pkk-green); --primary-color-rgb: 16, 185, 129; --primary-dark: #059669; }
     body.theme-karangtaruna { --primary-color: var(--kt-blue); --primary-color-rgb: 56, 189, 248; --primary-dark: #0284c7; }
-    /* Perbaikan Masalah 1: Tema Profil Kuning (Amber) */
-    body.theme-profil { --primary-color: #f59e0b; --primary-color-rgb: 245, 158, 11; --primary-dark: #d97706; }
+    /* PERBAIKAN 1: Warna Tema Profil Kuning Elegan (#fbbf24) */
+    body.theme-profil { --primary-color: #fbbf24; --primary-color-rgb: 251, 191, 36; --primary-dark: #d97706; }
     body.theme-profil #profileMainCard {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%);
+      border: 1px solid rgba(251, 191, 36, 0.3);
       border-bottom: 5px solid var(--primary-color);
     }
 
@@ -1948,10 +1948,10 @@
       
       <div id="profileMainCard" class="card-item" style="padding: 30px 20px; text-align: center; border-left: none;">
         <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
-          <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-color); border: 2px solid var(--border-color); overflow: hidden;">
+          <div style="width: 100%; height: 100%; background: var(--bg-app); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-dark); border: 2px solid var(--border-color); overflow: hidden;">
             <i class="material-icons" style="font-size: 64px;">person</i>
           </div>
-          <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-surface);"> 
+          <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-dark); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-surface);"> 
             <i class="material-icons" style="font-size: 16px;">verified</i>
           </div>
         </div>
@@ -2016,8 +2016,8 @@
         <p style="font-size: 12px; color: var(--text-muted);">
           Portal RT01 RW03 - Desa Ngelom
         </p>
-        <!-- Perbaikan Masalah 2: WhatsApp Deep-link -->
-        <a href="https://wa.me/6285236356569" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--primary-dark); text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <!-- PERBAIKAN 2: WhatsApp Deep-link Dukungan Resmi -->
+        <a href="https://wa.me/6285236356569" id="profAdminContact" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #b45309; text-decoration: none; font-size: 13px; font-weight: 700; background: var(--bg-surface); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
           <i class="material-icons" style="font-size: 18px;">support_agent</i> Hubungi Dukungan
         </a>
       </div>
@@ -2834,6 +2834,7 @@
                   
                   // Masukkan hasil ke success handler (biar UI yang menangani status 'success' atau 'error' di dalamnya)
                   if (handlers.success) handlers.success(json);
+                  return json; // PENTING: Kembalikan data agar 'await' berfungsi
                 } catch (err) {
                   const errorToReport = !navigator.onLine ? new Error("Gagal terhubung ke server. Anda sedang offline.") : err;
                   if (handlers.failure) handlers.failure(errorToReport);
@@ -2841,6 +2842,7 @@
                     console.error("GAS Server Error:", errorToReport);
                     showError("Gangguan Jaringan: Pastikan internet Anda stabil.");
                   }
+                  throw errorToReport;
                 }
               };
             }
@@ -5328,110 +5330,18 @@ function bukaJadwal() {
       document.getElementById('rondaTodayInfo').innerHTML = rondaSlides[idx].html;
       container.style.opacity = '1';
       updateRondaDots(idx);
-    }, 200); // Jeda singkat untuk efek transisi
-  }
-
-  /**
-   * Memperbarui indikator dot di bawah banner ronda.
-   * @param {number} activeIdx - Indeks slide yang sedang aktif.
-   */
-  function updateRondaDots(activeIdx) {
-    const dotContainer = document.querySelector('#rondaTodayBanner .summary-info > div:last-child'); // Target div yang berisi dots
-    if (!dotContainer) return;
-
-    dotContainer.innerHTML = ''; // Bersihkan dots yang ada
-    rondaSlides.forEach((_, i) => {
-      const dot = document.createElement('div');
-      dot.className = `ronda-dot ${i === activeIdx ? 'active' : ''}`;
-      dot.style.cssText = `width:${i === activeIdx ? '12px' : '6px'}; height:4px; border-radius:2px; background:${i === activeIdx ? '#d97706' : 'rgba(217,119,6,0.2)'}; transition:0.3s; cursor:pointer;`;
-      dot.onclick = (e) => {
-        e.stopPropagation(); // Mencegah event click banner utama
-        currentRondaSlideIdx = i;
-        displayRondaSlide(i);
-      };
-      dotContainer.appendChild(dot);
-    });
-  }
-
-  /**
-   * SPESIFIKASI 4: Realisasi Fitur Refresh Sentuh (Pull-to-Refresh Widget)
-   * Menginisialisasi event listener untuk swipe pada banner ronda.
-   */
-  function initRondaInteractions() {
-    const banner = document.getElementById('rondaTodayBanner');
-    if (!banner) return;
-
-    let touchY = 0;
-    let isSwipingDown = false;
-    const PULL_THRESHOLD = 60; // Jarak tarikan untuk memicu refresh
-
-    banner.addEventListener('touchstart', (e) => {
-      touchY = e.touches[0].clientY;
-      banner.style.transition = 'none'; // Matikan transisi CSS saat mulai menyentuh
-      isSwipingDown = false;
-    }, { passive: true }); // passive: true untuk performa scroll yang lebih baik
-
-    banner.addEventListener('touchmove', (e) => {
-      const deltaY = e.touches[0].clientY - touchY;
-      // Hanya aktifkan efek pull-to-refresh jika scroll berada di paling atas (scrollY === 0)
-      // dan gerakan ke bawah (deltaY > 0)
-      if (window.scrollY === 0 && deltaY > 0) {
-        isSwipingDown = true;
-        // Berikan efek pegas (friction) saat ditarik ke bawah
-        const translateY = Math.min(deltaY / 2.5, PULL_THRESHOLD * 1.5); // Batasi tarikan visual
-        banner.style.transform = `translateY(${translateY}px)`;
-      } else {
-        isSwipingDown = false;
-      }
-    }, { passive: true });
-
-    banner.addEventListener('touchend', (e) => {
-      const deltaY = e.changedTouches[0].clientY - touchY;
-      banner.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; // Aktifkan transisi kembali
-      banner.style.transform = 'translateY(0)'; // Kembalikan posisi banner
-      
-      // Trigger refresh jika tarikan ke bawah melebihi ambang batas
-      if (isSwipingDown && deltaY > PULL_THRESHOLD) {
-        muatRondaHariIni(); // Panggil fungsi refresh data
-        const title = document.getElementById('rondaBannerTitle');
-        if (title) title.innerText = 'Memperbarui data...'; // Berikan feedback loading
-      }
-      isSwipingDown = false;
-    }, { passive: true });
-
-    // Support Click/Tap untuk navigasi slide (jika tidak ada swipe)
-    banner.onclick = () => {
-      // Hanya ganti slide jika tidak ada gerakan swipe yang signifikan
-      if (!isSwipingDown) {
-        currentRondaSlideIdx = (currentRondaSlideIdx + 1) % rondaSlides.length;
-        displayRondaSlide(currentRondaSlideIdx);
-      }
-    };
-  }
-
-  /**
-   * PERBAIKAN C: Render & State Management
-   */
-  function displayRondaSlide(idx) {
-    const container = document.getElementById('rondaBannerContent');
-    if (!rondaSlides[idx]) return;
-
-    container.style.opacity = '0';
-    setTimeout(() => {
-      document.getElementById('rondaBannerTitle').innerText = rondaSlides[idx].title;
-      document.getElementById('rondaTodayInfo').innerHTML = rondaSlides[idx].html;
-      container.style.opacity = '1';
-      updateRondaDots(idx);
     }, 200);
   }
 
   function updateRondaDots(activeIdx) {
-    const dotContainer = document.querySelector('.ronda-dot').parentElement;
-    dotContainer.innerHTML = ''; // Re-render dots
+    const dotContainer = document.querySelector('#rondaTodayBanner .ronda-dot')?.parentElement;
+    if (!dotContainer) return;
+    
+    dotContainer.innerHTML = '';
     rondaSlides.forEach((_, i) => {
       const dot = document.createElement('div');
       dot.className = `ronda-dot ${i === activeIdx ? 'active' : ''}`;
-      dot.style.cssText = `width:${i === activeIdx ? '12px' : '6px'}; height:4px; border-radius:2px; background:${i === activeIdx ? '#d97706' : 'rgba(217,119,6,0.2)'}; transition:0.3s; cursor:pointer;`;
+      dot.style.cssText = `width:${i === activeIdx ? '12px' : '6px'}; height:4px; border-radius:2px; background:${i === activeIdx ? '#d97706' : 'rgba(0,0,0,0.1)'}; transition:0.3s; cursor:pointer;`;
       dot.onclick = (e) => {
         e.stopPropagation();
         currentRondaSlideIdx = i;
@@ -5440,11 +5350,7 @@ function bukaJadwal() {
       dotContainer.appendChild(dot);
     });
   }
-
-
-  /**
-   * SPESIFIKASI 4: Pull-to-Refresh khusus Widget Ronda
-   */
+  
   function initRondaInteractions() {
     const banner = document.getElementById('rondaTodayBanner');
     if (!banner) return;
