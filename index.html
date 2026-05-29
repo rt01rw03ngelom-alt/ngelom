@@ -5541,12 +5541,13 @@ function bukaJadwal() {
         }
 
         // Tampilan Jadwal Ronda Lebih Bagus (Chips)
-        var petugasList = item.petugas ? item.petugas.split(/\r?\n/).filter(p => p.trim() !== "").map(p => 
-          `<span class="status-badge" style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); margin:2px; display:inline-flex; align-items:center; gap:4px; padding:4px 10px;">
+        var petugasList = item.petugas ? '<div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">' + 
+          item.petugas.split(/\r?\n/).filter(p => p.trim() !== "").map(p => 
+          `<span class="status-badge" style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; white-space: nowrap; gap: 4px;">
             <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${p}
-          </span>`).join('') : '-';
+          </span>`).join('') + '</div>' : '-';
         var aksi = hasPermission('rt_ronda_crud') ? 
-          `<div style="display:flex; gap:5px;">
+          `<div style="display: flex; gap: 4px; flex-wrap: nowrap;">
             <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
               <i class="material-icons" style="font-size:14px;">edit</i>
             </button>
@@ -5556,13 +5557,13 @@ function bukaJadwal() {
           </div>` : '-';
         
         html += `<tr ${rowStyle}>
-          <td style="white-space:nowrap;">${item.tanggal}</td>
-          <td><strong>${item.kelompok}</strong></td>
-          <td style="font-size:12px;">${petugasList}</td>
-          <td>${aksi}</td>
+          <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
+          <td style="white-space: nowrap; width: 1%;"><strong>${item.kelompok}</strong></td>
+          <td>${petugasList}</td>
+          <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
       });
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       list.innerHTML = html;
     } else {
       list.innerHTML = `
@@ -5598,52 +5599,52 @@ function bukaJadwal() {
   }
 
   function muatTahunRondaList() {
+    // 1. KALKULASI REAL-TIME SEGERA (Point 3: Set Default Sebelum Fetching)
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    const dayOfMonth = now.getDate();
+    const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+    
+    let targetMonth = currentMonth;
+    let targetYear = currentYear;
+
+    // Logika Deteksi Akhir Bulan (Otomatis Transisi ke Bulan Depan jika H-3)
+    if (lastDay - dayOfMonth < 3) {
+      targetMonth = currentMonth + 1;
+      if (targetMonth > 12) {
+        targetMonth = 1;
+        targetYear++;
+      }
+    }
+
+    // Set Dropdown Bulan Langsung (Point 1: Bulletproof Casting)
+    if (rondaFilterBulanSelect) {
+      rondaFilterBulanSelect.value = String(targetMonth);
+    }
+
+    showLoading('Menginisialisasi filter...');
+
     google.script.run.withSuccessHandler(function(res) {
-      // Logika Deteksi Akhir Bulan (Otomatis Transisi ke Bulan Depan)
-      var now = new Date();
-      var currentYear = now.getFullYear();
-      var currentMonth = now.getMonth() + 1; // 1-12
-      var dayOfMonth = now.getDate();
-      var lastDay = new Date(currentYear, currentMonth, 0).getDate();
+      Swal.close();
+      let years = (res && res.status === 'success') ? res.data : [];
       
-      var targetMonth = currentMonth;
-      var targetYear = currentYear;
-
-      // Jika sudah masuk 3 hari terakhir bulan ini (Contoh: tgl 29, 30, 31)
-      if (lastDay - dayOfMonth < 3) {
-        targetMonth = currentMonth + 1;
-        if (targetMonth > 12) {
-          targetMonth = 1;
-          targetYear++;
-        }
+      // 2. LOGIKA INJEKSI TAHUN DINAMIS (Point 2: Dynamic Year Injection)
+      // Pastikan targetYear ada di daftar meskipun database server belum diperbarui
+      if (!years.includes(targetYear) && !years.includes(Number(targetYear))) {
+        years.push(targetYear);
       }
+      
+      // Render Dropdown Tahun dengan Casting Eksplisit
+      rondaFilterTahunSelect.innerHTML = '';
+      [...new Set(years)].sort((a, b) => b - a).forEach(function(y) {
+        rondaFilterTahunSelect.options.add(new Option(y, String(y)));
+      });
 
-      if (res.status === 'success' && res.data.length > 0) {
-        rondaFilterTahunSelect.innerHTML = '';
-        var years = res.data;
-        // Tambahkan targetYear ke pilihan jika belum ada di database (misal saat transisi tahun baru)
-        if (years.indexOf(targetYear) === -1) {
-          years.push(targetYear);
-          years.sort((a,b) => b-a);
-        }
-        years.forEach(function(tahun) {
-          var option = document.createElement('option');
-          option.value = tahun;
-          option.text = tahun;
-          rondaFilterTahunSelect.appendChild(option);
-        });
-        rondaFilterTahunSelect.value = targetYear;
-      } else {
-        rondaFilterTahunSelect.innerHTML = '';
-        for (var y = currentYear - 2; y <= currentYear + 2; y++) {
-          var option = document.createElement('option');
-          option.value = y;
-          option.text = y;
-          rondaFilterTahunSelect.appendChild(option);
-        }
-        rondaFilterTahunSelect.value = targetYear;
-      }
-      rondaFilterBulanSelect.value = targetMonth;
+      // 4. FINAL LOCK-IN & FETCH DATA
+      rondaFilterTahunSelect.value = String(targetYear);
+      rondaFilterBulanSelect.value = String(targetMonth);
+
       // Ensure button visibility is updated here too
       document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
       muatDataRonda();
