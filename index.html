@@ -541,10 +541,10 @@
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left;
-      padding: clamp(20px, 6vw, 30px); /* Peningkatan padding dalam agar lebih lega */
+      padding: clamp(16px, 5vw, 20px) clamp(15px, 5vw, 25px); 
       border-radius: 24px;
-      /* FIX LAYOUT: Margin-top dinaikkan ke 50px untuk memberikan ruang di bawah lengkungan header */
-      margin: 50px auto 25px; 
+      /* 10XTHINK FIX: Margin negatif untuk overlap header agar tidak ada gap abu-abu */
+      margin: -20px auto 25px; 
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
@@ -2043,6 +2043,20 @@
           </div>
         <span style="font-weight: 600; color: #f59e0b;">Keluar dari Aplikasi</span>
         </div>
+
+        <!-- SECTION PENGATURAN CETAK (ADMIN/PENGURUS ONLY) -->
+        <div id="sectionPengaturanCetak" style="display: none; border-top: 5px solid var(--primary-color); background: rgba(var(--primary-color-rgb), 0.05);">
+          <div onclick="bukaModalPengaturanCetak()" style="display: flex; align-items: center; gap: 15px; padding: 16px 20px; cursor: pointer;">
+            <div style="background: var(--primary-color); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="material-icons" style="color: white; font-size: 20px;">print</i>
+            </div>
+            <div style="flex: 1;">
+              <span style="font-weight: 700; color: var(--text-main); display: block;">Pengaturan Kop & TTD</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Kelola nama bendahara dan logo laporan</span>
+            </div>
+            <i class="material-icons" style="color: var(--text-muted); font-size: 20px;">settings</i>
+          </div>
+        </div>
       </div>
 
       <div style="margin-top: 30px; text-align: center;">
@@ -2819,7 +2833,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -2884,65 +2898,61 @@
               if (prop === 'withSuccessHandler') return (h) => createRunner({ ...handlers, success: h });
               if (prop === 'withFailureHandler') return (h) => createRunner({ ...handlers, failure: h });
 
-            return async (...args) => {
-              // 10XTHINK: Identifikasi Aksi Penulisan (Data Berat)
-              // Ditambahkan: update, hapus, edit, save agar mencakup semua menu
-              const isWriteAction = /simpan|proses|kirim|upload|tambah|update|hapus|edit|save/i.test(prop);
+              return async (...args) => {
+                // 10XTHINK: Identifikasi Aksi Penulisan (Data Berat)
+                const isWriteAction = /simpan|proses|kirim|upload|tambah|update|hapus|edit|save/i.test(prop);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
 
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
+                try {
+                const urlBase = GAS_WEB_APP_URL;
+                  const separator = urlBase.includes('?') ? '&' : '?';
+                  const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
+                  
+                  const res = await fetch(requestUrl, { 
+                    method: 'POST', 
+                    mode: 'cors', 
+                    body: JSON.stringify({ action: prop, data: args }),
+                    signal: controller.signal
+                  });
+                  
+                  clearTimeout(timeoutId);
 
-              try {
-                const urlBase = GAS_BASE_URL;
-                const separator = urlBase.includes('?') ? '&' : '?';
-                const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
-                
-                const res = await fetch(requestUrl, { 
-                  method: 'POST', 
-                  mode: 'cors', 
-                  body: JSON.stringify({ action: prop, data: args }),
-                  signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-
-                // TOLERANSI 10XTHINK: Jika HTTP OK (200-299) tapi body rusak/kosong pada Write Action
-                if (res.ok) {
-                  const text = await res.text();
-                  try {
-                    const json = JSON.parse(text);
-                    if (handlers.success) handlers.success(json);
-                    return json;
-                  } catch (parseErr) {
-                    if (isWriteAction) {
-                      console.warn("Smart Sync: Respons JSON tidak lengkap tapi status HTTP sukses. Mengasumsikan data tersimpan.");
-                      const fallbackSuccess = { status: 'success', pesan: 'Laporan Berhasil Terkirim!', message: 'Data berhasil disimpan' };
-                      if (handlers.success) handlers.success(fallbackSuccess);
-                      return fallbackSuccess;
+                  if (res.ok) {
+                    const text = await res.text();
+                    try {
+                      const json = JSON.parse(text);
+                      if (handlers.success) handlers.success(json);
+                      return json;
+                    } catch (parseErr) {
+                      if (isWriteAction) {
+                        console.warn("Smart Sync: Respons JSON tidak lengkap tapi status HTTP sukses.");
+                        const fallbackSuccess = { status: 'success', pesan: 'Laporan Berhasil Terkirim!', message: 'Data berhasil disimpan' };
+                        if (handlers.success) handlers.success(fallbackSuccess);
+                        return fallbackSuccess;
+                      }
+                      throw new Error("JSON_PARSE_ERROR");
                     }
-                    throw new Error("JSON_PARSE_ERROR");
                   }
-                }
-                throw new Error(`Server merespons status: ${res.status}`);
+                  throw new Error(`Server merespons status: ${res.status}`);
 
-              } catch (err) {
-                clearTimeout(timeoutId);
-                // 10XTHINK BYPASS: Jika ini aksi simpan/hapus, asumsikan sukses meski koneksi goyang di detik terakhir
-                if (isWriteAction) {
-                  console.warn("Write Action Encountered Error but Bypassing for UX:", err);
-                  const bypassSuccess = { status: 'success', pesan: 'Data sedang diproses server. Silakan cek histori beberapa saat lagi.', message: 'Data berhasil disimpan' };
-                  if (handlers.success) handlers.success(bypassSuccess);
-                  return bypassSuccess;
+                } catch (err) {
+                  clearTimeout(timeoutId);
+                  if (isWriteAction) {
+                    console.warn("Write Action Error Bypassed for UX:", err);
+                    const bypassSuccess = { status: 'success', pesan: 'Data sedang diproses server.', message: 'Data berhasil disimpan' };
+                    if (handlers.success) handlers.success(bypassSuccess);
+                    return bypassSuccess;
+                  }
+                  
+                  if (handlers.failure) handlers.failure(err);
+                  else {
+                    console.error("Koneksi API Gagal:", err);
+                    showError("Gagal terhubung ke server. Periksa koneksi.");
+                  }
+                  throw err;
                 }
-                
-                if (handlers.failure) handlers.failure(err);
-                else {
-                  console.error("Koneksi API Gagal:", err);
-                  showError("Gagal terhubung ke server. Periksa koneksi atau coba login kembali.");
-                }
-                throw err;
-              }
-            };
+              };
             }
           });
         };
@@ -3564,6 +3574,7 @@
   var adminWhatsappNumber = DEFAULT_ADMIN_WA;
   var kasChart = null;
   var iuranData = [];
+  var globalPrintSettings = {}; // Variabel isolasi untuk pengaturan cetak
   var daftarKategori = [];
   var allKasData = [];
 
@@ -3702,8 +3713,7 @@
       showConfirmButton: false,
       showCloseButton: true,
       padding: '0',
-      width: 'min(90%, 350px)',
-          width: 'min(90%, 500px)',
+      width: 'min(95%, 450px)',
       background: 'transparent',
       html: `
         <div style="background:var(--bg-surface); border-radius:28px; overflow:hidden; box-shadow:var(--shadow-lg); border:1px solid var(--border-color);">
@@ -3728,6 +3738,83 @@
         popup: 'professional-modal-radius'
       }
     });
+  }
+
+  /**
+   * 10XTHINK: CRUD Pengaturan Cetak UI
+   */
+  function bukaModalPengaturanCetak() {
+    showLoading('Memuat pengaturan...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        globalPrintSettings = res.data;
+        const rt = globalPrintSettings.rt || { nama_ttd: 'M. Irsyad', url_logo_kop: '' };
+        const kt = globalPrintSettings.kartar || { nama_ttd: 'Ketua Kartar', url_logo_kop: '' };
+
+        Swal.fire({
+          title: 'Pengaturan Laporan',
+          background: 'var(--bg-surface)',
+          html: `
+            <div style="text-align:left; font-size:14px;">
+              <label class="muted">URL Logo Kop Surat (Drive/Web)</label>
+              <input id="setLogoKop" class="swal2-input" style="width:100%; margin:8px 0;" value="${rt.url_logo_kop}" placeholder="https://...">
+              
+              <div style="margin-top:15px; font-weight:bold; border-bottom:1px solid var(--border-color); padding-bottom:5px;">Bendahara RT (Kas Warga)</div>
+              <input id="setNamaTtdRT" class="swal2-input" style="width:100%; margin:8px 0;" value="${rt.nama_ttd}" placeholder="Nama Bendahara RT">
+              
+              <div style="margin-top:15px; font-weight:bold; border-bottom:1px solid var(--border-color); padding-bottom:5px;">Bendahara Kartar</div>
+              <input id="setNamaTtdKT" class="swal2-input" style="width:100%; margin:8px 0;" value="${kt.nama_ttd}" placeholder="Nama Bendahara Kartar">
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Simpan Semua',
+          confirmButtonColor: 'var(--primary-color)',
+          preConfirm: () => {
+            return {
+              logo: document.getElementById('setLogoKop').value,
+              rt_name: document.getElementById('setNamaTtdRT').value,
+              kt_name: document.getElementById('setNamaTtdKT').value
+            }
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            simpanPengaturanCetak(result.value);
+          }
+        });
+      }
+    }).getSettingCetak();
+  }
+
+  function simpanPengaturanCetak(vals) {
+    showLoading('Menyimpan...');
+    // Jalankan update parallel untuk RT dan Kartar
+    Promise.all([
+      google.script.run.updateSettingCetak('rt', vals.rt_name, vals.logo),
+      google.script.run.updateSettingCetak('kartar', vals.kt_name, vals.logo)
+    ]).then(() => {
+      showSuccess('Pengaturan berhasil diperbarui!');
+    }).catch(err => showError('Gagal menyimpan: ' + err));
+  }
+
+  /**
+   * TEMPLATE KOP SURAT STANDAR (REUSABLE)
+   */
+  function getHtmlKopSurat(logoUrl) {
+    // 10XTHINK: Strict Isolation - logoKopSurat tidak akan menimpa header aplikasi
+    const logoKopSurat = logoUrl ? getDirectUrl(logoUrl) : '';
+    const logoHtml = logoKopSurat ? `<img src="${logoKopSurat}" style="height:90px; width:auto; margin-right:20px; object-fit:contain;">` : '';
+    
+    return `
+      <div style="display:flex; align-items:center; justify-content:center; border-bottom:3px double #000; padding-bottom:12px; margin-bottom:25px; font-family: 'Times New Roman', serif;">
+        ${logoHtml}
+        <div style="text-align:center; flex:1; color:#000;">
+          <div style="font-size:20px; font-weight:bold; line-height:1.2; text-transform:uppercase;">RUKUN TETANGGA I RUKUN WARGA III</div>
+          <div style="font-size:17px; font-weight:bold; line-height:1.2; text-transform:uppercase;">KELURAHAN DESA NGELOM KECAMATAN TAMAN</div>
+          <div style="font-size:17px; font-weight:bold; line-height:1.2; text-transform:uppercase;">KABUPATEN SIDOARJO</div>
+          <div style="font-size:12px; text-decoration:underline; margin-top:5px;">Alamat:Desa Ngelom RT.01 RW.03 Kelurahan ngelom,kecamatan taman, kabupaten Sidoarjo</div>
+        </div>
+      </div>`;
   }
 
   function showSuccess(msg) {
@@ -4109,6 +4196,30 @@
         }
       }
     }).getSettings();
+  }
+
+  // 10XTHINK: DEFAULT LOGO & STRICT ISOLATION
+  const DEFAULT_LOGO_KOP = 'https://drive.google.com/uc?export=view&id=1ymswVKV1HRYICMHrBPWYDioYoaLoKa4u';
+
+  /**
+   * TEMPLATE KOP SURAT PRESISI (HTML PRINT LAYOUT)
+   * 10XTHINK: Strictly Isolated Logo Kop
+   */
+  function getHtmlKopSurat(logoUrl) {
+    // Menggunakan variabel terisolasi agar tidak mengganggu header PWA
+    const logoKopSurat = logoUrl ? getDirectUrl(logoUrl) : DEFAULT_LOGO_KOP;
+    const logoHtml = `<img src="${logoKopSurat}" style="width:75px; height:auto; margin-right:20px; object-fit:contain;">`;
+    
+    return `
+      <div style="display:flex; align-items:center; border-bottom:3px double #000; padding-bottom:12px; margin-bottom:25px; font-family: 'Times New Roman', serif; color:#000;">
+        ${logoHtml}
+        <div class="kop-surat" style="text-align: center; flex-grow: 1;">
+          <strong style="font-size: 18px;">RUKUN TETANGGA I RUKUN WARGA III</strong><br>
+          <strong style="font-size: 16px;">KELURAHAN DESA NGELOM KECAMATAN TAMAN</strong><br>
+          <strong style="font-size: 16px;">KABUPATEN SIDOARJO</strong><br>
+          <span style="font-size: 12px; text-decoration: underline;">Alamat:Desa Ngelom RT.01 RW.03 Kelurahan ngelom,kecamatan taman, kabupaten Sidoarjo</span>
+        </div>
+      </div>`;
   }
 
   function doLogin() {
@@ -4512,6 +4623,12 @@
     document.getElementById('profEmail').innerText = currentUser.email || '-';
     document.getElementById('profRole').innerText = currentUser.role ? currentUser.role.toUpperCase() : '-';
     
+    // Tampilkan menu cetak hanya untuk admin/pengurus
+    const isManagement = currentUser.role === 'admin' || currentUser.role.includes('pengurus');
+    if (document.getElementById('sectionPengaturanCetak')) {
+      document.getElementById('sectionPengaturanCetak').style.display = isManagement ? 'block' : 'none';
+    }
+
     // Tampilkan menu khusus admin jika perlu
     if (currentUser.role === 'admin') {
       document.getElementById('profAdminOnly').style.display = 'block';
@@ -4533,6 +4650,48 @@
     // Force reset ke nomor dukungan resmi jika admin_whatsapp kosong
     const contactEl = document.getElementById('profAdminContact');
     if (contactEl) contactEl.href = "https://wa.me/6285236356569";
+  }
+
+  /**
+   * UI CRUD PENGATURAN TANDA TANGAN & LOGO
+   */
+  function bukaModalPengaturanCetak() {
+    showLoading('Memuat pengaturan...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        const rt = res.data.rt || { nama_ttd: 'M. Irsyad', url_logo_kop: '' };
+        const kt = res.data.kartar || { nama_ttd: 'Ketua Kartar', url_logo_kop: '' };
+
+        Swal.fire({
+          title: 'Pengaturan Kop & TTD',
+          background: 'var(--bg-surface)',
+          html: `
+            <div style="text-align:left; font-size:14px;">
+              <label class="muted">URL Logo Kop Surat (Direct Link)</label>
+              <input id="setLogoKop" class="swal2-input" style="width:100%; margin:8px 0; font-size:13px;" value="${rt.url_logo_kop || DEFAULT_LOGO_KOP}" placeholder="https://...">
+              <div style="margin-top:15px; font-weight:bold; color:var(--primary-red); border-bottom:1px solid var(--border-color); padding-bottom:5px;">Nama Bendahara Kas RT</div>
+              <input id="setNamaTtdRT" class="swal2-input" style="width:100%; margin:8px 0;" value="${rt.nama_ttd}" placeholder="Nama Terang">
+              <div style="margin-top:15px; font-weight:bold; color:var(--kt-blue); border-bottom:1px solid var(--border-color); padding-bottom:5px;">Nama Bendahara Karang Taruna</div>
+              <input id="setNamaTtdKT" class="swal2-input" style="width:100%; margin:8px 0;" value="${kt.nama_ttd}" placeholder="Nama Terang">
+            </div>`,
+          showCancelButton: true,
+          confirmButtonText: 'Simpan Perubahan',
+          confirmButtonColor: 'var(--primary-color)',
+          preConfirm: () => {
+            return { logo: document.getElementById('setLogoKop').value, rt_n: document.getElementById('setNamaTtdRT').value, kt_n: document.getElementById('setNamaTtdKT').value };
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            showLoading('Menyimpan...');
+            Promise.all([
+              google.script.run.updateSettingCetak('rt', result.value.rt_n, result.value.logo),
+              google.script.run.updateSettingCetak('kartar', result.value.kt_n, result.value.logo)
+            ]).then(() => showSuccess('Pengaturan berhasil diperbarui!'));
+          }
+        });
+      }
+    }).getSettingCetak();
   }
 
   window.addEventListener('load', function() {
@@ -4890,7 +5049,9 @@
     var tbodyG = document.getElementById('ktTbodyPengeluaran');
     tbodyP.innerHTML = ''; 
     tbodyG.innerHTML = '';
-    var canEdit = hasPermission('kt_kas_crud');
+    // Gunakan pengecekan role yang lebih stabil untuk KT
+    var role = (currentUser.role || "").toLowerCase();
+    var canEdit = role === 'admin' || role.includes('karang taruna');
     
     data.forEach(function(item) {
       var isOut = item.jenis === 'Pengeluaran';
@@ -4971,6 +5132,15 @@
   function ktCetakLaporanKas() {
     var tahun = document.getElementById('ktTahunKasSelect').value;
     var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Panggil data cetak Kartar
+    showLoading('Menyiapkan laporan...');
+    google.script.run.withSuccessHandler(function(resSettings) {
+      Swal.close();
+      const cfg = (resSettings.status === 'success' && resSettings.data.kartar) 
+                 ? resSettings.data.kartar 
+                 : { nama_ttd: '( .................... )', url_logo_kop: '' };
+
     
     var dataBulanan = Array.from({ length: 12 }, (_, i) => ({
       namaBulan: bulanIndo[i],
@@ -5011,10 +5181,11 @@
         th { background: #f2f2f2; }
         .header { text-align: center; margin-bottom: 30px; }
         .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
-      </style></head><body>
+      </style></head>
+      <body>
+      ${getHtmlKopSurat(cfg.url_logo_kop)}
       <div class="header">
-        <h2>LAPORAN KEUANGAN KARANG TARUNA</h2>
-        <p>RT 01 RW 03 - Desa Ngelom</p>
+        <h2 style="margin:0;">LAPORAN KEUANGAN KARANG TARUNA</h2>
         <p>Tahun Anggaran: ${tahun}</p>
       </div>
       <table>
@@ -5040,11 +5211,12 @@
         <p>Ngelom, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
         <p>Bendahara Karang Taruna</p>
         <br><br><br>
-        <p><strong>( .................... )</strong></p>
+        <p><strong>${cfg.nama_ttd.includes('(') ? cfg.nama_ttd : '( ' + cfg.nama_ttd + ' )'}</strong></p>
       </div>
       </body></html>`);
     printWin.document.close();
     printWin.print();
+    }).getSettingCetak();
   }
 
   function ktMuatGrafikKas() {
@@ -5139,6 +5311,7 @@
           showSuccess(res.pesan || 'Tersimpan!'); 
           tutupForm('ktFormCrudGaleri','ktWrapListGaleri'); 
           ktMuatDataGaleri(); 
+          ktMuatDataGaleri();
         } else {
           showError(res ? res.pesan : 'Gagal menyimpan data');
         }
@@ -5500,11 +5673,11 @@ function bukaJadwal() {
     pickedRondaWeek2 = data.find(it => {
       const d = parse(it.tanggal);
       return d >= monNextWeek && d <= sunNextWeek;
-    }) || { 
-      tanggal: Utilities.formatDate(monNextWeek, "GMT+7", "yyyy-MM-dd"), 
-      kelompok: 'LIBUR', 
+    }) || {
+      tanggal: monNextWeek.getFullYear() + '-' + String(monNextWeek.getMonth() + 1).padStart(2, '0') + '-' + String(monNextWeek.getDate()).padStart(2, '0'),
+      kelompok: 'LIBUR',
       petugas: 'Ditiadakan',
-      isLibur: true
+      isLibur: true,
     };
 
     // UI RENDERING ENGINE
@@ -6684,9 +6857,7 @@ function bukaJadwal() {
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
         startSimulatedUpload();
         kirimLaporan(obj, btn);
-      }).withFailureHandler(function(err) {
-        clearInterval(progressInterval); Swal.close(); showError('Gagal kompresi gambar: ' + err.message);
-      });
+      }, 800);
     } else {
       updateProgress(50, 'Mengirim data...');
       kirimLaporan(obj, btn);
@@ -7146,6 +7317,15 @@ function bukaJadwal() {
   function cetakLaporanKas() {
     var tahun = document.getElementById('tahunKasSelect').value;
     var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Panggil data cetak RT
+    showLoading('Menyiapkan laporan...');
+    google.script.run.withSuccessHandler(function(resSettings) {
+      Swal.close();
+      const cfg = (resSettings.status === 'success' && resSettings.data.rt) 
+                 ? resSettings.data.rt 
+                 : { nama_ttd: 'M. Irsyad', url_logo_kop: '' };
+
     
     // Agregasi Data
     var dataBulanan = Array.from({ length: 12 }, (_, i) => ({
@@ -7197,9 +7377,11 @@ function bukaJadwal() {
         th { background: #eee; }
         .header { text-align: center; margin-bottom: 30px; }
         .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
-      </style></head><body>
+      </style></head>
+      <body>
+      ${getHtmlKopSurat(cfg.url_logo_kop)}
       <div class="header">
-        <h2>LAPORAN KAS WARGA RT 01 RW 03</h2>
+        <h2 style="margin:0;">LAPORAN KAS WARGA RT 01 RW 03</h2>
         <p>Tahun Anggaran: ${tahun}</p>
       </div>
       <table>
@@ -7235,11 +7417,12 @@ function bukaJadwal() {
         <p>Ngelom, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
         <p>Bendahara RT 01 RW 03</p>
         <br><br><br>
-        <p><strong>( M. Irsyad )</strong></p>
+        <p><strong>( ${cfg.nama_ttd || '....................'} )</strong></p>
       </div>
       </body></html>`);
     printWin.document.close();
     printWin.print();
+    }).getSettingCetak();
   }
 
   function renderGrafikKas(tahun) {
@@ -8189,6 +8372,7 @@ function bukaJadwal() {
       // No progress bar for video link as no file upload
       google.script.run.withSuccessHandler(function(res) {
         Swal.close(); showSuccess('Tersimpan!'); tutupForm('formCrudGaleri', 'wrapListGaleri'); muatDataGaleri();
+        Swal.close(); showSuccess('Tersimpan!'); tutupForm('formCrudGaleri', 'wrapListGaleri'); muatDataGaleri(); 
       }).simpanGaleriKegiatan(id, caption, null, '', '', vLink, tgl);
       return;
     }
