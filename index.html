@@ -543,21 +543,22 @@
     }
 
 
-    .welcome-banner {
+.welcome-banner {
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left; 
       padding: 30px 25px 24px; /* Ditambah padding top agar konten turun sedikit */
       border-radius: 28px; 
-      /* Kurangi overlap header: banner tidak boleh menimpa header */
-      margin: -8px auto 32px; 
-
+      /* Perapihan overlap header: turunkan sedikit lebih dekat, tapi jangan menimpa */
+      margin: -12px auto 32px; 
+      
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
       transition: background-color 0.3s ease;
       z-index: 10;
     }
+
 
 
     .menu-container {
