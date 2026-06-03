@@ -345,7 +345,7 @@
     .header {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 30px 20px 50px; /* Ditambah 10px agar teks 'Portal RT' memiliki 'clearance' yang cukup */
+      padding: 32px 20px 56px; /* Peningkatan padding bawah untuk transisi overlap yang lebih estetis */
       border-radius: 0;
       position: relative;
       overflow: visible;
@@ -541,10 +541,10 @@
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left;
-      padding: clamp(22px, 6vw, 28px) clamp(15px, 5vw, 25px); /* Padding internal atas ditingkatkan untuk estetika */
-      border-radius: 24px;
-      /* 10XTHINK RE-CALIBRATION: Margin negatif dikurangi agar tidak 'amblas' ke teks header */
-      margin: -24px auto 25px; 
+      padding: clamp(18px, 5vw, 24px) clamp(15px, 5vw, 25px); /* Jarak internal ideal 18px-24px untuk estetika premium */
+      border-radius: 28px; /* Sudut lebih bulat untuk tampilan kartu modern */
+      /* Efek overlap yang lebih dalam (-24px) untuk hierarki visual yang lebih kuat */
+      margin: -24px auto 32px; 
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
@@ -5626,7 +5626,7 @@ function bukaJadwal() {
       if (res2 && res2.status === 'success') combinedData = combinedData.concat(res2.data);
 
       // SORTING ASCENDING: Berdasarkan tanggal asli data Sheets
-      combinedData.sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+      combinedData.sort((a, b) => (a.tanggal || "").localeCompare(b.tanggal || ""));
 
       prosesDataJadwalRonda(combinedData);
       if (isManualRefresh) showSuccess('Jadwal Sinkron!');
