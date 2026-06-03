@@ -351,7 +351,7 @@
     .header {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 32px 20px 85px; /* Ditambah agar memberi ruang lebih untuk konten header sebelum card menumpuk */
+      padding: 32px 20px 60px; /* Kalibrasi: Menghilangkan kesan anjlok dengan padding bawah yang ringkas */
       border-radius: 0;
       position: relative;
       overflow: visible;
@@ -549,8 +549,8 @@
       text-align: left; 
       padding: 25px 25px 24px; /* Inner padding agar konten tetap memiliki ruang napas yang lega */
       border-radius: 28px; 
-      /* Elevation Fix: Meningkatkan margin negatif dari -28px ke -55px untuk menutup gap merah yang berlebihan */
-      margin: -55px auto 32px;
+      /* Sinkronisasi margin negatif dengan padding baru header agar transisi terlihat menyatu */
+      margin: -40px auto 32px; /* Elevation Fix: Mengangkat banner secara presisi menutupi area header */
       
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
