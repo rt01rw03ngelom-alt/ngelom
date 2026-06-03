@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.4';
+    const APP_VERSION = '1.2.1';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -112,11 +112,17 @@
     }
 
     /* Pointer Cursor Fix: Semua elemen interaktif harus memiliki pointer */
-    button, .btn, .btn-primary, .btn-secondary, .btn-small, .btn-action-subtle, 
-    .nav-item, .nav-menu-item, .menu-item, .header-toggle-btn, .fab, [onclick],
-    .action-item, .action-button, input[type="button"], input[type="submit"],
-    .card-item[onclick], .summary-card[onclick], [onclick] {
+    button, .btn, .btn-primary, .btn-secondary, .btn-small, 
+    .nav-item, .nav-item span, .nav-item i,
+    .nav-menu-item, .menu-item, .header-toggle-btn, .fab, 
+    .action-item, .action-button, 
+    input[type="button"], input[type="submit"], input[type="checkbox"],
+    .card-item[onclick], .summary-card[onclick], 
+    .btn-action-subtle, [onclick] {
       cursor: pointer !important;
+      user-select: none; /* Mencegah munculnya kursor teks (I-beam) */
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* Pertahankan indikator warna pada card-item */
@@ -540,11 +546,11 @@
     .welcome-banner {
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
-      text-align: left;
-      padding: 24px 25px; /* Pastikan padding internal konsisten, terutama padding-top */
-      border-radius: 28px; /* Sudut lebih bulat untuk tampilan kartu modern */
-      /* Efek overlap yang lebih dalam (-24px) untuk hierarki visual yang lebih kuat */
-      margin: -35px auto 32px; /* Disesuaikan agar tetap overlap namun tidak menabrak teks di atasnya */
+      text-align: left; 
+      padding: 30px 25px 24px; /* Ditambah padding top agar konten turun sedikit */
+      border-radius: 28px; 
+      /* 10XTHINK: Mengurangi overlap dari -35px ke -25px agar tidak terlalu menempel ke atas */
+      margin: -25px auto 32px; 
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
@@ -3366,9 +3372,13 @@
     var type = document.getElementById(typeId).value;
     var fileCont = document.getElementById(fileContId);
     var videoCont = document.getElementById(videoContId);
-    
+
     if (type === 'video') {
-      if (fileCont) fileCont.style.display = 'none';
+      if (fileCont) {
+        fileCont.style.display = 'none';
+        // Reset kursor manual jika browser macet
+        fileCont.style.cursor = 'default';
+      }
       if (videoCont) videoCont.style.display = 'block';
     } else {
       if (fileCont) fileCont.style.display = 'block';
@@ -3380,11 +3390,11 @@
   function startNotifikasiPolling() {
     try {
       if (notifPollingHandle) return;
-      var savedTs = localStorage.getItem('lastNotifTs');
 
-      // hit sekali dulu agar cepat
-      muatNotifikasiSekali(savedTs);
+      // Trigger pertama kali secara instan saat login/load
+      muatNotifikasiSekali(localStorage.getItem('lastNotifTs'));
 
+      // Jalankan interval polling reguler
       notifPollingHandle = setInterval(function() {
         muatNotifikasiSekali(localStorage.getItem('lastNotifTs'));
       }, NOTIF_POLL_INTERVAL_MS);
@@ -3406,6 +3416,18 @@
     if (!currentUser || !currentUser.role) return;
     google.script.run
       .withSuccessHandler(function(res) {
+        // 10XTHINK: Sync Permissions jika role di server berubah atau diperbarui
+        if (res && res.status === 'success' && res.permissions) {
+           // Cek apakah ada perubahan permission untuk trigger update UI instan
+           const oldPerms = JSON.stringify(currentUser.permissions || []);
+           const newPerms = JSON.stringify(res.permissions);
+           if (oldPerms !== newPerms) {
+             console.log("[System] Hak akses diperbarui secara remote.");
+             currentUser.permissions = res.permissions;
+             renderMenu(currentTab); // Re-render menu untuk memunculkan/menyembunyikan fitur
+           }
+        }
+
         if (!res || res.status !== 'success') return;
         var items = res.data || [];
         var latest = res.latestTs || null;
@@ -3665,8 +3687,8 @@
   // ======================== NOTIFIKASI ========================
   var notifPollingHandle = null;
   var notifAlreadyShownIds = new Set();
-  // LOGIKA PSEUDO-REALTIME PERMISSIONS: Polling setiap 5 menit (300.000 ms)
-  var NOTIF_POLL_INTERVAL_MS = 300000; 
+  // 10XTHINK: Polling setiap 3 menit (180.000 ms) untuk keseimbangan performa & aktualitas
+  var NOTIF_POLL_INTERVAL_MS = 180000; 
   var rondaFilterBulanSelect = document.getElementById('rondaFilterBulan');
   var rondaFilterTahunSelect = document.getElementById('rondaFilterTahun');
   var currentRondaData = [];
