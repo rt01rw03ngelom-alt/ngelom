@@ -543,8 +543,8 @@
       text-align: left;
       padding: clamp(16px, 5vw, 20px) clamp(15px, 5vw, 25px); 
       border-radius: 24px;
-      /* 10XTHINK FIX: Margin negatif untuk overlap header agar tidak ada gap abu-abu */
-      margin: -20px auto 25px; 
+      /* 10XTHINK FIX: Margin negatif ditingkatkan agar lengkungan pas menempel ke atas */
+      margin: -35px auto 25px; 
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
@@ -4205,19 +4205,30 @@
    * TEMPLATE KOP SURAT PRESISI (HTML PRINT LAYOUT)
    * 10XTHINK: Strictly Isolated Logo Kop
    */
-  function getHtmlKopSurat(logoUrl) {
+  function getHtmlKopSurat(logoUrl, modul) {
     // Menggunakan variabel terisolasi agar tidak mengganggu header PWA
     const logoKopSurat = logoUrl ? getDirectUrl(logoUrl) : DEFAULT_LOGO_KOP;
     const logoHtml = `<img src="${logoKopSurat}" style="width:75px; height:auto; margin-right:20px; object-fit:contain;">`;
     
+    let teksKop = '';
+    if (modul === 'rt') {
+      teksKop = `
+        <strong style="font-size: 18px;">RUKUN TETANGGA I RUKUN WARGA III</strong><br>
+        <strong style="font-size: 16px;">KELURAHAN DESA NGELOM KECAMATAN TAMAN</strong><br>
+        <strong style="font-size: 16px;">KABUPATEN SIDOARJO</strong><br>
+        <span style="font-size: 12px; text-decoration: underline;">Alamat:Desa Ngelom RT.01 RW.03 Kelurahan ngelom,kecamatan taman, kabupaten Sidoarjo</span>`;
+    } else {
+      teksKop = `
+        <strong style="font-size: 18px;">KARANG TARUNA RUKUN TETANGGA I RUKUN WARGA III</strong><br>
+        <strong style="font-size: 16px;">KELURAHAN DESA NGELOM KECAMATAN TAMAN KABUPATEN SIDOARJO</strong><br>
+        <span style="font-size: 12px; text-decoration: underline;">Alamat : Desa ngelom RT.01 RW.03 Kelurahan Ngelom,kecamatan taman,Kabupaten sidoarjo</span>`;
+    }
+
     return `
       <div style="display:flex; align-items:center; border-bottom:3px double #000; padding-bottom:12px; margin-bottom:25px; font-family: 'Times New Roman', serif; color:#000;">
         ${logoHtml}
         <div class="kop-surat" style="text-align: center; flex-grow: 1;">
-          <strong style="font-size: 18px;">RUKUN TETANGGA I RUKUN WARGA III</strong><br>
-          <strong style="font-size: 16px;">KELURAHAN DESA NGELOM KECAMATAN TAMAN</strong><br>
-          <strong style="font-size: 16px;">KABUPATEN SIDOARJO</strong><br>
-          <span style="font-size: 12px; text-decoration: underline;">Alamat:Desa Ngelom RT.01 RW.03 Kelurahan ngelom,kecamatan taman, kabupaten Sidoarjo</span>
+          ${teksKop}
         </div>
       </div>`;
   }
@@ -5183,7 +5194,7 @@
         .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
       </style></head>
       <body>
-      ${getHtmlKopSurat(cfg.url_logo_kop)}
+      ${getHtmlKopSurat(cfg.url_logo_kop, 'kartar')}
       <div class="header">
         <h2 style="margin:0;">LAPORAN KEUANGAN KARANG TARUNA</h2>
         <p>Tahun Anggaran: ${tahun}</p>
@@ -7379,7 +7390,7 @@ function bukaJadwal() {
         .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
       </style></head>
       <body>
-      ${getHtmlKopSurat(cfg.url_logo_kop)}
+      ${getHtmlKopSurat(cfg.url_logo_kop, 'rt')}
       <div class="header">
         <h2 style="margin:0;">LAPORAN KAS WARGA RT 01 RW 03</h2>
         <p>Tahun Anggaran: ${tahun}</p>
