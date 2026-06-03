@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.4';
+    const APP_VERSION = '1.2.1';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -549,8 +549,9 @@
       text-align: left; 
       padding: 30px 25px 24px; /* Ditambah padding top agar konten turun sedikit */
       border-radius: 28px; 
-      /* 10XTHINK: Mengurangi overlap dari -35px ke -25px agar tidak terlalu menempel ke atas */
-      margin: -25px auto 32px; 
+      /* Kurangi overlap header: banner tidak boleh menimpa header */
+      margin: -8px auto 32px; 
+
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
