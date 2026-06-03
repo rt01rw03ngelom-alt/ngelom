@@ -547,10 +547,10 @@
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left; 
-      padding: 22px 25px 24px; /* Elevation fix: kurangi padding-top agar whitespace dalam tetap proporsional */
+      padding: 25px 25px 24px; /* Inner padding agar konten tetap memiliki ruang napas yang lega */
       border-radius: 28px; 
-      /* Elevation Fix: naikkan card putih utama agar lengkungan menempel rapi tepat di bawah batas header merah */
-      margin: -28px auto 32px;
+      /* Elevation Fix: Meningkatkan margin negatif dari -28px ke -55px untuk menutup gap merah yang berlebihan */
+      margin: -55px auto 32px;
       
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
