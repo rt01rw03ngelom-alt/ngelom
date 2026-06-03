@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.1';
+    const APP_VERSION = '1.2.4';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -114,8 +114,8 @@
     /* Pointer Cursor Fix: Semua elemen interaktif harus memiliki pointer */
     button, .btn, .btn-primary, .btn-secondary, .btn-small, .btn-action-subtle, 
     .nav-item, .nav-menu-item, .menu-item, .header-toggle-btn, .fab, [onclick],
-    .action-button, input[type="button"], input[type="submit"],
-    .card-item[onclick], .summary-card[onclick] {
+    .action-item, .action-button, input[type="button"], input[type="submit"],
+    .card-item[onclick], .summary-card[onclick], [onclick] {
       cursor: pointer !important;
     }
 
@@ -345,7 +345,7 @@
     .header {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 32px 20px 56px; /* Peningkatan padding bawah untuk transisi overlap yang lebih estetis */
+      padding: 32px 20px 85px; /* Ditambah agar memberi ruang lebih untuk konten header sebelum card menumpuk */
       border-radius: 0;
       position: relative;
       overflow: visible;
@@ -541,10 +541,10 @@
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left;
-      padding: clamp(18px, 5vw, 24px) clamp(15px, 5vw, 25px); /* Jarak internal ideal 18px-24px untuk estetika premium */
+      padding: 24px 25px; /* Pastikan padding internal konsisten, terutama padding-top */
       border-radius: 28px; /* Sudut lebih bulat untuk tampilan kartu modern */
       /* Efek overlap yang lebih dalam (-24px) untuk hierarki visual yang lebih kuat */
-      margin: -24px auto 32px; 
+      margin: -35px auto 32px; /* Disesuaikan agar tetap overlap namun tidak menabrak teks di atasnya */
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
       box-shadow: var(--shadow-md);
       position: relative;
