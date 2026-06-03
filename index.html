@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.5';
+    const APP_VERSION = '1.2.1';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -351,8 +351,11 @@
     .header {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 32px 20px 60px; /* Kalibrasi: Menghilangkan kesan anjlok dengan padding bawah yang ringkas */
-      border-radius: 0;
+      /* Kurangi padding bawah agar tidak terlalu ke bawah */
+      padding: 30px 20px 45px; 
+      /* Berikan lengkungan dan garis pembatas halus di bagian bawah */
+      border-radius: 0 0 30px 30px; 
+      border-bottom: 4px solid rgba(255, 255, 255, 0.15);
       position: relative;
       overflow: visible;
       box-shadow: var(--shadow-md);
@@ -513,7 +516,6 @@
     body.dark-mode #headerDarkIcon {
       filter: none; /* Pastikan gambar matahari tampil dengan warna aslinya */
     }
-    @media (min-width: 768px) { .header { border-radius: 0 0 24px 24px; } }
 
     .header::after {
       content: "";
@@ -547,13 +549,15 @@
       background: rgba(var(--bg-surface-rgb), 0.95);
       color: var(--text-main);
       text-align: left; 
-      padding: 25px 25px 24px; /* Inner padding agar konten tetap memiliki ruang napas yang lega */
+      padding: 25px 25px 24px;
       border-radius: 28px; 
-      /* Sinkronisasi margin negatif dengan padding baru header agar transisi terlihat menyatu */
-      margin: -40px auto 32px; /* Elevation Fix: Mengangkat banner secara presisi menutupi area header */
+      /* Ubah margin atas agar overlap lebih rapi dengan header baru */
+      margin: -25px auto 32px; 
+      /* Tambahkan border tipis sebagai pembatas ekstra pada kartu */
+      border: 1px solid rgba(0, 0, 0, 0.08); 
       
       width: calc(100% - clamp(24px, 8vw, 40px)); /* Responsive width */
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 8px 20px -4px rgba(0,0,0,0.1); /* Bayangan diperlembut */
       position: relative;
       transition: background-color 0.3s ease;
       z-index: 10;
