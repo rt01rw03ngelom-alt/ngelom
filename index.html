@@ -3033,8 +3033,33 @@
   var pickedRondaWeek1 = null;
   var pickedRondaWeek2 = null;
 
-  // Global Loading Spinner Component
-  const SPINNER_HTML = '<div style="display:flex; justify-content:center; padding:40px; width:100%;"><div class="bbx-spinner"></div></div>';
+  // 10XTHINK: Modern Loading & Error State Engine
+  const SPINNER_HTML = `<div class="loading-container"><div class="bbx-spinner"></div><p>Menghubungkan ke database...</p></div>`;
+
+  function renderSkeleton(containerId, count = 3) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    let html = SPINNER_HTML;
+    for (let i = 0; i < count; i++) {
+      html += `<div class="card-item skeleton-card">
+        <div class="skeleton-line" style="width:40%; height:20px;"></div>
+        <div class="skeleton-line" style="width:100%; height:12px;"></div>
+        <div class="skeleton-line" style="width:85%; height:12px;"></div>
+      </div>`;
+    }
+    el.innerHTML = html;
+  }
+
+  function renderErrorState(containerId, retryFn) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = `<div class="error-state">
+      <i class="material-icons" style="font-size:48px; color:var(--primary-color);">cloud_off</i>
+      <div style="font-weight:800; margin:10px 0;">Gagal memuat data</div>
+      <p class="muted" style="font-size:12px; margin-bottom:15px;">Periksa koneksi internet Anda</p>
+      <button class="btn-small" onclick="${retryFn}">Coba Lagi</button>
+    </div>`;
+  }
 
   // Definisi daftar izin yang tersedia untuk Kelola Role
   const availablePermissions = [
@@ -4893,7 +4918,7 @@
             </div>` : '';
           
           list.innerHTML += `
-            <div class="card-item" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(56,189,248,0.1); color:var(--kt-blue); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">Karang Taruna</span>
@@ -5471,7 +5496,7 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    list.innerHTML = SPINNER_HTML; // Gunakan SPINNER_HTML
+    renderSkeleton('listJadwal', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
       if (res.status === 'error') { // Tambahkan penanganan error
@@ -5495,7 +5520,7 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item" style="border-left-width: 5px; border-left-color: var(--primary-red);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--primary-red);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(239,68,68,0.1); color:var(--primary-red); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">RT 01/RW 03</span>
@@ -6203,7 +6228,7 @@ function bukaJadwal() {
             </div>` : '';
 
           list.innerHTML += `
-            <div class="card-item ${isKetua ? 'ketua-highlight' : ''}" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${node.nama.replace(/'/g,"\\'")}','${(node.jabatan||'').replace(/'/g,"\\'")}','${node.nohp}','${node.fotoUrl}')">
+            <div class="card-item fade-up-in ${isKetua ? 'ketua-highlight' : ''}" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${node.nama.replace(/'/g,"\\'")}','${(node.jabatan||'').replace(/'/g,"\\'")}','${node.nohp}','${node.fotoUrl}')">
               <div style="display:flex; align-items:center; gap:16px;">
                 <div style="background:${isKetua ? '#f59e0b' : 'var(--primary-red)'}; color:white; width:72px; height:72px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; box-shadow: var(--shadow-sm);">
                   ${avatar}
@@ -6220,10 +6245,7 @@ function bukaJadwal() {
       } else {
         list.innerHTML = '<p class="muted">Belum ada data kader pengurus.</p>';
       }
-    }).withFailureHandler(function(err) {
-      Swal.close(); // Close loading modal
-      showError('Gagal memuat data kontak: ' + err.message);
-    }).getKontakPengurus();
+    }).withFailureHandler(() => renderErrorState('listKontak', 'muatDataKontak()')).getKontakPengurus();
   }
 
   function bukaFormKontak() {
