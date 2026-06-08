@@ -5320,18 +5320,37 @@
     printWin.document.write(`
       <html><head><title>Laporan Kas Karang Taruna</title>
       <style>
-        body { font-family: sans-serif; padding: 40px; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 10px; font-size: 13px; }
-        th { background: #f2f2f2; }
-        .header { text-align: center; margin-bottom: 30px; }
+        @page { size: A4; margin: 2cm; }
+        body { font-family: "Times New Roman", Times, serif; padding: 0; color: #000; line-height: 1.2; }
+        .kop-container { display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 4pt; }
+        .kop-logo { flex: 0 0 75pt; text-align: left; }
+        .kop-logo img { width: 70pt; height: auto; object-fit: contain; }
+        .kop-spacer { flex: 0 0 75pt; }
+        .kop-text { flex: 1; text-align: center; }
+        .kop-title { font-size: 16pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2pt; }
+        .kop-subtitle { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2pt; }
+        .kop-address { font-size: 10pt; font-style: italic; margin-top: 4pt; }
+        .kop-line { border-top: 2.5pt solid #000; border-bottom: 0.5pt solid #000; height: 2pt; margin-bottom: 20pt; width: 100%; }
+        
+        .report-title { text-align: center; margin-bottom: 20pt; }
+        .report-title h2 { font-size: 14pt; text-transform: uppercase; margin: 0; text-decoration: underline; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10pt; font-size: 11pt; }
+        th, td { border: 1pt solid #000; padding: 6pt 8pt; }
+        th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; text-transform: uppercase; }
+        
+        @media print {
+          button, select { display: none !important; }
+          body { -webkit-print-color-adjust: exact; }
+        }
+        
         .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
       </style></head>
       <body>
       ${getHtmlKopSurat(cfg.url_logo_kop, 'kartar')}
-      <div class="header">
-        <h2 style="margin:0;">LAPORAN KEUANGAN KARANG TARUNA</h2>
-        <p>Tahun Anggaran: ${tahun}</p>
+      <div class="report-title">
+        <h2>LAPORAN KEUANGAN KARANG TARUNA</h2>
+        <div style="font-size: 12pt; margin-top: 5pt;">Tahun Anggaran: ${tahun}</div>
       </div>
       <table>
         <thead>
