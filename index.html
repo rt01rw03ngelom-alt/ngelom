@@ -1209,24 +1209,110 @@
       to { transform: rotate(360deg); }
     }
 
-
-    .skeleton {
+    /* Modern Skeleton Loading System */
+    .skeleton-card {
+      background: var(--bg-surface) !important;
+      border: 1px solid var(--border-color) !important;
+      padding: 1.5rem;
+      border-radius: 16px;
+      margin-bottom: 1rem;
       position: relative;
       overflow: hidden;
-      background: rgba(226,232,240,0.9);
-      border-radius: 12px;
     }
-    .skeleton::after {
+    .skeleton-line {
+      background: var(--border-color);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-line::after {
       content: "";
-      position: absolute;
-      top: 0; left: -150px;
-      width: 150px; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
-      animation: shimmer 1.1s infinite;
+      position: absolute; inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(var(--primary-color-rgb), 0.08), transparent);
+      animation: bbx-shimmer 1.5s infinite;
     }
-    @keyframes shimmer {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(300px); }
+    @keyframes bbx-shimmer {
+      100% { transform: translateX(100%); }
+    }
+
+    /* Progressive Loading Bar */
+    .bbx-loader-container {
+      width: 100%;
+      background: rgba(var(--primary-color-rgb), 0.1);
+      height: 4px;
+      border-radius: 10px;
+      margin: 15px 0 5px;
+      overflow: hidden;
+    }
+    .bbx-loader-bar {
+      height: 100%;
+      background: var(--primary-color);
+      width: 30%;
+      border-radius: 10px;
+      animation: bbx-progress-move 1.2s infinite ease-in-out;
+    }
+    @keyframes bbx-progress-move {
+      0% { margin-left: -30%; width: 30%; }
+      50% { width: 60%; }
+      100% { margin-left: 100%; width: 30%; }
+    }
+
+    /* State Component Styles */
+    .state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      animation: bbxFadeUp 0.4s ease forwards;
+    }
+    .state-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(var(--primary-color-rgb), 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--primary-color);
+    }
+    .state-title {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+    .state-msg {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 250px;
+      line-height: 1.5;
+    }
+
+    /* Overlay Styles */
+    .swal2-modern-loading {
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    /* Fade Animation for Data Arrival */
+    .fade-up-in {
+      animation: bbxFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    @keyframes bbxFadeUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
     }
 
     /* Professional Skeleton Text */
@@ -3943,23 +4029,19 @@
   }
 
   function showLoading(msg, withProgress = false) {
-    const progressHtml = withProgress ? `
-      <div style="margin-top:12px; background:rgba(var(--primary-color-rgb), 0.1); height:8px; border-radius:10px; overflow:hidden; border:1px solid var(--border-color);">
-        <div id="bbxProgressFill" style="background:var(--primary-color); width:0%; height:100%; transition:width 0.3s ease;"></div>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
-        <span id="bbxLoadingMsg">${msg || 'Memproses...'}</span>
-        <span id="bbxProgressText">0%</span>
-      </div>` : `<div style="color:var(--text-muted); font-size:13px; line-height:1.35;" id="bbxLoadingMsg">${msg || ''}</div>`;
+    const progressHtml = `<div class="bbx-loader-container"><div class="bbx-loader-bar"></div></div>
+      <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">
+        <span id="bbxLoadingMsg">${msg || 'Menghubungkan Database'}</span>
+      </div>`;
 
     // loading custom: spinner modern + teks, terlihat jelas tanpa perlu ganti content halaman
     Swal.fire({
       title: '',
       html:
         '<div style="display:flex; align-items:center; gap:14px; padding:6px 2px; min-height:70px;">'
-          + '  <div class="bbx-spinner" aria-hidden="true"></div>'
+          + '  <div class="bbx-spinner" style="border-width:4px;"></div>'
           + '  <div style="text-align:left; flex:1;">'
-          + '    <div style="font-weight:700; color:var(--primary-dark); margin-bottom:4px;">Memproses...</div>'
+          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Mohon Tunggu</div>'
           +      progressHtml
           + '  </div>'
           + '</div>',
@@ -3967,7 +4049,7 @@
       showConfirmButton: false,
       showCancelButton: false,
       background: 'var(--bg-surface)',
-      width: 'min(calc(100% - 40px), 420px)',
+      width: 'min(calc(100% - 60px), 380px)',
       padding: '16px',
       customClass: {
         popup: 'swal2-modern-loading'
@@ -5496,14 +5578,12 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    renderSkeleton('listJadwal', 3);
+    renderSkeleton('listJadwal', 4);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
-      if (res.status === 'error') { // Tambahkan penanganan error
-        showError(res.pesan);
-        list.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Gagal memuat data jadwal.</p>';
-        return;
-      }
+      if (res.status === 'error') return renderErrorState('listJadwal', 'muatDataJadwal()');
+      if (!res.data || res.data.length === 0) return renderEmptyState('listJadwal', 'Belum ada jadwal kegiatan RT terdaftar.');
+
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -5520,7 +5600,7 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--primary-red);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--primary-red); animation-delay:${i*0.05}s;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(239,68,68,0.1); color:var(--primary-red); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">RT 01/RW 03</span>
@@ -6407,10 +6487,7 @@ function bukaJadwal() {
       } else {
         list.innerHTML = '<p>Belum ada user.</p>';
       }
-    }).withFailureHandler(function(err) {
-      Swal.close(); // Close loading modal
-      showError('Gagal memuat data user: ' + err.message);
-    }).getAllUsersWithWarga();
+    }).withFailureHandler(() => renderErrorState('listUsers', 'muatDataUser()')).getAllUsersWithWarga();
   }
 
   function cariUser() {
@@ -8639,7 +8716,7 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item" style="border-left-width: 5px; border-left-color: var(--pkk-green);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(16,185,129,0.1); color:var(--pkk-green); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">PKK Ngelom</span>
