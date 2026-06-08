@@ -5578,7 +5578,7 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    renderSkeleton('listJadwal', 4);
+    list.innerHTML = SKELETON_JADWAL_HTML;
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('listJadwal', 'muatDataJadwal()');
