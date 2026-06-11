@@ -2550,10 +2550,29 @@
   <div id="formPengaduanView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Buat Laporan Baru</h3>
+      <h3>Kirim Pengaduan</h3>
     </div>
+    <div class="crud-form" style="display:block;">
+      <label class="muted">Subjek / Judul</label>
+      <input type="text" id="judulPengaduan" placeholder="Contoh: Lampu Jalan Mati">
+      
+      <label class="muted">Kategori</label>
+      <select id="katPengaduan">
+        <option value="Infrastruktur">Infrastruktur & Jalan</option>
+        <option value="Keamanan">Keamanan & Ketertiban</option>
+        <option value="Kebersihan">Kebersihan Lingkungan</option>
+        <option value="Sosial">Sosial & Kemasyarakatan</option>
+        <option value="Lainnya">Lain-lain</option>
+      </select>
+
+      <label class="muted">Detail Laporan</label>
     <textarea id="isiPengaduan" rows="4" placeholder="Detail laporan..."></textarea>
+      
+      <label class="muted">Foto Lampiran (Opsional)</label>
     <input type="file" id="fotoPengaduan" accept="image/*">
+      <div class="muted" style="font-size:11px; margin-bottom:15px;">* Maksimal 10MB, akan dikompres otomatis.</div>
+    </div>
+    
     <div id="previewUpload"></div>
     <button class="btn-primary" onclick="submitPengaduan()">Kirim</button>
   </div>
@@ -2561,8 +2580,24 @@
   <div id="historiPengaduanView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Histori Laporan</h3>
+      <h3>Pengaduan Saya</h3>
     </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="filter-bar" style="margin-bottom:1.5rem;">
+      <div style="position:relative; width:100%; margin-bottom:10px;">
+        <i class="material-icons" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);">search</i>
+        <input type="text" id="searchPengaduan" placeholder="Cari judul atau isi..." onkeyup="filterHistoriPengaduan()" style="padding-left:40px; margin:0;">
+      </div>
+      <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; width:100%;">
+        <button class="btn-small success" onclick="setPengaduanFilter('Semua')">Semua</button>
+        <button class="btn-small warning" onclick="setPengaduanFilter('Menunggu')">Menunggu</button>
+        <button class="btn-small" style="background:#3b82f6" onclick="setPengaduanFilter('Diproses')">Diproses</button>
+        <button class="btn-small success" onclick="setPengaduanFilter('Selesai')">Selesai</button>
+        <button class="btn-small danger" onclick="setPengaduanFilter('Ditolak')">Ditolak</button>
+      </div>
+    </div>
+
     <div id="listHistori"></div>
   </div>
 
@@ -4960,7 +4995,8 @@
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
       { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
-      { title: "Laporan Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" }
+      { title: "Pengaduan Saya", icon: "history", roles: ["admin", "pengurus rt", "warga"], action: "bukaHistori", perm: "rt_pengaduan_kirim" },
+      { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" }
     ],
     pkk: [
       { title: "Jadwal Kegiatan PKK", icon: "event", roles: ["admin", "pengurus pkk", "warga"], action: "bukaPkkJadwal", perm: "pkk_jadwal" },
@@ -7090,10 +7126,12 @@ function bukaJadwal() {
   }
 
   function submitPengaduan() {
-    var isi = document.getElementById('isiPengaduan').value;
-    if (!isi) {
-      return showWarning("Silakan isi laporan!");
-    }
+    var judul = document.getElementById('judulPengaduan').value.trim();
+    var kat = document.getElementById('katPengaduan').value;
+    var isi = document.getElementById('isiPengaduan').value.trim();
+
+    if (!judul || !isi) return showWarning("Harap isi Judul dan Detail laporan!");
+
     var btn = document.querySelector('#formPengaduanView .btn-primary');
     btn.disabled = true;
     
@@ -7102,6 +7140,9 @@ function bukaJadwal() {
 
     var obj = {
       pelapor: currentUser.nama,
+      email: currentUser.email,
+      judul: judul,
+      kategori: kat,
       isi: isi,
       dataFile: null,
       mimeType: '',
@@ -7130,6 +7171,7 @@ function bukaJadwal() {
       btn.disabled = false;
       if (res.status === 'success') {
         showSuccess(res.pesan).then(function() {
+          document.getElementById('judulPengaduan').value = '';
           document.getElementById('isiPengaduan').value = '';
           document.getElementById('fotoPengaduan').value = '';
           document.getElementById('previewUpload').innerHTML = '';
@@ -7186,8 +7228,8 @@ function bukaJadwal() {
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'error') return showError(res.pesan);
       window.pengaduanDataGlobal = res.data || [];
-      renderListHistoriUI(window.pengaduanDataGlobal);
-    }).getHistoriPengaduan(currentUser.nama);
+      filterHistoriPengaduan(); // Terapkan filter/search yang mungkin sedang aktif
+    }).getHistoriPengaduan(currentUser.email);
   }
 
   function bukaLaporanAdmin() {
