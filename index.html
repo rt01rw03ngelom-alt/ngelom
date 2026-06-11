@@ -3279,6 +3279,21 @@
     </div>`;
   }
 
+  // Empty state standar (anti "layar kosong")
+  function renderEmptyState(containerId, message) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = `
+      <div class="state-container" style="padding:48px 20px;">
+        <div class="state-icon">
+          <i class="material-icons">event_busy</i>
+        </div>
+        <div class="state-title">${escapeHtml(message || 'Data tidak tersedia')}</div>
+        <div class="state-msg">Silakan coba lagi nanti atau tambah data jika Anda memiliki akses.</div>
+      </div>
+    `;
+  }
+
   // Definisi daftar izin yang tersedia untuk Kelola Role
   const availablePermissions = [
     { key: 'rt_jadwal', label: 'Melihat Jadwal RT' },
@@ -5117,9 +5132,14 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
-    list.innerHTML = '<div class="skeleton" style="height:100px;"></div>';
+    renderSkeleton('ktListJadwal', 3);
+    console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
+      console.log('[KT JADWAL] response:', res);
+      console.log('[KT JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = ''; // Clear skeleton
+      if (res.status === 'error') return renderErrorState('ktListJadwal', 'ktMuatDataJadwal()');
+      if (!res.data || res.data.length === 0) return renderEmptyState('ktListJadwal', 'Belum ada jadwal kegiatan Karang Taruna terdaftar.');
       if (res.data && res.data.length) {
         res.data.forEach(function(item) {
           var aksi = hasPermission('kt_jadwal_crud') ? `
@@ -5152,7 +5172,7 @@
               ${aksi}
             </div>`;
         });
-      } else list.innerHTML = '<p>Belum ada jadwal KT.</p>';
+      }
     }).ktGetJadwal();
   }
 
@@ -5736,8 +5756,11 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    list.innerHTML = SKELETON_JADWAL_HTML;
+    renderSkeleton('listJadwal', 3);
+    console.log('[JADWAL RT] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
+      console.log('[JADWAL RT] response:', res);
+      console.log('[JADWAL RT] jumlah data:', res.data?.length);
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('listJadwal', 'muatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('listJadwal', 'Belum ada jadwal kegiatan RT terdaftar.');
@@ -8859,11 +8882,14 @@ function bukaJadwal() {
 
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
-    list.innerHTML = '<p>Memuat...</p>';
-    showLoading('Memuat jadwal PKK...');
-    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
-      Swal.close(); // Close loading modal
+    renderSkeleton('pkkListJadwal', 3);
+    console.log('[PKK JADWAL] halaman dibuka, memuat data...');
+    google.script.run.withSuccessHandler(function(res) {
+      console.log('[PKK JADWAL] response:', res);
+      console.log('[PKK JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = '';
+      if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
+      if (!res.data || res.data.length === 0) return renderEmptyState('pkkListJadwal', 'Belum ada jadwal kegiatan PKK terdaftar.');
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -8899,8 +8925,6 @@ function bukaJadwal() {
               ${aksi}
             </div>`;
         }
-      } else {
-        list.innerHTML = '<p>Belum ada jadwal PKK.</p>';
       }
     }).pkkGetJadwal();
   }
