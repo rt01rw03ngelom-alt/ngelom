@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.4';
+    const APP_VERSION = '1.2.1';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -5350,7 +5350,10 @@
       if (res.status === 'success') {
         ktAllKasData = res.data || [];
         document.getElementById('ktTotalKas').innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
-        renderTabelKasKT(ktAllKasData);
+        
+        // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
+        renderRekapKasKT(ktAllKasData);
+        filterKtTabelTransaksi(); // Inisialisasi filter default
         ktMuatGrafikKas();
       }
     }).ktGetKas();
@@ -5359,6 +5362,15 @@
   function renderTabelKasKT(data) {
     var tbodyP = document.getElementById('ktTbodyPemasukan');
     var tbodyG = document.getElementById('ktTbodyPengeluaran');
+    
+    console.log('[KT KAS] renderTabelKasKT Debug:', {P: tbodyP, G: tbodyG});
+
+    if (!tbodyP || !tbodyG) {
+       console.warn('[KT KAS] renderTabelKasKT: Elemen tabel terpisah tidak ditemukan. Mengalihkan ke rekap tunggal.');
+       renderRekapKasKT(data);
+       return;
+    }
+
     tbodyP.innerHTML = ''; 
     tbodyG.innerHTML = '';
     // Gunakan pengecekan role yang lebih stabil untuk KT
@@ -5652,6 +5664,14 @@
   }
 
   function renderGrafikKasKT(tahun) {
+    var canvas = document.getElementById('ktKasChart');
+    console.log('[KT KAS] renderGrafikKasKT Canvas:', canvas);
+    
+    if (!canvas) {
+       console.error('[KT KAS] ERROR: Container ktKasChart tidak ditemukan');
+       return;
+    }
+
     var pemasukanPerBulan = Array(12).fill(0);
     var pengeluaranPerBulan = Array(12).fill(0);
     
@@ -5667,7 +5687,7 @@
     var labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     if (ktKasChart) ktKasChart.destroy();
     
-    var ctx = document.getElementById('ktKasChart').getContext('2d');
+    var ctx = canvas.getContext('2d');
     ktKasChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -6469,6 +6489,59 @@ function bukaJadwal() {
         }).pkkHapusLaporan(id);
       }
     });
+  }
+
+  /**
+   * 10X THINK: Implementasi renderRekapKasKT dengan Saldo Berjalan
+   */
+  function renderRekapKasKT(data) {
+    var container = document.getElementById('ktTbodyRekapTransaksi');
+    console.log('[KT KAS] renderRekapKasKT Container:', container);
+    
+    if (!container) {
+      console.error('[KT KAS] ERRROR: Container ktTbodyRekapTransaksi tidak ditemukan di DOM');
+      return;
+    }
+    
+    container.innerHTML = '';
+    if (!data || data.length === 0) {
+      container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Tidak ada data pada periode ini.</td></tr>';
+      return;
+    }
+
+    var runningSaldo = 0;
+    // Saldo berjalan membutuhkan data terurut tanggal naik (Ascending)
+    var sorted = [...data].sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+    
+    sorted.forEach(function(item) {
+      var isIn = item.jenis === 'Pemasukan';
+      var nominal = item.nominal || 0;
+      if (isIn) runningSaldo += nominal; else runningSaldo -= nominal;
+      
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + item.tanggal + '</td>'
+                   + '<td>' + (item.keterangan || '-') + '</td>'
+                   + '<td style="color:#10b981; font-weight:700;">' + (isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
+                   + '<td style="color:#ef4444; font-weight:700;">' + (!isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
+                   + '<td style="font-weight:700; background:rgba(var(--primary-color-rgb), 0.05);">Rp ' + runningSaldo.toLocaleString('id-ID') + '</td>'
+                   + '<td><button class="btn-small" onclick="ktEditKas(\''+item.id+'\',\''+item.tanggal+'\',\''+item.jenis+'\',\''+escapeHtml(item.keterangan)+'\','+nominal+')"><i class="material-icons" style="font-size:14px;">edit</i></button></td>';
+      container.appendChild(tr);
+    });
+  }
+
+  function filterKtTabelTransaksi() {
+    var bulan = parseInt(document.getElementById('ktFilterBulanTransaksi').value);
+    var tahun = parseInt(document.getElementById('ktFilterTahunTransaksi').value);
+    
+    var filtered = ktAllKasData.filter(function(item) {
+      var p = item.tanggal.split('-');
+      if (p.length !== 3) return false;
+      var itemThn = parseInt(p[0]);
+      var itemBln = parseInt(p[1]);
+      if (bulan === 0) return itemThn === tahun;
+      return itemThn === tahun && itemBln === bulan;
+    });
+    renderRekapKasKT(filtered);
   }
 
   function bukaFormRonda() {
