@@ -4628,13 +4628,22 @@
       </div>`;
   }
 
+
+
+
+
   function doLogin() {
     var email = document.getElementById('email').value;
     var pass = document.getElementById('password').value;
+
     if (!email || !pass) {
       return showWarning("Email dan Password harus diisi!");
     }
+
+
+
     var btn = document.getElementById('btnLogin');
+
     btn.innerHTML = '<span class="loading-spinner"></span>';
     btn.disabled = true;
     google.script.run
@@ -4674,6 +4683,9 @@
       })
       .prosesLoginStay(email, pass);
   }
+
+  // Expose globally for inline onclick="doLogin()"
+  window.doLogin = doLogin;
 
   function updateDarkModeIcons() {
     var isDark = document.body.classList.contains('dark-mode');
