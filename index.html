@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.1';
+    const APP_VERSION = '1.2.4';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3150,15 +3150,23 @@
                   if (res.ok) {
                     const text = await res.text();
                     try {
+                      console.log('[Smart Sync Debug] RAW RESPONSE:', text);
                       const json = JSON.parse(text);
                       if (handlers.success) handlers.success(json);
                       return json;
                     } catch (parseErr) {
+                      console.error('[Smart Sync Error] JSON_PARSE_ERROR - RAW RESPONSE:', text, 'Parse Error:', parseErr);
                       if (isWriteAction) {
                         console.warn("Smart Sync: Respons JSON tidak lengkap tapi status HTTP sukses.");
                         const fallbackSuccess = { status: 'success', pesan: 'Laporan Berhasil Terkirim!', message: 'Data berhasil disimpan' };
                         if (handlers.success) handlers.success(fallbackSuccess);
                         return fallbackSuccess;
+                      } else {
+                        // Untuk read actions, juga provide fallback error response
+                        const fallbackError = { status: 'error', pesan: 'Gagal parse data dari server. Silakan coba lagi.' };
+                        if (handlers.failure) handlers.failure(fallbackError);
+                        if (handlers.success) handlers.success(fallbackError);
+                        return fallbackError;
                       }
                       throw new Error("JSON_PARSE_ERROR");
                     }
@@ -5225,7 +5233,7 @@
 
   function ktMuatDataKader() {
     var list = document.getElementById('ktListKader');
-    list.innerHTML = '<div class="skeleton" style="height:80px;"></div>';
+    renderSkeleton('ktListKader', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -5233,8 +5241,8 @@
           var aksi = hasPermission('kt_kader_crud') ? '<div class="hr-light"></div><button class="btn-small" onclick="ktEditKader(\''+item.id+'\',\''+item.nama.replace(/'/g,"\\'")+'\',\''+item.usia+'\',\''+item.alamat.replace(/'/g,"\\'")+'\',\''+item.nohp+'\',\''+item.status+'\',\''+item.jabatan.replace(/'/g,"\\'")+'\')">Edit</button><button class="btn-small danger" onclick="ktHapusKader(\''+item.id+'\')">Hapus</button>' : '';
           list.innerHTML += '<div class="card-item"><strong>'+item.nama+'</strong> ('+item.jabatan+')<br><span class="muted">'+item.status+' | '+item.usia+' Thn | '+item.nohp+'</span>'+aksi+'</div>';
         });
-      } else list.innerHTML = '<p>Belum ada anggota terdaftar.</p>';
-    }).ktGetKader();
+      } else renderEmptyState('ktListKader', 'Belum ada anggota Karang Taruna terdaftar.');
+    }).withFailureHandler(() => renderErrorState('ktListKader', 'ktMuatDataKader()')).ktGetKader();
   }
 
   function ktBukaFormKader() {
@@ -5377,6 +5385,102 @@
       if (item.jenis === 'Pemasukan') tbodyP.appendChild(tr);
       else tbodyG.appendChild(tr);
     });
+  }
+
+  // ========================================
+  // FILTER MODE MANAGEMENT FOR KT KAS
+  // ========================================
+  function toggleKtLaporanMode() {
+    var mode = document.getElementById('ktLaporanMode').value;
+    document.getElementById('ktLaporanTahunanMode').style.display = 'none';
+    document.getElementById('ktLaporanBulanMode').style.display = 'none';
+    document.getElementById('ktLaporanCustomMode').style.display = 'none';
+    if (mode === 'tahunan') {
+      document.getElementById('ktLaporanTahunanMode').style.display = 'flex';
+    } else if (mode === 'bulan') {
+      document.getElementById('ktLaporanBulanMode').style.display = 'flex';
+    } else {
+      document.getElementById('ktLaporanCustomMode').style.display = 'flex';
+      if (!document.getElementById('ktStartDate').value) {
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        document.getElementById('ktStartDate').value = firstDay.toISOString().slice(0, 10);
+        document.getElementById('ktEndDate').value = lastDay.toISOString().slice(0, 10);
+      }
+    }
+    muatKtRekapPeriode();
+  }
+
+  function muatKtRekapPeriode() {
+    var mode = document.getElementById('ktLaporanMode').value;
+    var startDate = '';
+    var endDate = '';
+    var periodeText = '';
+    if (mode === 'tahunan') {
+      var tahun = parseInt(document.getElementById('ktTahunLaporanTahunan').value);
+      periodeText = 'Tahun ' + tahun;
+      startDate = new Date(tahun, 0, 1).toISOString().slice(0,10);
+      endDate = new Date(tahun, 11, 31).toISOString().slice(0,10);
+    } else if (mode === 'bulan') {
+      var bulan = parseInt(document.getElementById('ktBulanLaporan').value);
+      var tahunBulan = parseInt(document.getElementById('ktTahunLaporanBulan').value);
+      var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
+      startDate = new Date(tahunBulan, bulan-1, 1).toISOString().slice(0,10);
+      endDate = new Date(tahunBulan, bulan, 0).toISOString().slice(0,10);
+    } else {
+      startDate = document.getElementById('ktStartDate').value;
+      endDate = document.getElementById('ktEndDate').value;
+      if (!startDate || !endDate) {
+        return showWarning('Pilih tanggal mulai dan selesai!');
+      }
+      var s = startDate.split('-'); var e = endDate.split('-');
+      periodeText = s[2]+'/'+s[1] + ' - ' + e[2]+'/'+e[1];
+    }
+    // Note: Update periode text jika element ada
+    var periodeEl = document.getElementById('ktPeriodeText');
+    if (periodeEl) periodeEl.innerText = periodeText;
+    fetchKtKasByDateRange(startDate, endDate);
+  }
+
+  function fetchKtKasByDateRange(startDate, endDate) {
+    showLoading('Memuat data kas Karang Taruna...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (!res) {
+        showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Response kosong');
+        console.error('RAW RESPONSE (null/undefined):', res);
+        return;
+      }
+      if (res.status === 'error') {
+        showError('⚠️ Gagal Memuat Data Kas Karang Taruna - ' + (res.pesan || 'Unknown error'));
+        console.error('RAW RESPONSE (error status):', res);
+        return;
+      }
+      var totalPemasukan = 0;
+      var totalPengeluaran = 0;
+      if (res.data && res.data.length) {
+        for (var i = 0; i < res.data.length; i++) {
+          if (res.data[i].jenis === 'Pemasukan') {
+            totalPemasukan += res.data[i].nominal;
+          } else {
+            totalPemasukan -= res.data[i].nominal;
+          }
+        }
+      }
+      // Note: Update summary elements jika ada
+      var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
+      var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
+      var elSelisih = document.getElementById('ktRekapSelisih');
+      if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
+      if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan + totalPengeluaran).toLocaleString('id-ID');
+    }).withFailureHandler(function(err) {
+      Swal.close();
+      showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
+      console.error('RAW RESPONSE (failure handler):', err);
+    }).ktGetKasByDateRange(startDate, endDate);
   }
 
   function ktBukaFormKas(jenis) {
@@ -5666,7 +5770,7 @@
 
   function ktMuatDataGaleri() {
     var list = document.getElementById('ktListGaleri');
-    list.innerHTML = '<div class="skeleton" style="height:150px;"></div>';
+    renderSkeleton('ktListGaleri', 6);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.status === 'error') {
@@ -5723,9 +5827,7 @@
               </div>
             </div>`;
         });
-      } else {
-        list.innerHTML = '<p>Belum ada dokumentasi Karang Taruna.</p>';
-      }
+      } else renderEmptyState('ktListGaleri', 'Belum ada dokumentasi Karang Taruna.');
   }
 
   // ======================== JADWAL ========================
@@ -5888,7 +5990,7 @@ function bukaJadwal() {
     var bulan = document.getElementById('rondaFilterBulan').value;
     var tahun = document.getElementById('rondaFilterTahun').value;
     var list = document.getElementById('listRonda');
-    list.innerHTML = '<div class="skeleton" style="height:100px;"></div>';
+    renderSkeleton('listRonda', 3);
     showLoading('Memuat data ronda...');
     
     google.script.run.withSuccessHandler(function(res) {
@@ -6452,7 +6554,7 @@ function bukaJadwal() {
 
   function muatDataKontak() {
     var list = document.getElementById('listKontak');
-    list.innerHTML = '<div class="skeleton" style="height:80px;"></div>';
+    renderSkeleton('listKontak', 3);
     
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -6657,7 +6759,7 @@ function bukaJadwal() {
 
   function muatDataUser() {
     var list = document.getElementById('listUsers');
-    list.innerHTML = '<p>Memuat...</p>';
+    renderSkeleton('listUsers', 3);
     showLoading('Memuat data user...');
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
@@ -6665,9 +6767,7 @@ function bukaJadwal() {
       if (res.data && res.data.length) {
         allUsers = res.data;
         renderUserList(allUsers);
-      } else {
-        list.innerHTML = '<p>Belum ada user.</p>';
-      }
+      } else renderEmptyState('listUsers', 'Belum ada user terdaftar.');
     }).withFailureHandler(() => renderErrorState('listUsers', 'muatDataUser()')).getAllUsersWithWarga();
   }
 
@@ -7264,7 +7364,7 @@ function bukaJadwal() {
 
   function muatLaporanPengaduanAdmin() {
     var list = document.getElementById('listLaporanSemua');
-    list.innerHTML = '<p>Memuat...</p>';
+    renderSkeleton('listLaporanSemua', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -8582,7 +8682,7 @@ function bukaJadwal() {
 
   function muatDataGaleri() {
     var container = document.getElementById('listGaleri');
-    container.innerHTML = '<p>Memuat galeri...</p>';
+    renderSkeleton('listGaleri', 6);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = ''; // Clear previous content
       rtGaleriDataGlobal = res.data || [];
@@ -9029,7 +9129,7 @@ function bukaJadwal() {
 
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
-    list.innerHTML = '<p>Memuat...</p>';
+    renderSkeleton('pkkListKader', 3);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
       if (res.data && res.data.length) {
@@ -9059,10 +9159,8 @@ function bukaJadwal() {
               ${aksi}
             </div>`;
         }
-      } else {
-        list.innerHTML = '<p>Belum ada kader PKK.</p>';
-      }
-    }).pkkGetKader();
+      } else renderEmptyState('pkkListKader', 'Belum ada kader PKK terdaftar.');
+    }).withFailureHandler(() => renderErrorState('pkkListKader', 'pkkMuatDataKader()')).pkkGetKader();
   }
 
   function bukaPkkKirimLaporan() {
@@ -9135,7 +9233,7 @@ function bukaJadwal() {
 
   function pkkMuatDataHistori() {
     var list = document.getElementById('pkkListHistori');
-    list.innerHTML = '<p>Memuat...</p>';
+    renderSkeleton('pkkListHistori', 3);
 
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
@@ -9169,9 +9267,7 @@ function bukaJadwal() {
             + fotoHTML
             + '</div>';
         }
-      } else {
-        list.innerHTML = '<p>Belum ada histori PKK.</p>';
-      }
+      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK.');
     }).pkkGetLaporanByPelapor(currentUser.nama);
   }
 
