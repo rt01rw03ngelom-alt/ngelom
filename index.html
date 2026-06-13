@@ -1681,6 +1681,7 @@
       align-items: center;
       justify-content: center;
       margin: 8px 0 !important; 
+      margin: 0 !important; 
       padding: 0 24px !important;
       border-radius: 12px !important;
       font-weight: 700;
@@ -1721,6 +1722,35 @@
       color: var(--text-main);
     }
 
+    /* PERBAIKAN ALIGNMENT FILTER (Garis Horizontal Sejajar) */
+    .filter-controls, .filter-table, .filter-bar {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 16px !important;
+      align-items: flex-end !important; /* Menyejajarkan bagian bawah elemen */
+    }
+
+    /* Standarisasi tinggi elemen agar sejajar presisi */
+    .filter-controls .filter-group input, 
+    .filter-controls .filter-group select,
+    .filter-controls button,
+    .filter-table .filter-group input, 
+    .filter-table .filter-group select,
+    .filter-table button.btn-small,
+    .filter-bar .filter-group input, 
+    .filter-bar .filter-group select,
+    .filter-bar button.btn-small {
+      margin: 0 !important; /* Hilangkan margin yang menyebabkan "drop" pixel */
+      height: 44px !important;
+      box-sizing: border-box;
+    }
+
+    .filter-controls button, .filter-table .btn-small, .filter-bar .btn-small {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .rekapitulasi {
       background: rgba(var(--primary-color-rgb), 0.1);
       border-radius: var(--border-radius);
@@ -1757,6 +1787,10 @@
       }
 
       .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filter-table {
         flex-direction: column;
         align-items: stretch;
       }
@@ -2364,6 +2398,7 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
+        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatKtRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2397,6 +2432,7 @@
 
     <!-- Filter Tabel Transaksi Karang Taruna -->
     <div class="filter-table">
+    <div class="filter-table filter-controls">
       <div class="filter-group">
         <label>Filter Tabel Bulan</label>
         <select id="ktFilterBulanTransaksi">
@@ -2411,6 +2447,8 @@
       <div class="filter-group">
         <label>&nbsp;</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
+        <label style="visibility: hidden;">Action</label>
+        <button class="btn-small" onclick="filterKtTabelTransaksi()" style="background:var(--kt-blue); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
@@ -2633,6 +2671,7 @@
       <h3>Jadwal Ronda Malam</h3>
     </div>
     <div class="filter-bar">
+    <div class="filter-bar filter-controls">
       <div class="filter-group">
         <label>Bulan</label>
         <select id="rondaFilterBulan" onchange="muatDataRonda()">
@@ -2887,6 +2926,7 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
+        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2947,6 +2987,9 @@
       </div>
       <div>
         <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
+      <div class="filter-group">
+        <label style="visibility: hidden;">Action</label>
+        <button class="btn-small" onclick="filterTabelTransaksi()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
@@ -3267,6 +3310,8 @@
   window.pengaduanDataGlobal = [];
   window.pkkLaporanDataGlobal = [];
   
+  var currentPengaduanStatusFilter = 'Semua'; // Global variable for current filter status
+
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
   var currentThisWeekEntries = []; // Storage untuk Share WA
   var currentNextWeekEntries = []; // Storage untuk Share WA
@@ -5386,7 +5431,9 @@
 
   function bukaKtKas() {
     sembunyikanSemuaLayar();
-    document.getElementById('ktKasView').style.display = 'block';
+    var viewEl = document.getElementById('ktKasView');
+    if (viewEl) viewEl.style.display = 'block';
+    
     history.pushState({view: 'ktKasView', tab: 'karangtaruna', onLoad: 'ktMuatDataKas'}, '', '#ktkas');
     
     var actionDiv = document.getElementById('ktActionButtonsKas');
@@ -5398,8 +5445,11 @@
     }
       
       // Inisialisasi default filter disamakan dengan Kas Warga
-      document.getElementById('ktTahunLaporanTahunan').value = new Date().getFullYear();
-      document.getElementById('ktFilterTahunTransaksi').value = new Date().getFullYear();
+      var inputTahun = document.getElementById('ktTahunLaporanTahunan');
+      if (inputTahun) inputTahun.value = new Date().getFullYear();
+      
+      var inputFilter = document.getElementById('ktFilterTahunTransaksi');
+      if (inputFilter) inputFilter.value = new Date().getFullYear();
       
     ktMuatDataKas();
       toggleKtLaporanMode();
@@ -5411,18 +5461,19 @@
       totalEl.classList.add('skeleton-text');
       totalEl.innerText = 'Rp 0.000.000';
     }
-    // 10X Standardized Skeletons for KT Kas
-    const kasSummaryCont = document.querySelector('#ktKasView .kas-summary');
-    const chartCont = document.querySelector('#ktKasView .chart-container');
-    if (kasSummaryCont) renderSkeleton(kasSummaryCont, 'stats', 1);
-    if (chartCont) renderSkeleton(chartCont, 'chart', 1);
+    
     renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
 
     google.script.run.withSuccessHandler(function(res) {
       if (totalEl) totalEl.classList.remove('skeleton-text');
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         ktAllKasData = res.data || [];
-        document.getElementById('ktTotalKas').innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        
+        var displayEl = document.getElementById('ktTotalKas');
+        console.log('[KT KAS] Element Total Saldo:', displayEl);
+        if (displayEl) {
+          displayEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        }
         
         // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
         renderRekapKasKT(ktAllKasData);
@@ -5550,7 +5601,7 @@
           if (res.data[i].jenis === 'Pemasukan') {
             totalPemasukan += res.data[i].nominal;
           } else {
-            totalPemasukan -= res.data[i].nominal;
+            totalPengeluaran += res.data[i].nominal;
           }
         }
       }
@@ -5558,9 +5609,12 @@
       var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
       var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
       var elSelisih = document.getElementById('ktRekapSelisih');
+      
+      console.log('[KT KAS] Rekap Elements:', {in: elPemasukan, out: elPengeluaran, total: elSelisih});
+
       if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan + totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
     }).withFailureHandler(function(err) {
       Swal.close();
       showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
@@ -7467,6 +7521,32 @@ function bukaJadwal() {
     document.getElementById('historiPengaduanView').style.display = 'block';
     history.pushState({view: 'historiPengaduanView', tab: 'warga', onLoad: 'muatHistoriPengaduan'}, '', '#historiPengaduan');
     muatHistoriPengaduan();
+  }
+
+  function setPengaduanFilter(status) {
+    currentPengaduanStatusFilter = status;
+    filterHistoriPengaduan();
+  }
+
+  function filterHistoriPengaduan() {
+    const keyword = document.getElementById('searchPengaduan').value.toLowerCase();
+    let filteredData = window.pengaduanDataGlobal;
+
+    // Apply keyword filter
+    if (keyword) {
+        filteredData = filteredData.filter(item =>
+            (item.judul && item.judul.toLowerCase().includes(keyword)) ||
+            (item.isi && item.isi.toLowerCase().includes(keyword))
+        );
+    }
+
+    // Apply status filter
+    if (currentPengaduanStatusFilter !== 'Semua') {
+        filteredData = filteredData.filter(item =>
+            item.status === currentPengaduanStatusFilter
+        );
+    }
+    renderListHistoriUI(filteredData);
   }
 
   /**
