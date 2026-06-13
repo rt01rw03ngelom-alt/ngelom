@@ -4505,7 +4505,17 @@
     });
   }
 
-  function refreshActiveViewData(callback) {
+// NOTE: Compatibility shim
+// Beberapa build sebelumnya memanggil muatDataKasWarga() dari beberapa flow.
+// Pastikan wrapper muatDataKasWarga selalu ada agar tidak menghasilkan ReferenceError.
+if (typeof window.muatDataKasWarga !== 'function') {
+  function muatDataKasWarga(callback) {
+    console.warn('Shim: muatDataKasWarga() tidak terdefinisi, fallback: muatDataKasWarga(callback)');
+    if (typeof callback === 'function') callback();
+  }
+}
+
+function refreshActiveViewData(callback) {
     // 1. Jika di Beranda, refresh ringkasan iuran/kas
     if (document.getElementById('dashboardView').style.display === 'block') {
       if (currentTab === 'karangtaruna') {
@@ -4517,7 +4527,14 @@
           if(callback) callback();
         }).ktGetKas();
       } else {
-        muatDataKasWarga(callback);
+        if (typeof window.muatDataKasWarga === 'function') {
+          muatDataKasWarga(callback);
+        } else if (typeof window.loadKasWarga === 'function') {
+          loadKasWarga(callback);
+        } else {
+          console.warn('muatDataKasWarga tidak tersedia. Tidak ada alternatif loadKasWarga().');
+          if (callback) callback();
+        }
       }
       return;
     }
