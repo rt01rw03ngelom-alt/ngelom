@@ -2984,7 +2984,7 @@
       </div>
       <div class="filter-group">
         <label style="visibility: hidden;">Action</label>
-        <button class="btn-small" onclick="renderKasWarga()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
+        <button class="btn-small" onclick="filterKasWarga()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
@@ -3953,10 +3953,6 @@
     document.getElementById('ktFormKas').style.display = 'block';
   }
 
-  function renderKasWargaPeriode() {
-    muatRekapPeriode();
-  }
-
   function ktSimpanDataKas() {
     var id = document.getElementById('ktKasId').value;
     var tgl = document.getElementById('ktKasTanggal').value;
@@ -4529,7 +4525,7 @@
     // 2. Jika di halaman Kas detail, refresh tabelnya
     const kasView = document.getElementById('laporanKasContainer');
     if (kasView && kasView.style.display === 'block') {
-      muatDataKasWarga(callback);
+      if (typeof window.muatDataKasWarga === 'function') window.muatDataKasWarga(callback); else if(callback) callback();
     } else if (document.getElementById('ktKasView').style.display === 'block') {
       ktMuatDataKas(); if(callback) callback();
     } else {
@@ -8200,14 +8196,17 @@ function bukaJadwal() {
 
   var kasBackendTotalsGlobal = null;
 
-  function muatDataKas(callback) {
-    console.log('[KAS WARGA] muatDataKas started');
+  // 10XTHINK: Ekspos ke window segera untuk mencegah ReferenceError di fungsi lain
+  window.muatDataKasWarga = muatDataKasWarga;
+
+  function muatDataKasWarga(callback) {
+    console.log('[KAS WARGA] muatDataKasWarga executing...');
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasWarga', 'totalKasKematian'];
     targets.forEach(id => {
       const el = document.getElementById(id);
       if (!el) {
-        console.error('Element tidak ditemukan:', id);
+        console.warn('Element tidak ditemukan:', id);
         return;
       }
       el.classList.add('skeleton-text');
@@ -8218,9 +8217,9 @@ function bukaJadwal() {
     const tbodyG = document.getElementById('tbodyPengeluaran');
     const thSelect = document.getElementById('tahunKasSelect');
 
-    if (!tbodyP) { console.error('Element tidak ditemukan: tbodyPemasukan'); return; }
-    if (!tbodyG) { console.error('Element tidak ditemukan: tbodyPengeluaran'); return; }
-    if (!thSelect) { console.error('Element tidak ditemukan: tahunKasSelect'); return; }
+    if (!tbodyP) { console.warn('Element tidak ditemukan: tbodyPemasukan'); }
+    if (!tbodyG) { console.warn('Element tidak ditemukan: tbodyPengeluaran'); }
+    if (!thSelect) { console.warn('Element tidak ditemukan: tahunKasSelect'); }
 
     renderLoadingState(tbodyP, 'table', 5);
     renderLoadingState(tbodyG, 'table', 5);
@@ -8274,6 +8273,9 @@ function bukaJadwal() {
       showError('Gagal memuat data kas: ' + err.message);
     }).getKasWarga();
   }
+
+  // Ekspos fungsi ke window untuk mencegah ReferenceError saat popstate/direct call
+  window.muatDataKasWarga = muatDataKasWarga;
 
   function filterKasWarga() {
     console.log('[KAS WARGA] filterKasWarga engine processing');
@@ -8928,7 +8930,8 @@ function bukaJadwal() {
   function loadTahunIuranOptions() {
     google.script.run.withSuccessHandler(function(res) {
       var select = document.getElementById('tahunIuranSelect');
-      if (!select) return;
+      if (!select) { console.warn('tahunIuranSelect not found'); return; }
+      
       if (res.status === 'success' && res.data.length > 0) {
         select.innerHTML = '';
         for (var i = 0; i < res.data.length; i++) {
