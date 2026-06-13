@@ -3119,10 +3119,64 @@
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
   var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  var VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
+  /**
+   * 10XTHINK: PRIMARY GLOBAL LOGIN HANDLER
+   * Didefinisikan di awal script agar segera tersedia di global scope.
+   */
+  function doLogin() {
+    console.log('[LOGIN] Tombol login diklik');
+    console.log('[LOGIN] Function doLogin ditemukan');
+    
+    var email = document.getElementById('email').value;
+    var pass = document.getElementById('password').value;
+
+    if (!email || !pass) {
+      return showWarning("Email dan Password harus diisi!");
+    }
+
+    console.log('[LOGIN] Proses autentikasi berjalan');
+
+    var btn = document.getElementById('btnLogin');
+    btn.innerHTML = '<span class="loading-spinner"></span>';
+    btn.disabled = true;
+    
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.innerHTML = 'Masuk';
+        btn.disabled = false;
+        if (res.status === 'success') {
+          currentUser = res;
+          currentToken = res.token;
+          var nameEl = document.getElementById('welcomeUserName');
+          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
+
+          localStorage.setItem('sessionToken', res.token);
+          syncTokenToIDB(res.token); 
+
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('mainApp').style.display = 'block';
+          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
+          window.resolveLoginReady(); 
+          
+          registrasiWebPush();
+          currentTab = 'warga';
+          kembaliKeDashboard();
+          showSuccess('Selamat datang, ' + currentUser.nama + '!');
+        } else {
+          showError(res.pesan);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.innerHTML = 'Masuk';
+        btn.disabled = false;
+        showError('Gagal menghubungi server: ' + err.message);
+      })
+      .prosesLoginStay(email, pass);
+  }
+  window.doLogin = doLogin; // Ekspos eksplisit ke window global
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
-  var VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
-
   function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -4684,9 +4738,6 @@
       .prosesLoginStay(email, pass);
   }
 
-  // Expose globally for inline onclick="doLogin()"
-  window.doLogin = doLogin;
-
   function updateDarkModeIcons() {
     var isDark = document.body.classList.contains('dark-mode');
     var headerBtn = document.getElementById('headerDarkIcon');
@@ -4823,6 +4874,8 @@
     if (!nama || !email || !pass) {
       return showWarning("Harap lengkapi semua data pendaftaran!");
     }
+
+    console.log('[LOGIN] Proses autentikasi berjalan');
 
     var btn = document.getElementById('btnDaftar');
     btn.innerHTML = '<span class="loading-spinner"></span>';
