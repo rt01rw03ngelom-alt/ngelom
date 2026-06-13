@@ -3124,57 +3124,62 @@
    * 10XTHINK: PRIMARY GLOBAL LOGIN HANDLER
    * Didefinisikan di awal script agar segera tersedia di global scope.
    */
-  function doLogin() {
-    console.log('[LOGIN] Tombol login diklik');
-    console.log('[LOGIN] Function doLogin ditemukan');
-    
-    var email = document.getElementById('email').value;
-    var pass = document.getElementById('password').value;
+  window.doLogin = function() {
+    try {
+      console.log('[LOGIN] doLogin dipanggil');
+      console.log('[LOGIN] proses autentikasi');
 
-    if (!email || !pass) {
-      return showWarning("Email dan Password harus diisi!");
+      var emailEl = document.getElementById('email');
+      var passEl = document.getElementById('password');
+      var email = (emailEl ? emailEl.value : '').trim();
+      var pass = (passEl ? passEl.value : '');
+
+      if (!email || !pass) {
+        return showWarning("Email dan Password harus diisi!");
+      }
+
+      var btn = document.getElementById('btnLogin');
+      btn.innerHTML = '<span class="loading-spinner"></span>';
+      btn.disabled = true;
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.innerHTML = 'Masuk Sekarang';
+          btn.disabled = false;
+          if (res.status === 'success') {
+            console.log('[LOGIN] login berhasil');
+            currentUser = res;
+            currentToken = res.token;
+            var nameEl = document.getElementById('welcomeUserName');
+            if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
+
+            localStorage.setItem('sessionToken', res.token);
+            if (typeof syncTokenToIDB === 'function') syncTokenToIDB(res.token); 
+
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
+            if (typeof window.resolveLoginReady === 'function') window.resolveLoginReady(); 
+            
+            if (typeof registrasiWebPush === 'function') registrasiWebPush();
+            currentTab = 'warga';
+            kembaliKeDashboard();
+            showSuccess('Selamat datang, ' + currentUser.nama + '!');
+          } else {
+            showError(res.pesan);
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.innerHTML = 'Masuk Sekarang';
+          btn.disabled = false;
+          showError('Gagal menghubungi server: ' + err.message);
+        })
+        .prosesLoginStay(email, pass);
+    } catch (e) {
+      console.error('[LOGIN] Critical error in doLogin function:', e);
     }
-
-    console.log('[LOGIN] Proses autentikasi berjalan');
-
-    var btn = document.getElementById('btnLogin');
-    btn.innerHTML = '<span class="loading-spinner"></span>';
-    btn.disabled = true;
-    
-    google.script.run
-      .withSuccessHandler(function(res) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        if (res.status === 'success') {
-          currentUser = res;
-          currentToken = res.token;
-          var nameEl = document.getElementById('welcomeUserName');
-          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
-
-          localStorage.setItem('sessionToken', res.token);
-          syncTokenToIDB(res.token); 
-
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('mainApp').style.display = 'block';
-          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
-          window.resolveLoginReady(); 
-          
-          registrasiWebPush();
-          currentTab = 'warga';
-          kembaliKeDashboard();
-          showSuccess('Selamat datang, ' + currentUser.nama + '!');
-        } else {
-          showError(res.pesan);
-        }
-      })
-      .withFailureHandler(function(err) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        showError('Gagal menghubungi server: ' + err.message);
-      })
-      .prosesLoginStay(email, pass);
-  }
-  window.doLogin = doLogin; // Ekspos eksplisit ke window global
+  };
+  var doLogin = window.doLogin; // Compatibility for naked calls
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   function urlBase64ToUint8Array(base64String) {
@@ -4685,58 +4690,6 @@
 
 
 
-
-  function doLogin() {
-    var email = document.getElementById('email').value;
-    var pass = document.getElementById('password').value;
-
-    if (!email || !pass) {
-      return showWarning("Email dan Password harus diisi!");
-    }
-
-
-
-    var btn = document.getElementById('btnLogin');
-
-    btn.innerHTML = '<span class="loading-spinner"></span>';
-    btn.disabled = true;
-    google.script.run
-      .withSuccessHandler(function(res) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        if (res.status === 'success') {
-          currentUser = res;
-          currentToken = res.token;
-          // Perbaikan: Update nama di dashboard saat login sukses
-          var nameEl = document.getElementById('welcomeUserName');
-          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
-
-          localStorage.setItem('sessionToken', res.token);
-          syncTokenToIDB(res.token); // Sinkronisasi ke IDB
-
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('mainApp').style.display = 'block';
-          // Set state awal setelah login
-          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
-          window.resolveLoginReady(); // Resolve the login promise here (Point 2)
-          
-          // Jalankan Registrasi Push setelah login sukses
-          registrasiWebPush();
-
-          currentTab = 'warga';
-          kembaliKeDashboard();
-          showSuccess('Selamat datang, ' + currentUser.nama + '!');
-        } else {
-          showError(res.pesan);
-        }
-      })
-      .withFailureHandler(function(err) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        showError('Gagal menghubungi server: ' + err.message);
-      })
-      .prosesLoginStay(email, pass);
-  }
 
   function updateDarkModeIcons() {
     var isDark = document.body.classList.contains('dark-mode');
@@ -9770,3 +9723,9 @@ function bukaJadwal() {
     if (pwaBanner) pwaBanner.style.display = 'none';
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
+
+  console.log('[LOGIN] Function doLogin loaded');
+  refreshNavVisibility();
+</script>
+</body>
+</html>
