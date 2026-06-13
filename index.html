@@ -1211,11 +1211,22 @@
 
     /* Modern Skeleton Loading System */
     .skeleton-card {
-      background: var(--bg-surface) !important;
-      border: 1px solid var(--border-color) !important;
-      padding: 1.5rem;
-      border-radius: 16px;
-      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--border-color);
+      border-radius: 12px;
       position: relative;
       overflow: hidden;
     }
@@ -1226,14 +1237,20 @@
       position: relative;
       overflow: hidden;
     }
-    .skeleton-line::after {
+
+    /* 10X Standard Shimmer Animation */
+    .skeleton-card::after, 
+    .skeleton-line::after, 
+    .skeleton-avatar::after, 
+    .skeleton-img::after {
       content: "";
-      position: absolute; inset: 0;
-      transform: translateX(-100%);
-      background: linear-gradient(90deg, transparent, rgba(var(--primary-color-rgb), 0.08), transparent);
-      animation: bbx-shimmer 1.5s infinite;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: bbx-shimmer 1.5s infinite linear;
     }
     @keyframes bbx-shimmer {
+      0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
     }
 
@@ -2391,7 +2408,8 @@
         <label>Tahun</label>
         <input type="number" id="ktFilterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
       </div>
     </div>
@@ -5140,7 +5158,7 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
-    renderSkeleton('ktListJadwal', 3);
+    renderSkeleton('ktListJadwal', 'card', 3);
     console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[KT JADWAL] response:', res);
@@ -5233,7 +5251,7 @@
 
   function ktMuatDataKader() {
     var list = document.getElementById('ktListKader');
-    renderSkeleton('ktListKader', 3);
+    renderSkeleton('ktListKader', 'profile', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -5345,6 +5363,8 @@
       totalEl.classList.add('skeleton-text');
       totalEl.innerText = 'Rp 0.000.000';
     }
+    renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
+    
     google.script.run.withSuccessHandler(function(res) {
       if (totalEl) totalEl.classList.remove('skeleton-text');
       if (res.status === 'success') {
@@ -5790,7 +5810,7 @@
 
   function ktMuatDataGaleri() {
     var list = document.getElementById('ktListGaleri');
-    renderSkeleton('ktListGaleri', 6);
+    renderSkeleton('ktListGaleri', 'grid', 6);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.status === 'error') {
@@ -5878,7 +5898,7 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    renderSkeleton('listJadwal', 3);
+    renderSkeleton('listJadwal', 'card', 3);
     console.log('[JADWAL RT] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[JADWAL RT] response:', res);
@@ -6010,7 +6030,11 @@ function bukaJadwal() {
     var bulan = document.getElementById('rondaFilterBulan').value;
     var tahun = document.getElementById('rondaFilterTahun').value;
     var list = document.getElementById('listRonda');
-    renderSkeleton('listRonda', 3);
+    list.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+      <thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead>
+      <tbody id="rondaSkeletonBody"></tbody>
+    </table>`;
+    renderSkeleton('rondaSkeletonBody', 'table', 8);
     showLoading('Memuat data ronda...');
     
     google.script.run.withSuccessHandler(function(res) {
@@ -6509,6 +6533,10 @@ function bukaJadwal() {
       return;
     }
 
+    // 10X THINK: Action button permission check & Dynamic Injection
+    var role = (currentUser.role || "").toLowerCase();
+    var canEdit = role === 'admin' || role.includes('karang taruna');
+
     var runningSaldo = 0;
     // Saldo berjalan membutuhkan data terurut tanggal naik (Ascending)
     var sorted = [...data].sort((a,b) => a.tanggal.localeCompare(b.tanggal));
@@ -6518,13 +6546,17 @@ function bukaJadwal() {
       var nominal = item.nominal || 0;
       if (isIn) runningSaldo += nominal; else runningSaldo -= nominal;
       
+      var aksiHtml = canEdit ? 
+        '<button class="btn-small" title="Edit" onclick="ktEditKas(\''+item.id+'\',\''+item.tanggal+'\',\''+item.jenis+'\',\''+escapeJsString(item.keterangan)+'\','+nominal+')"><i class="material-icons" style="font-size:14px;">edit</i></button>' +
+        '<button class="btn-small danger" title="Hapus" onclick="ktHapusDataKas(\''+item.id+'\')"><i class="material-icons" style="font-size:14px;">delete</i></button>' : '-';
+
       var tr = document.createElement('tr');
       tr.innerHTML = '<td>' + item.tanggal + '</td>'
                    + '<td>' + (item.keterangan || '-') + '</td>'
                    + '<td style="color:#10b981; font-weight:700;">' + (isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
                    + '<td style="color:#ef4444; font-weight:700;">' + (!isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
                    + '<td style="font-weight:700; background:rgba(var(--primary-color-rgb), 0.05);">Rp ' + runningSaldo.toLocaleString('id-ID') + '</td>'
-                   + '<td><button class="btn-small" onclick="ktEditKas(\''+item.id+'\',\''+item.tanggal+'\',\''+item.jenis+'\',\''+escapeHtml(item.keterangan)+'\','+nominal+')"><i class="material-icons" style="font-size:14px;">edit</i></button></td>';
+                   + '<td>' + aksiHtml + '</td>';
       container.appendChild(tr);
     });
   }
@@ -6627,7 +6659,7 @@ function bukaJadwal() {
 
   function muatDataKontak() {
     var list = document.getElementById('listKontak');
-    renderSkeleton('listKontak', 3);
+    renderSkeleton('listKontak', 'profile', 3);
     
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -6832,7 +6864,7 @@ function bukaJadwal() {
 
   function muatDataUser() {
     var list = document.getElementById('listUsers');
-    renderSkeleton('listUsers', 3);
+    renderSkeleton('listUsers', 'profile', 5);
     showLoading('Memuat data user...');
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
@@ -7437,7 +7469,7 @@ function bukaJadwal() {
 
   function muatLaporanPengaduanAdmin() {
     var list = document.getElementById('listLaporanSemua');
-    renderSkeleton('listLaporanSemua', 3);
+    renderSkeleton('listLaporanSemua', 'card', 4);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -8242,6 +8274,7 @@ function bukaJadwal() {
   }
 
   function hapusKas(id) {
+    console.log('[KT HAPUS] Memulai proses hapus ID:', id);
     showConfirm('Yakin hapus transaksi?').then(function(res) {
       if (res.isConfirmed) {
         showLoading('Menghapus...');
@@ -9055,7 +9088,7 @@ function bukaJadwal() {
 
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
-    renderSkeleton('pkkListJadwal', 3);
+    renderSkeleton('pkkListJadwal', 'card', 3);
     console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[PKK JADWAL] response:', res);
@@ -9202,7 +9235,7 @@ function bukaJadwal() {
 
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
-    renderSkeleton('pkkListKader', 3);
+    renderSkeleton('pkkListKader', 'profile', 4);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
       if (res.data && res.data.length) {
@@ -9306,7 +9339,7 @@ function bukaJadwal() {
 
   function pkkMuatDataHistori() {
     var list = document.getElementById('pkkListHistori');
-    renderSkeleton('pkkListHistori', 3);
+    renderSkeleton('pkkListHistori', 'card', 3);
 
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
@@ -9455,7 +9488,7 @@ function bukaJadwal() {
 
   function pkkMuatDataGaleri() {
     var container = document.getElementById('pkkListGaleri');
-    container.innerHTML = SPINNER_HTML; // Gunakan SPINNER_HTML
+    renderSkeleton('pkkListGaleri', 'grid', 8);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = '';
       if(res.status==='error'){ 
@@ -9506,7 +9539,7 @@ function bukaJadwal() {
 
   function pkkMuatDataLaporanAdmin() {
     var list = document.getElementById('pkkListLaporanAdmin'); 
-    list.innerHTML = SPINNER_HTML; // Gunakan SPINNER_HTML
+    renderSkeleton('pkkListLaporanAdmin', 'card', 5);
     showLoading('Memuat laporan admin PKK...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
