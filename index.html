@@ -2832,7 +2832,7 @@
   </div>
 
 
-  <div id="kasView" class="screen">
+  <div id="laporanKasContainer" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
       <h3>Laporan Keuangan Warga</h3>
@@ -2845,7 +2845,7 @@
         </div>
         <div class="summary-info">
           <h3>Total Saldo Kas (Semua Tahun)</h3>
-          <h2 id="totalKasIuran">Rp 0</h2>
+          <h2 id="totalKasWarga">Rp 0</h2>
         </div>
       </div>
       <div class="summary-card">
@@ -2854,7 +2854,7 @@
         </div>
         <div class="summary-info">
           <h3>Total Uang Kematian</h3>
-          <h2 id="totalKonsumsiRondaIuran">Rp 0</h2>
+          <h2 id="totalKasKematian">Rp 0</h2>
         </div>
       </div>
     </div>
@@ -2873,7 +2873,7 @@
       </div>
     </div>
 
-    <div class="filter-bar filter-row">
+    <div id="filterKasContainer" class="filter-bar filter-row">
       <div class="filter-group">
         <label>Mode Laporan</label>
         <select id="laporanMode" onchange="toggleLaporanMode()">
@@ -2984,18 +2984,18 @@
       </div>
       <div class="filter-group">
         <label style="visibility: hidden;">Action</label>
-        <button class="btn-small" onclick="filterTabelTransaksi()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
+        <button class="btn-small" onclick="renderKasWarga()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
-    <div class="table-container">
+    <div id="kasWargaContainer" class="table-container">
       <div class="table-header">
         <span><i class="material-icons">arrow_upward</i> Pemasukan</span>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table id="tabelKasWarga">
           <thead>
-            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
+            <tr><th>Tanggal</th><th>Jenis</th><th>Deskripsi</th><th>Jumlah</th><th>Saldo</th><th>Aksi</th></tr>
           </thead>
           <tbody id="tbodyPemasukan"></tbody>
         </table>
@@ -3007,9 +3007,9 @@
         <span><i class="material-icons">arrow_downward</i> Pengeluaran</span>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table id="tabelKasWargaPengeluaran">
           <thead>
-            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
+            <tr><th>Tanggal</th><th>Jenis</th><th>Deskripsi</th><th>Jumlah</th><th>Saldo</th><th>Aksi</th></tr>
           </thead>
           <tbody id="tbodyPengeluaran"></tbody>
         </table>
@@ -3367,6 +3367,7 @@
   // STATE MANAGEMENT: Local Cache untuk Optimistic Update
   window.pengaduanDataGlobal = [];
   window.pkkLaporanDataGlobal = [];
+  window.ktAllKasData = [];
   
   var currentPengaduanStatusFilter = 'Semua'; // Global variable for current filter status
 
@@ -3804,6 +3805,411 @@
       .replace(/\r/g, '\\r');
   }
 
+  /**
+   * 10XTHINK: KT KAS DATA LOADER (FIX ReferenceError)
+   * Definisi global untuk akses dari refreshActiveViewData dan pemulihan state.
+   */
+  function ktMuatDataKas() {
+    var totalEl = document.getElementById('ktTotalKas');
+    if (totalEl) {
+      totalEl.classList.add('skeleton-text');
+      totalEl.innerText = 'Rp 0.000.000';
+    }
+    
+    // Poin 6: Pastikan elemen tabel tersedia sebelum render loading
+    renderLoadingState('ktTbodyRekapTransaksi', 'table', 5);
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (totalEl) totalEl.classList.remove('skeleton-text');
+      if (res && res.status === 'success') {
+        window.ktAllKasData = res.data || [];
+        if (totalEl) totalEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        
+        // Flow Task 4: Muat Tabel dan Grafik
+        renderTabelKasKT(window.ktAllKasData);
+        ktMuatGrafikKas();
+      } else {
+        renderErrorState('ktTbodyRekapTransaksi', 'ktMuatDataKas()');
+      }
+    }).withFailureHandler(() => renderErrorState('ktTbodyRekapTransaksi', 'ktMuatDataKas()')).ktGetKas();
+  }
+
+  // ========================================
+  // FILTER MODE MANAGEMENT FOR KT KAS
+  // ========================================
+  function toggleKtLaporanMode() {
+    var mode = document.getElementById('ktLaporanMode').value;
+    document.getElementById('ktLaporanTahunanMode').style.display = 'none';
+    document.getElementById('ktLaporanBulanMode').style.display = 'none';
+    document.getElementById('ktLaporanCustomMode').style.display = 'none';
+    if (mode === 'tahunan') {
+      document.getElementById('ktLaporanTahunanMode').style.display = 'flex';
+    } else if (mode === 'bulan') {
+      document.getElementById('ktLaporanBulanMode').style.display = 'flex';
+    } else {
+      document.getElementById('ktLaporanCustomMode').style.display = 'flex';
+      if (!document.getElementById('ktStartDate').value) {
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        document.getElementById('ktStartDate').value = firstDay.toISOString().slice(0, 10);
+        document.getElementById('ktEndDate').value = lastDay.toISOString().slice(0, 10);
+      }
+    }
+    muatKtRekapPeriode();
+  }
+
+  function muatKtRekapPeriode() {
+    var mode = document.getElementById('ktLaporanMode').value;
+    var startDate = '';
+    var endDate = '';
+    var periodeText = '';
+    if (mode === 'tahunan') {
+      var tahun = parseInt(document.getElementById('ktTahunLaporanTahunan').value);
+      periodeText = 'Tahun ' + tahun;
+      startDate = new Date(tahun, 0, 1).toISOString().slice(0,10);
+      endDate = new Date(tahun, 11, 31).toISOString().slice(0,10);
+    } else if (mode === 'bulan') {
+      var bulan = parseInt(document.getElementById('ktBulanLaporan').value);
+      var tahunBulan = parseInt(document.getElementById('ktTahunLaporanBulan').value);
+      var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
+      startDate = new Date(tahunBulan, bulan-1, 1).toISOString().slice(0,10);
+      endDate = new Date(tahunBulan, bulan, 0).toISOString().slice(0,10);
+    } else {
+      startDate = document.getElementById('ktStartDate').value;
+      endDate = document.getElementById('ktEndDate').value;
+      if (!startDate || !endDate) {
+        return showWarning('Pilih tanggal mulai dan selesai!');
+      }
+      var s = startDate.split('-'); var e = endDate.split('-');
+      periodeText = s[2]+'/'+s[1] + ' - ' + e[2]+'/'+e[1];
+    }
+    // Note: Update periode text jika element ada
+    var periodeEl = document.getElementById('ktPeriodeText');
+    if (periodeEl) periodeEl.innerText = periodeText;
+    fetchKtKasByDateRange(startDate, endDate);
+  }
+
+  function fetchKtKasByDateRange(startDate, endDate) {
+    showLoading('Memuat data kas Karang Taruna...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (!res) {
+        showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Response kosong');
+        return;
+      }
+      console.log('[KAS KT] Filter Range Response:', res);
+
+      if (res.status === 'error') {
+        showError('⚠️ Gagal Memuat Data Kas Karang Taruna - ' + (res.pesan || 'Unknown error'));
+        return;
+      }
+      var totalPemasukan = 0;
+      var totalPengeluaran = 0;
+      if (res.data && res.data.length) {
+        for (var i = 0; i < res.data.length; i++) {
+          if (res.data[i].jenis === 'Pemasukan') {
+            totalPemasukan += res.data[i].nominal;
+          } else {
+            totalPengeluaran += res.data[i].nominal;
+          }
+        }
+      }
+      // Note: Update summary elements jika ada
+      var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
+      var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
+      var elSelisih = document.getElementById('ktRekapSelisih');
+      
+      console.log('[KAS KT] Rekap Elements:', {in: elPemasukan, out: elPengeluaran, total: elSelisih});
+
+      if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
+      if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
+    }).withFailureHandler(function(err) {
+      Swal.close();
+      showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
+      console.error('RAW RESPONSE (failure handler):', err);
+    }).ktGetKasByDateRange(startDate, endDate);
+  }
+
+  function ktBukaFormKas(jenis) {
+    document.getElementById('ktJudulFormKas').innerText = 'Tambah ' + jenis + ' KT';
+    document.getElementById('ktKasId').value = '';
+    document.getElementById('ktKasTanggal').value = new Date().toISOString().slice(0,10);
+    document.getElementById('ktKasJenis').value = jenis;
+    document.getElementById('ktKasKeterangan').value = '';
+    document.getElementById('ktKasNominal').value = '';
+    document.getElementById('ktFormKas').style.display = 'block';
+  }
+
+  function ktEditKas(id, tgl, jenis, ket, nom) {
+    document.getElementById('ktJudulFormKas').innerText = 'Edit ' + jenis + ' KT';
+    document.getElementById('ktKasId').value = id;
+    document.getElementById('ktKasTanggal').value = tgl;
+    document.getElementById('ktKasJenis').value = jenis;
+    document.getElementById('ktKasKeterangan').value = ket;
+    document.getElementById('ktKasNominal').value = nom ? Number(nom).toLocaleString('id-ID') : '';
+    document.getElementById('ktFormKas').style.display = 'block';
+  }
+
+  function renderKasWargaPeriode() {
+    muatRekapPeriode();
+  }
+
+  function ktSimpanDataKas() {
+    var id = document.getElementById('ktKasId').value;
+    var tgl = document.getElementById('ktKasTanggal').value;
+    var jns = document.getElementById('ktKasJenis').value;
+    var ket = document.getElementById('ktKasKeterangan').value;
+    var nom = document.getElementById('ktKasNominal').value.replace(/\D/g, '');
+    if (!tgl || !nom) return showWarning('Lengkapi data transaksi!');
+    
+    showLoading('Menyimpan Kas KT...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        showSuccess(res.pesan);
+        tutupForm('ktFormKas', '');
+        ktMuatDataKas();
+      } else { showError(res.pesan); }
+    }).ktSimpanKas(id, tgl, jns, nom, ket, null, '', '');
+  }
+
+  function ktHapusDataKas(id) {
+    showConfirm('Hapus transaksi Kas KT ini?').then(function(res) {
+      if (res.isConfirmed) {
+        showLoading('Menghapus...');
+        google.script.run.withSuccessHandler(function(r) {
+          Swal.close();
+          if (r.status === 'success') {
+            showSuccess(r.pesan);
+            ktMuatDataKas();
+          } else { showError(r.pesan); }
+        }).ktHapusKas(id);
+      }
+    });
+  }
+
+  function ktCetakLaporanKas() {
+    var tahun = document.getElementById('ktTahunKasSelect').value;
+    var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Panggil data cetak Kartar
+    showLoading('Menyiapkan laporan...');
+    google.script.run.withSuccessHandler(function(resSettings) {
+      Swal.close();
+      const cfg = (resSettings.status === 'success' && resSettings.data.kartar) 
+                 ? resSettings.data.kartar 
+                 : { nama_ttd: '( .................... )', url_logo_kop: '' };
+
+    
+    var dataBulanan = Array.from({ length: 12 }, (_, i) => ({
+      namaBulan: bulanIndo[i],
+      pemasukan: 0,
+      pengeluaran: 0,
+      keterangan: []
+    }));
+
+    ktAllKasData.forEach(item => {
+      var d = item.tanggal.split('-');
+      if (d[0] == tahun) {
+        var mIdx = parseInt(d[1]) - 1;
+        if (item.jenis === 'Pemasukan') dataBulanan[mIdx].pemasukan += item.nominal;
+        else dataBulanan[mIdx].pengeluaran += item.nominal;
+        if (item.keterangan) dataBulanan[mIdx].keterangan.push(item.keterangan);
+      }
+    });
+
+    var total = { p: 0, g: 0 };
+    var tableRows = dataBulanan.map(b => {
+      if (b.pemasukan === 0 && b.pengeluaran === 0) return '';
+      total.p += b.pemasukan; total.g += b.pengeluaran;
+      return `<tr>
+        <td>${b.namaBulan}</td>
+        <td align="right">${b.pemasukan.toLocaleString('id-ID')}</td>
+        <td align="right">${b.pengeluaran.toLocaleString('id-ID')}</td>
+        <td><small>${b.keterangan.slice(0,3).join(', ')}</small></td>
+      </tr>`;
+    }).join('');
+
+    var printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <html><head><title>Laporan Kas Karang Taruna</title>
+      <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: "Times New Roman", Times, serif; padding: 0; color: #000; line-height: 1.2; }
+        .kop-container { display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 4pt; }
+        .kop-logo { flex: 0 0 75pt; text-align: left; }
+        .kop-logo img { width: 100px; height: 100px; object-fit: contain; }
+        .kop-spacer { flex: 0 0 75pt; }
+        .kop-text { flex: 1; text-align: center; }
+        .kop-title { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-bottom: 2pt; }
+        .kop-subtitle { font-size: 18px; font-weight: bold; text-transform: uppercase; margin-bottom: 2pt; }
+        .kop-address { font-size: 10pt; font-style: italic; margin-top: 4pt; }
+        .kop-line { border-top: 2.5pt solid #000; border-bottom: 0.5pt solid #000; height: 2pt; margin-bottom: 20pt; width: 100%; }
+        
+        .report-title { text-align: center; margin-bottom: 20pt; }
+        .report-title h2 { font-size: 14pt; text-transform: uppercase; margin: 0; text-decoration: underline; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10pt; font-size: 11pt; }
+        th, td { border: 1pt solid #000; padding: 6pt 8pt; }
+        th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; text-transform: uppercase; }
+        
+        @media print {
+          button, select { display: none !important; }
+          body { -webkit-print-color-adjust: exact; }
+        }
+        
+        .footer { margin-top: 50px; float: right; text-align: center; width: 250px; }
+      </style></head>
+      <body>
+      ${getHtmlKopSurat(cfg.url_logo_kop, 'kartar')}
+      <div class="report-title">
+        <h2>LAPORAN KEUANGAN KARANG TARUNA</h2>
+        <div style="font-size: 12pt; margin-top: 5pt;">Tahun Anggaran: ${tahun}</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th>Pemasukan (Rp)</th>
+            <th>Pengeluaran (Rp)</th>
+            <th>Keterangan Kegiatan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+          <tr style="font-weight:bold; background:#f2f2f2;">
+            <td>TOTAL TAHUNAN</td>
+            <td align="right">${total.p.toLocaleString('id-ID')}</td>
+            <td align="right">${total.g.toLocaleString('id-ID')}</td>
+            <td>Saldo Akhir: Rp ${(total.p - total.g).toLocaleString('id-ID')}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="footer">
+        <p>Ngelom, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
+        <p>Bendahara Karang Taruna</p>
+        <br><br><br>
+        <p><strong>${cfg.nama_ttd.includes('(') ? cfg.nama_ttd : '( ' + cfg.nama_ttd + ' )'}</strong></p>
+      </div>
+      </body></html>`);
+    printWin.document.close();
+    printWin.print();
+    }).getSettingCetak();
+  }
+
+  function ktMuatGrafikKas() {
+    var year = parseInt(document.getElementById('ktTahunKasSelect').value);
+    renderGrafikKasKT(year);
+  }
+
+  function renderGrafikKasKT(tahun) {
+    var canvas = document.getElementById('ktKasChart');
+    console.log('[KT KAS] renderGrafikKasKT Canvas:', canvas);
+    
+    if (!canvas) {
+       console.error('[KT KAS] ERROR: Container ktKasChart tidak ditemukan');
+       return;
+    }
+
+    var pemasukanPerBulan = Array(12).fill(0);
+    var pengeluaranPerBulan = Array(12).fill(0);
+    
+    ktAllKasData.forEach(function(item) {
+      var parts = item.tanggal.split('-');
+      if (parts.length === 3 && parseInt(parts[0]) === tahun) {
+        var bln = parseInt(parts[1]) - 1;
+        if (item.jenis === 'Pemasukan') pemasukanPerBulan[bln] += item.nominal;
+        else if (item.jenis === 'Pengeluaran') pengeluaranPerBulan[bln] += item.nominal;
+      }
+    });
+
+    var labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    if (ktKasChart) ktKasChart.destroy();
+    
+    var ctx = canvas.getContext('2d');
+    ktKasChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Pemasukan KT', data: pemasukanPerBulan, borderColor: '#10b981', backgroundColor: 'transparent', borderWidth: 3, tension: 0.3, pointRadius: 4 },
+          { label: 'Pengeluaran KT', data: pengeluaranPerBulan, borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 3, tension: 0.3, pointRadius: 4 }
+        ]
+      },
+      options: { 
+        responsive: true, 
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true, ticks: { callback: function(v) { return 'Rp ' + v.toLocaleString('id-ID'); } } } }
+      }
+    });
+  }
+
+  /**
+   * 10X THINK: Implementasi renderTabelKasKT dengan Saldo Berjalan
+   */
+  function renderTabelKasKT(data) {
+    var container = document.getElementById('ktTbodyRekapTransaksi');
+    
+    if (!container) {
+      console.error('[KAS KT] Element ktTbodyRekapTransaksi tidak ditemukan');
+      return;
+    }
+    
+    container.innerHTML = '';
+    if (!data || data.length === 0) {
+      container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Tidak ada data pada periode ini.</td></tr>';
+      return;
+    }
+
+    // 10X THINK: Action button permission check & Dynamic Injection
+    // Restore logika lama (Permission based)
+    var canEdit = hasPermission('kt_kas_crud');
+
+    var runningSaldo = 0;
+    // Saldo berjalan membutuhkan data terurut tanggal naik (Ascending)
+    var sorted = [...data].sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+    
+    sorted.forEach(function(item) {
+      var isIn = item.jenis === 'Pemasukan';
+      var nominal = item.nominal || 0;
+      if (isIn) runningSaldo += nominal; else runningSaldo -= nominal;
+      
+      var aksiHtml = canEdit ? 
+        '<button class="btn-small" title="Edit" onclick="ktEditKas(\''+item.id+'\',\''+item.tanggal+'\',\''+item.jenis+'\',\''+escapeJsString(item.keterangan)+'\','+nominal+')"><i class="material-icons" style="font-size:14px;">edit</i></button>' +
+        '<button class="btn-small danger" title="Hapus" onclick="ktHapusDataKas(\''+item.id+'\')"><i class="material-icons" style="font-size:14px;">delete</i></button>' : '-';
+
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + item.tanggal + '</td>'
+                   + '<td>' + (item.keterangan || '-') + '</td>'
+                   + '<td style="color:#10b981; font-weight:700;">' + (isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
+                   + '<td style="color:#ef4444; font-weight:700;">' + (!isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
+                   + '<td style="font-weight:700; background:rgba(var(--primary-color-rgb), 0.05);">Rp ' + runningSaldo.toLocaleString('id-ID') + '</td>'
+                   + '<td>' + aksiHtml + '</td>';
+      container.appendChild(tr);
+    });
+  }
+
+  function filterKtTabelTransaksi() {
+    const rekapBox = document.getElementById('ktRekapitulasiBox');
+    if(rekapBox) rekapBox.style.display = 'block';
+
+    var bulan = parseInt(document.getElementById('ktFilterBulanTransaksi').value);
+    var tahun = parseInt(document.getElementById('ktFilterTahunTransaksi').value);
+    
+    var filtered = ktAllKasData.filter(function(item) {
+      var p = item.tanggal.split('-');
+      if (p.length !== 3) return false;
+      var itemThn = parseInt(p[0]);
+      var itemBln = parseInt(p[1]);
+      if (bulan === 0) return itemThn === tahun;
+      return itemThn === tahun && itemBln === bulan;
+    });
+    renderTabelKasKT(filtered);
+  }
+
   function toggleGaleriType(prefix) {
     var typeId = prefix === 'rt' ? 'galeriType' : prefix + 'GaleriType';
     var fileContId = prefix === 'rt' ? 'rtGaleriFileContainer' : prefix + 'GaleriFileContainer';
@@ -4115,14 +4521,15 @@
           if(callback) callback();
         }).ktGetKas();
       } else {
-        muatDataKas(callback);
+        muatDataKasWarga(callback);
       }
       return;
     }
 
     // 2. Jika di halaman Kas detail, refresh tabelnya
-    if (document.getElementById('kasView').style.display === 'block') {
-      muatDataKas(callback);
+    const kasView = document.getElementById('laporanKasContainer');
+    if (kasView && kasView.style.display === 'block') {
+      muatDataKasWarga(callback);
     } else if (document.getElementById('ktKasView').style.display === 'block') {
       ktMuatDataKas(); if(callback) callback();
     } else {
@@ -5150,7 +5557,7 @@
       { title: "Kelola User", icon: "manage_accounts", roles: ["admin"], action: "bukaKelolaUser", perm: "rt_user" },
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
-      { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
+      { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKasWarga", perm: "rt_kas" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
       { title: "Pengaduan Saya", icon: "history", roles: ["admin", "pengurus rt", "warga"], action: "bukaHistori", perm: "rt_pengaduan_kirim" },
       { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" }
@@ -5455,6 +5862,13 @@
   var ktAllKasData = [];
 
   function bukaKtKas() {
+    // Fallback Task 5: Pastikan modul Kas KT terdefinisi
+    if(typeof ktMuatDataKas !== 'function'){
+      console.error('ktMuatDataKas missing');
+      showError('Modul Kas Karang Taruna gagal dimuat');
+      return;
+    }
+
     sembunyikanSemuaLayar();
     var viewEl = document.getElementById('ktKasView');
     if (viewEl) viewEl.style.display = 'block';
@@ -5476,8 +5890,39 @@
       var inputFilter = document.getElementById('ktFilterTahunTransaksi');
       if (inputFilter) inputFilter.value = new Date().getFullYear();
       
+    // Perbaikan Poin 5 & 6: Pastikan memuat data utama dan rekapitulasi periode dengan aman
     ktMuatDataKas();
+    muatKtRekapPeriode();
+  }
+
+  /**
+   * 10XTHINK: KT KAS DATA LOADER (FIX ReferenceError)
+   * Definisi global untuk akses dari refreshActiveViewData dan pemulihan state.
+   */
+  function ktMuatDataKas() {
+    var totalEl = document.getElementById('ktTotalKas');
+    if (totalEl) {
+      totalEl.classList.add('skeleton-text');
+      totalEl.innerText = 'Rp 0.000.000';
     }
+    
+    // Poin 6: Pastikan elemen tabel tersedia sebelum render loading
+    renderLoadingState('ktTbodyRekapTransaksi', 'table', 5);
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (totalEl) totalEl.classList.remove('skeleton-text');
+      if (res && res.status === 'success') {
+        window.ktAllKasData = res.data || [];
+        if (totalEl) totalEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        
+        // Restore logika safety check lama
+        if (typeof renderTabelKasKT === 'function') renderTabelKasKT(window.ktAllKasData);
+        if (typeof ktMuatGrafikKas === 'function') ktMuatGrafikKas();
+      } else {
+        renderErrorState('ktTbodyRekapTransaksi', 'ktMuatDataKas()');
+      }
+    }).withFailureHandler(() => renderErrorState('ktTbodyRekapTransaksi', 'ktMuatDataKas()')).ktGetKas();
+  }
 
   // ========================================
   // FILTER MODE MANAGEMENT FOR KT KAS
@@ -5815,6 +6260,7 @@
     document.getElementById('ktGaleriTanggal').value = new Date().toISOString().slice(0,10);
     document.getElementById('ktGaleriJudul').value = '';
     document.getElementById('ktGaleriFile').value = '';
+    document.getElementById('ktGaleriTanggal').value = new Date().toISOString().slice(0,10);
     document.getElementById('ktGaleriVideoLink').value = '';
     document.getElementById('ktGaleriDeskripsi').value = '';
     document.getElementById('ktPreviewGaleri').innerHTML = '';
@@ -5824,6 +6270,7 @@
   function ktUploadGaleri() {
     var id = document.getElementById('ktGaleriId').value;
     var j = document.getElementById('ktGaleriJudul').value;
+    var tgl = document.getElementById('ktGaleriTanggal').value;
     var tgl = document.getElementById('ktGaleriTanggal').value;
     var d = document.getElementById('ktGaleriDeskripsi').value;
     var type = document.getElementById('ktGaleriType').value;
@@ -6581,9 +7028,9 @@ function bukaJadwal() {
   }
 
   /**
-   * 10X THINK: Implementasi renderRekapKasKT dengan Saldo Berjalan
+   * 10X THINK: Implementasi renderTabelKasKT dengan Saldo Berjalan
    */
-  function renderRekapKasKT(data) {
+  function renderTabelKasKT(data) {
     var container = document.getElementById('ktTbodyRekapTransaksi');
     
     if (!container) {
@@ -6598,8 +7045,8 @@ function bukaJadwal() {
     }
 
     // 10X THINK: Action button permission check & Dynamic Injection
-    var role = (currentUser.role || "").toLowerCase();
-    var canEdit = role === 'admin' || role.includes('karang taruna');
+    // Restore logika lama (Permission based)
+    var canEdit = hasPermission('kt_kas_crud');
 
     var runningSaldo = 0;
     // Saldo berjalan membutuhkan data terurut tanggal naik (Ascending)
@@ -6640,7 +7087,7 @@ function bukaJadwal() {
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
-    renderRekapKasKT(filtered);
+    renderTabelKasKT(filtered);
   }
 
   function bukaFormRonda() {
@@ -7705,34 +8152,49 @@ function bukaJadwal() {
   }
 
   function updateRingkasanUI(backendTotals) {
-    // Prefer pakai total dari backend (lebih akurat dari sisi kategori/akumulasi)
-    // backendTotals totalSaldo/totalUangKematian bisa saja string.
-    var totalSaldo = hitungTotalSaldo(allKasData);
-    var totalKematian = hitungTotalKematian(allKasData);
+    const totalSaldo = (allKasData && allKasData.length) ? hitungTotalSaldo(allKasData) : 0;
+    const totalKematian = (allKasData && allKasData.length) ? hitungTotalKematian(allKasData) : 0;
+
+    let saldoFinal = totalSaldo;
+    let kematianFinal = totalKematian;
 
     if (backendTotals) {
       if (backendTotals.totalSaldo !== null && backendTotals.totalSaldo !== undefined) {
-        var parsedSaldo = parseFloat(backendTotals.totalSaldo);
-        if (isFinite(parsedSaldo)) totalSaldo = parsedSaldo;
+        const parsedSaldo = parseFloat(backendTotals.totalSaldo);
+        if (!isNaN(parsedSaldo)) saldoFinal = parsedSaldo;
       }
       if (backendTotals.totalUangKematian !== null && backendTotals.totalUangKematian !== undefined) {
-        var parsedKematian = parseFloat(backendTotals.totalUangKematian);
-        if (isFinite(parsedKematian)) totalKematian = parsedKematian;
+        const parsedKematian = parseFloat(backendTotals.totalUangKematian);
+        if (!isNaN(parsedKematian)) kematianFinal = parsedKematian;
       }
     }
 
-    // Selalu update elemen di dalam layar laporan Kas (kasView)
-    var totalKasEl2 = document.getElementById('totalKasIuran');
-    if (totalKasEl2) totalKasEl2.innerText = totalSaldo.toLocaleString('id-ID');
-    var totalKematianEl2 = document.getElementById('totalKonsumsiRondaIuran');
-    if (totalKematianEl2) totalKematianEl2.innerText = totalKematian.toLocaleString('id-ID');
+    // Target 2: Verifikasi & Sinkronisasi ID Summary
+    const ids = {
+      'totalKasWarga': saldoFinal,
+      'totalKasKematian': kematianFinal,
+      'totalKasIuranValue': saldoFinal,
+      'totalKonsumsiRondaIuranValue': kematianFinal,
+      'totalKasIuran': saldoFinal, // Legacy support
+      'totalKonsumsiRondaIuran': kematianFinal // Legacy support
+    };
+
+    for (let id in ids) {
+      const el = document.getElementById(id);
+      if (!el) {
+        console.warn('Element summary tidak ditemukan:', id);
+        continue;
+      }
+      const val = ids[id] || 0;
+      el.innerText = 'Rp ' + val.toLocaleString('id-ID');
+    }
 
     // Hanya update elemen di Beranda (dashboardView) jika tab yang aktif adalah 'warga'
     if (currentTab === 'warga') {
       var totalKasEl1 = document.getElementById('totalKasIuranValue');
-      if (totalKasEl1) totalKasEl1.innerText = totalSaldo.toLocaleString('id-ID');
+      if (totalKasEl1) totalKasEl1.innerText = saldoFinal.toLocaleString('id-ID');
       var totalKematianEl1 = document.getElementById('totalKonsumsiRondaIuranValue');
-      if (totalKematianEl1) totalKematianEl1.innerText = totalKematian.toLocaleString('id-ID');
+      if (totalKematianEl1) totalKematianEl1.innerText = kematianFinal.toLocaleString('id-ID');
     }
   }
 
@@ -7741,20 +8203,29 @@ function bukaJadwal() {
   function muatDataKas(callback) {
     console.log('[KAS WARGA] muatDataKas started');
     // Aktifkan skeleton pada semua elemen saldo RT
-    const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
+    const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasWarga', 'totalKasKematian'];
     targets.forEach(id => {
       const el = document.getElementById(id);
-      if (el) {
-        el.classList.add('skeleton-text');
-        el.innerText = '0.000.000';
+      if (!el) {
+        console.error('Element tidak ditemukan:', id);
+        return;
       }
+      el.classList.add('skeleton-text');
+      el.innerText = '0.000.000';
     });
 
-    renderLoadingState('tbodyPemasukan', 'table', 5);
-    renderLoadingState('tbodyPengeluaran', 'table', 5);
+    const tbodyP = document.getElementById('tbodyPemasukan');
+    const tbodyG = document.getElementById('tbodyPengeluaran');
+    const thSelect = document.getElementById('tahunKasSelect');
+
+    if (!tbodyP) { console.error('Element tidak ditemukan: tbodyPemasukan'); return; }
+    if (!tbodyG) { console.error('Element tidak ditemukan: tbodyPengeluaran'); return; }
+    if (!thSelect) { console.error('Element tidak ditemukan: tahunKasSelect'); return; }
+
+    renderLoadingState(tbodyP, 'table', 5);
+    renderLoadingState(tbodyG, 'table', 5);
 
     google.script.run.withSuccessHandler(function(res) {
-      console.log('[KAS WARGA] API Response:', res);
       targets.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('skeleton-text');
@@ -7762,7 +8233,8 @@ function bukaJadwal() {
 
       var backendTotals = null;
       if (res && res.status === 'success') {
-        allKasData = res.data || [];
+        window.allKasData = res.data || [];
+        console.log('[KAS WARGA] Data diterima:', window.allKasData.length, 'baris');
         var ts = res.totalSaldo;
         var tk = res.totalUangKematian;
         backendTotals = {
@@ -7770,45 +8242,59 @@ function bukaJadwal() {
           totalUangKematian: (isFinite(parseFloat(tk)) ? parseFloat(tk) : null)
         };
       } else {
-        allKasData = [];
+        console.error('Backend error:', res ? res.pesan : 'No response');
+        window.allKasData = [];
       }
-      kasBackendTotalsGlobal = backendTotals;
+      window.kasBackendTotalsGlobal = backendTotals;
 
       var pemasukanList = [];
       var pengeluaranList = [];
-      for (var i = 0; i < allKasData.length; i++) {
-        var jns = (allKasData[i].jenis || '').toLowerCase().trim();
+      const sourceData = window.allKasData || [];
+      for (var i = 0; i < sourceData.length; i++) {
+        var jns = (sourceData[i].jenis || '').toLowerCase().trim();
         if (jns === 'pemasukan') {
-          pemasukanList.push(allKasData[i]);
+          pemasukanList.push(sourceData[i]);
         } else if (jns === 'pengeluaran') {
-          pengeluaranList.push(allKasData[i]);
+          pengeluaranList.push(sourceData[i]);
         }
       }
-      originalPemasukanList = pemasukanList;
-      originalPengeluaranList = pengeluaranList;
-      filterTabelTransaksi();
+      window.originalPemasukanList = pemasukanList;
+      window.originalPengeluaranList = pengeluaranList;
+      filterKasWarga(); // Target logic lama yang bekerja
       muatRekapPeriode();
       updateRingkasanUI(backendTotals);
-      var selectedYear = parseInt(document.getElementById('tahunKasSelect').value);
-      renderGrafikKas(selectedYear);
+      const selYear = document.getElementById('tahunKasSelect');
+      if (selYear) renderGrafikKasWarga(parseInt(selYear.value));
       if (callback) {
         callback();
       }
-      console.log('[KAS WARGA] muatDataKas completed');
+      console.log('[KAS WARGA] muatDataKasWarga completed');
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
     }).getKasWarga();
   }
 
-  function filterTabelTransaksi() {
-    var bulan = parseInt(document.getElementById('filterBulanTransaksi').value);
-    var tahun = parseInt(document.getElementById('filterTahunTransaksi').value);
+  function filterKasWarga() {
+    console.log('[KAS WARGA] filterKasWarga engine processing');
+    const elBln = document.getElementById('filterBulanTransaksi');
+    const elThn = document.getElementById('filterTahunTransaksi');
+    
+    // Target 1: Pengecekan Element ada di HTML
+    if (!elBln) { console.error('Element tidak ditemukan: filterBulanTransaksi'); return; }
+    if (!elThn) { console.error('Element tidak ditemukan: filterTahunTransaksi'); return; }
+    
+    const filterBar = document.getElementById('filterKasContainer');
+    if (!filterBar) { console.error('Element tidak ditemukan: filterKasContainer'); }
+
+    var bulan = parseInt(elBln.value);
+    var tahun = parseInt(elThn.value);
     var filteredP = [];
     var filteredG = [];
-    for (var i = 0; i < originalPemasukanList.length; i++) {
-      var item = originalPemasukanList[i];
-      var p = item.tanggal.split('-');
+    const sourceP = window.originalPemasukanList || [];
+    for (var i = 0; i < sourceP.length; i++) {
+      var item = sourceP[i];
+      var p = (item.tanggal || "").split('-');
       if (p.length === 3) {
         var thn = parseInt(p[0]);
         var bln = parseInt(p[1]);
@@ -7823,8 +8309,9 @@ function bukaJadwal() {
         }
       }
     }
-    for (var j = 0; j < originalPengeluaranList.length; j++) {
-      var item2 = originalPengeluaranList[j];
+    const sourceG = window.originalPengeluaranList || [];
+    for (var j = 0; j < sourceG.length; j++) {
+      var item2 = sourceG[j];
       var p2 = item2.tanggal.split('-');
       if (p2.length === 3) {
         var thn2 = parseInt(p2[0]);
@@ -7840,46 +8327,58 @@ function bukaJadwal() {
         }
       }
     }
-    renderTabelTransaksi(filteredP, filteredG);
+    renderTabelKas(filteredP, filteredG);
   }
 
-  function renderTabelTransaksi(pemasukanList, pengeluaranList) {
+  function renderTabelKas(pemasukanList, pengeluaranList) {
+    console.log('[KAS WARGA] renderTabelKas dipanggil');
     var tbodyP = document.getElementById('tbodyPemasukan');
     var tbodyG = document.getElementById('tbodyPengeluaran');
+    var tableW = document.getElementById('tabelKasWarga');
+    var containerW = document.getElementById('kasWargaContainer');
     
-    if(!tbodyP || !tbodyG){ 
-      console.error('[KAS WARGA] Element tbodyPemasukan/tbodyPengeluaran tidak ditemukan'); 
-      return; 
-    }
+    if (!tbodyP) { console.error('Element tidak ditemukan: tbodyPemasukan'); return; }
+    if (!tbodyG) { console.error('Element tidak ditemukan: tbodyPengeluaran'); return; }
+    if (!tableW) { console.error('Element tidak ditemukan: tabelKasWarga'); return; }
+    if (!containerW) { console.error('Element tidak ditemukan: kasWargaContainer'); return; }
 
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
-    if (!pemasukanList.length && !pengeluaranList.length) {
-      tbodyP.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi.</td></tr>';
-      tbodyG.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi.</td></tr>';
+
+    // Target 5: Simulation (Empty/Null check)
+    if ((!pemasukanList || !pemasukanList.length) && (!pengeluaranList || !pengeluaranList.length)) {
+      const emptyState = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">Data transaksi tidak ditemukan untuk filter ini.</td></tr>';
+      tbodyP.innerHTML = emptyState;
+      tbodyG.innerHTML = emptyState;
       return;
     }
-    var isAdmin = hasPermission('rt_iuran_manage');
+
+    // Logika render mengikuti struktur lama namun dengan kolom target 4
+    var isAdmin = hasPermission('rt_kas_crud');
     for (var p = 0; p < pemasukanList.length; p++) {
       var item = pemasukanList[p];
+
       var row = tbodyP.insertRow();
       row.insertCell(0).innerText = item.tanggal;
-      var cellKat = row.insertCell(1);
-      if (item.kategori) {
-        cellKat.innerHTML = '<span class="kategori-badge">' + item.kategori + '</span>';
-      } else {
-        cellKat.innerText = '-';
-      }
+      row.insertCell(1).innerText = 'Pemasukan'; 
       row.insertCell(2).innerText = item.deskripsi || '-';
       var cellJumlah = row.insertCell(3);
       cellJumlah.innerText = 'Rp ' + item.jumlah.toLocaleString('id-ID');
       cellJumlah.style.color = '#10b981';
       cellJumlah.style.fontWeight = '700';
-      var cellAksi = row.insertCell(4);
+
+      // Target 4: Saldo
+      var cellS = row.insertCell(4);
+      cellS.innerText = 'Rp ' + (item.saldo || 0).toLocaleString('id-ID');
+      cellS.style.fontWeight = '600';
+
+      var cellAksi = row.insertCell(5);
       if (isAdmin) {
-        var eb = document.createElement('button');
-        eb.className = 'btn-small';
-        eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+        var wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.gap = '4px';
+        
+        var eb = document.createElement('button'); eb.className = 'btn-small'; eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
         (function(it) {
           eb.onclick = function() {
             editKas(
@@ -7892,40 +8391,42 @@ function bukaJadwal() {
             );
           };
         })(item);
-        var db = document.createElement('button');
-        db.className = 'btn-small danger';
-        db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        var db = document.createElement('button'); db.className = 'btn-small danger'; db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
         (function(id) {
-          db.onclick = function() {
-            hapusKas(id);
-          };
+          db.onclick = function() { hapusKas(id); };
         })(item.id);
-        cellAksi.appendChild(eb);
-        cellAksi.appendChild(db);
+        
+        wrap.appendChild(eb); wrap.appendChild(db);
+        cellAksi.appendChild(wrap);
       } else {
         cellAksi.innerText = '-';
       }
     }
+
     for (var q = 0; q < pengeluaranList.length; q++) {
       var item2 = pengeluaranList[q];
+
       var row2 = tbodyG.insertRow();
       row2.insertCell(0).innerText = item2.tanggal;
-      var cellKat2 = row2.insertCell(1);
-      if (item2.kategori) {
-        cellKat2.innerHTML = '<span class="kategori-badge">' + item2.kategori + '</span>';
-      } else {
-        cellKat2.innerText = '-';
-      }
+      row2.insertCell(1).innerText = 'Pengeluaran'; 
       row2.insertCell(2).innerText = item2.deskripsi || '-';
       var cellJumlah2 = row2.insertCell(3);
       cellJumlah2.innerText = 'Rp ' + item2.jumlah.toLocaleString('id-ID');
       cellJumlah2.style.color = '#ef4444';
       cellJumlah2.style.fontWeight = '700';
-      var cellAksi2 = row2.insertCell(4);
+
+      // Target 4: Saldo
+      var cellS2 = row2.insertCell(4);
+      cellS2.innerText = 'Rp ' + (item2.saldo || 0).toLocaleString('id-ID');
+      cellS2.style.fontWeight = '600';
+
+      var cellAksi2 = row2.insertCell(5);
       if (isAdmin) {
-        var eb2 = document.createElement('button');
-        eb2.className = 'btn-small';
-        eb2.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+        var wrap2 = document.createElement('div');
+        wrap2.style.display = 'flex';
+        wrap2.style.gap = '4px';
+
+        var eb2 = document.createElement('button'); eb2.className = 'btn-small'; eb2.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
         (function(it) {
           eb2.onclick = function() {
             editKas(
@@ -7938,16 +8439,13 @@ function bukaJadwal() {
             );
           };
         })(item2);
-        var db2 = document.createElement('button');
-        db2.className = 'btn-small danger';
-        db2.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        var db2 = document.createElement('button'); db2.className = 'btn-small danger'; db2.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
         (function(id) {
-          db2.onclick = function() {
-            hapusKas(id);
-          };
+          db2.onclick = function() { hapusKas(id); };
         })(item2.id);
-        cellAksi2.appendChild(eb2);
-        cellAksi2.appendChild(db2);
+
+        wrap2.appendChild(eb2); wrap2.appendChild(db2);
+        cellAksi2.appendChild(wrap2);
       } else {
         cellAksi2.innerText = '-';
       }
@@ -8071,7 +8569,9 @@ function bukaJadwal() {
     }).getSettingCetak();
   }
 
-  function renderGrafikKas(tahun) {
+  function renderGrafikKasWarga(tahun) {
+    console.log('[KAS WARGA] renderGrafikKasWarga tahun:', tahun);
+    console.log('[KAS WARGA]', allKasData);
     var pemasukanPerBulan = [0,0,0,0,0,0,0,0,0,0,0,0];
     var pengeluaranPerBulan = [0,0,0,0,0,0,0,0,0,0,0,0];
     for (var i = 0; i < allKasData.length; i++) {
@@ -8289,18 +8789,27 @@ function bukaJadwal() {
   }
 
   function muatRekapPeriode() {
-    var mode = document.getElementById('laporanMode').value;
+    const elMode = document.getElementById('laporanMode');
+    if (!elMode) { console.error('Element laporanMode tidak ditemukan'); return; }
+    
+    var mode = elMode.value;
     var startDate = '';
     var endDate = '';
     var periodeText = '';
     if (mode === 'tahunan') {
-      var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
+      const elThn = document.getElementById('tahunLaporanTahunan');
+      if (!elThn) { console.error('Element tahunLaporanTahunan tidak ditemukan'); return; }
+      var tahun = parseInt(elThn.value);
       periodeText = 'Tahun ' + tahun;
       startDate = new Date(tahun, 0, 1).toISOString().slice(0,10);
       endDate = new Date(tahun, 11, 31).toISOString().slice(0,10);
     } else if (mode === 'bulan') {
-      var bulan = parseInt(document.getElementById('bulanLaporan').value);
-      var tahunBulan = parseInt(document.getElementById('tahunLaporanBulan').value);
+      const elBln = document.getElementById('bulanLaporan');
+      const elThnBln = document.getElementById('tahunLaporanBulan');
+      if (!elBln || !elThnBln) { console.error('Filter bulan/tahun laporan tidak ditemukan'); return; }
+      
+      var bulan = parseInt(elBln.value);
+      var tahunBulan = parseInt(elThnBln.value);
       var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
       startDate = new Date(tahunBulan, bulan-1, 1).toISOString().slice(0,10);
@@ -8326,20 +8835,24 @@ function bukaJadwal() {
         showError(res.pesan);
         return;
       }
+      console.log('[KAS WARGA] fetch rekap range success');
+      console.log('[KAS WARGA]', res.data);
       var totalPemasukan = 0;
       var totalPengeluaran = 0;
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
-          if (res.data[i].jenis === 'Pemasukan') {
-            totalPemasukan += res.data[i].jumlah;
+          var val = parseFloat(res.data[i].jumlah) || 0;
+          if (String(res.data[i].jenis).toLowerCase() === 'pemasukan') {
+            totalPemasukan += val;
           } else {
-            totalPengeluaran += res.data[i].jumlah;
+            totalPengeluaran += val;
           }
         }
       }
-      document.getElementById('rekapTotalPemasukan').innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
-      document.getElementById('rekapTotalPengeluaran').innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      document.getElementById('rekapSelisih').innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
+      const setSafeText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+      setSafeText('rekapTotalPemasukan', 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID'));
+      setSafeText('rekapTotalPengeluaran', 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID'));
+      setSafeText('rekapSelisih', 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID'));
       // (label sudah diubah di HTML menjadi "Total Uang:")
     }).getKasWargaByDateRange(startDate, endDate);
   }
@@ -8873,15 +9386,23 @@ function bukaJadwal() {
   }
 
   // ======================== BUKA HALAMAN KAS ========================
-  function bukaKas() {
-    console.log('[KAS WARGA] start');
-    const view = document.getElementById('kasView');
-    if(!view){ console.error('[KAS WARGA] container kasView tidak ditemukan'); return; }
+  function bukaKasWarga() {
+    console.log('[KAS WARGA] bukaKasWarga auditing process');
+    const view = document.getElementById('laporanKasContainer');
+    
+    // Target 1: Pengecekan Element ada di HTML
+    if (!view) { console.error('Element tidak ditemukan: laporanKasContainer'); return; }
+    if (!document.getElementById('filterKasContainer')) { console.error('Element tidak ditemukan: filterKasContainer'); }
+
     sembunyikanSemuaLayar();
     view.style.display = 'block';
-    history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
+    history.pushState({view: 'laporanKasContainer', tab: 'warga', onLoad: 'muatDataKasWarga'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
     var iuranAdminDiv = document.getElementById('iuranAdminButtons');
+    
+    if (!actionDiv) console.error('Element actionButtonsKas tidak ditemukan');
+    if (!iuranAdminDiv) console.error('Element iuranAdminButtons tidak ditemukan');
+
     if (hasPermission('rt_kas_crud')) { // Kontrol visibilitas tombol Tambah/Kurang Kas
       actionDiv.innerHTML = '<button class="btn-small success" onclick="bukaFormKas(\'Pemasukan\')">+ Tambah Pemasukan</button>'
         + '<button class="btn-small danger" onclick="bukaFormKas(\'Pengeluaran\')">+ Tambah Pengeluaran</button>';
@@ -8893,7 +9414,7 @@ function bukaJadwal() {
       actionDiv.innerHTML = '';
       iuranAdminDiv.innerHTML = '';
     }
-    muatDataKas();
+    muatDataKasWarga();
     loadTahunIuranOptions();
     toggleLaporanMode();
   }
