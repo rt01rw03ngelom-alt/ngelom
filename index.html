@@ -3223,7 +3223,11 @@
       // Kirim Subscription ke GAS
       google.script.run.withSuccessHandler(function(res) {
         console.log('Web Push Subscription tersinkronisasi ke server.');
-      }).savePushSubscription(JSON.stringify(subscription), currentUser.email);
+      })
+      .withFailureHandler(function(err) {
+        console.warn('Gagal sinkron push subscription:', err);
+      })
+      .savePushSubscription(JSON.stringify(subscription), currentUser.email);
 
     } catch (err) {
       console.error('Gagal registrasi Web Push:', err);
@@ -3400,6 +3404,8 @@
           </div></div>`;
       } else if (type === 'table') {
         html += `<tr>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
           <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
           <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
           <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
@@ -3589,7 +3595,11 @@
         if (res && res.status === 'success') {
           console.log('Token perangkat tersimpan di database.');
         }
-      }).savePushSubscription(JSON.stringify(subscription));
+      })
+      .withFailureHandler(function(err) {
+        console.warn('Background sync failed:', err);
+      })
+      .savePushSubscription(JSON.stringify(subscription));
     } catch (e) {
       console.error('Gagal mengirim token ke GAS:', e);
     }
@@ -5264,7 +5274,7 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
-    renderLoadingState('ktListJadwal');
+    if (list) renderSkeleton('ktListJadwal', 3);
     console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[KT JADWAL] response:', res);
@@ -5305,6 +5315,8 @@
             </div>`;
         });
       }
+    }).withFailureHandler(function(err) {
+      renderErrorState('ktListJadwal', 'ktMuatDataJadwal()');
     }).ktGetJadwal();
   }
 
@@ -5530,12 +5542,12 @@
       Swal.close();
       if (!res) {
         showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Response kosong');
-        console.error('RAW RESPONSE (null/undefined):', res);
         return;
       }
+      console.log('[KAS KT] Filter Range Response:', res);
+
       if (res.status === 'error') {
         showError('⚠️ Gagal Memuat Data Kas Karang Taruna - ' + (res.pesan || 'Unknown error'));
-        console.error('RAW RESPONSE (error status):', res);
         return;
       }
       var totalPemasukan = 0;
@@ -5949,11 +5961,11 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
-    renderSkeleton('listJadwal', 'card', 3);
+    if (list) renderSkeleton('listJadwal', 3);
     console.log('[JADWAL RT] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[JADWAL RT] response:', res);
-      console.log('[JADWAL RT] jumlah data:', res.data?.length);
+      console.log('[JADWAL RT] jumlah data:', res.data ? res.data.length : 0);
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('listJadwal', 'muatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('listJadwal', 'Belum ada jadwal kegiatan RT terdaftar.');
@@ -6006,6 +6018,8 @@ function bukaJadwal() {
           <div class="card-item" style="text-align:center; padding:30px; opacity:0.6;">
             <i class="material-icons" style="font-size:48px; margin-bottom:10px;">event_busy</i><br>Belum ada jadwal kegiatan terdekat.</div>`;
       }
+    }).withFailureHandler(function(err) {
+      renderErrorState('listJadwal', 'muatDataJadwal()');
     }).getJadwalKegiatan();
   }
 
@@ -6571,10 +6585,9 @@ function bukaJadwal() {
    */
   function renderRekapKasKT(data) {
     var container = document.getElementById('ktTbodyRekapTransaksi');
-    console.log('[KT KAS] renderRekapKasKT Container:', container);
     
     if (!container) {
-      console.error('[KT KAS] ERRROR: Container ktTbodyRekapTransaksi tidak ditemukan di DOM');
+      console.error('[KAS KT] Element ktTbodyRekapTransaksi tidak ditemukan');
       return;
     }
     
@@ -6613,6 +6626,9 @@ function bukaJadwal() {
   }
 
   function filterKtTabelTransaksi() {
+    const rekapBox = document.getElementById('ktRekapitulasiBox');
+    if(rekapBox) rekapBox.style.display = 'block';
+
     var bulan = parseInt(document.getElementById('ktFilterBulanTransaksi').value);
     var tahun = parseInt(document.getElementById('ktFilterTahunTransaksi').value);
     
@@ -6621,7 +6637,6 @@ function bukaJadwal() {
       if (p.length !== 3) return false;
       var itemThn = parseInt(p[0]);
       var itemBln = parseInt(p[1]);
-      document.getElementById('ktRekapitulasiBox').style.display = 'block'; // Ensure ktRekapitulasiBox is visible when filtered
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
@@ -6915,7 +6930,7 @@ function bukaJadwal() {
 
   function muatDataUser() {
     var list = document.getElementById('listUsers');
-    renderSkeleton('listUsers', 'profile', 5);
+    if (list) renderSkeleton('listUsers', 'profile', 5);
     
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
@@ -7135,6 +7150,9 @@ function bukaJadwal() {
         showSuccess('Nomor Admin berhasil diperbarui!');
         updateAdminContactLink();
       } else showError(res.pesan);
+    })
+    .withFailureHandler(function(err) {
+      showError('Gagal menyimpan nomor admin: ' + err.message);
     }).saveSettings('admin_whatsapp', val);
   }
 
@@ -7144,6 +7162,9 @@ function bukaJadwal() {
       if (res && res.status === 'success' && res.data.admin_whatsapp && input) {
         input.value = res.data.admin_whatsapp;
       }
+    })
+    .withFailureHandler(function(err) {
+      console.warn('Gagal memuat nomor admin:', err);
     }).getSettings();
   }
 
@@ -7162,6 +7183,9 @@ function bukaJadwal() {
         if (currentVal) select.value = currentVal;
         if (callback) callback();
       }
+    })
+    .withFailureHandler(function(err) {
+      showError('Gagal memuat daftar role: ' + err.message);
     }).getDaftarRole();
   }
 
@@ -7715,7 +7739,7 @@ function bukaJadwal() {
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
-    console.log('[KAS WARGA] muatDataKas start');
+    console.log('[KAS WARGA] muatDataKas started');
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
@@ -7726,11 +7750,11 @@ function bukaJadwal() {
       }
     });
 
-    // Add skeleton loading for the tables
-    renderSkeleton('tbodyPemasukan', 'table', 5);
-    renderSkeleton('tbodyPengeluaran', 'table', 5);
+    renderLoadingState('tbodyPemasukan', 'table', 5);
+    renderLoadingState('tbodyPengeluaran', 'table', 5);
 
     google.script.run.withSuccessHandler(function(res) {
+      console.log('[KAS WARGA] API Response:', res);
       targets.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('skeleton-text');
@@ -7749,8 +7773,6 @@ function bukaJadwal() {
         allKasData = [];
       }
       kasBackendTotalsGlobal = backendTotals;
-
-      console.log('[KAS WARGA] render berhasil');
 
       var pemasukanList = [];
       var pengeluaranList = [];
@@ -7772,7 +7794,7 @@ function bukaJadwal() {
       if (callback) {
         callback();
       }
-      console.log('[KAS WARGA] data loaded from backend');
+      console.log('[KAS WARGA] muatDataKas completed');
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
@@ -7825,14 +7847,16 @@ function bukaJadwal() {
     var tbodyP = document.getElementById('tbodyPemasukan');
     var tbodyG = document.getElementById('tbodyPengeluaran');
     
-    if(!tbodyP || !tbodyG){ console.error('[KAS WARGA] container tabel tidak ditemukan'); return; }
+    if(!tbodyP || !tbodyG){ 
+      console.error('[KAS WARGA] Element tbodyPemasukan/tbodyPengeluaran tidak ditemukan'); 
+      return; 
+    }
 
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
     if (!pemasukanList.length && !pengeluaranList.length) {
-      renderEmptyState('tbodyPemasukan', 'Tidak ada transaksi pada periode ini.');
-      renderEmptyState('tbodyPengeluaran', 'Tidak ada transaksi pada periode ini.');
-      console.log('[KAS WARGA] render success (empty state)');
+      tbodyP.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi.</td></tr>';
+      tbodyG.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi.</td></tr>';
       return;
     }
     var isAdmin = hasPermission('rt_iuran_manage');
@@ -8537,7 +8561,10 @@ function bukaJadwal() {
         (function(rowData, thn) {
           select.addEventListener('change', function() {
             rowData.kategori = this.value;
-            google.script.run.updateKategoriWarga(rowData.nama, thn, this.value);
+            google.script.run
+              .withSuccessHandler(res => { if(res.status !== 'success') showError(res.pesan); })
+              .withFailureHandler(err => showError('Gagal simpan kategori: ' + err.message))
+              .updateKategoriWarga(rowData.nama, thn, this.value);
           });
         })(row, tahun);
         tdKategori.appendChild(select);
@@ -8565,8 +8592,10 @@ function bukaJadwal() {
               var lunasNow = rowData.iuranBulanan.every(function(v) { return v > 0; });
               if (lunasNow) currentRow.classList.add('row-lunas');
               else currentRow.classList.remove('row-lunas');
-
-              google.script.run.updateIuranCell(rowData.nama, thn, blnIdx+1, rowData.iuranBulanan[blnIdx]);
+              
+              google.script.run
+                .withFailureHandler(function(err) { console.error('Update iuran gagal:', err); })
+                .updateIuranCell(rowData.nama, thn, blnIdx+1, rowData.iuranBulanan[blnIdx]);
             };
           })(row, bln, tahun, tr);
           td.appendChild(chk);
@@ -9329,7 +9358,7 @@ function bukaJadwal() {
 
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
-    renderSkeleton('pkkListKader', 'profile', 4);
+    if (list) renderSkeleton('pkkListKader', 4);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
       if (res.data && res.data.length) {
@@ -9434,7 +9463,7 @@ function bukaJadwal() {
 
   function pkkMuatDataHistori() {
     var list = document.getElementById('pkkListHistori');
-    renderSkeleton('pkkListHistori', 'card', 3);
+    if (list) renderSkeleton('pkkListHistori', 3);
 
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
@@ -9727,5 +9756,10 @@ function bukaJadwal() {
   console.log('[LOGIN] Function doLogin loaded');
   refreshNavVisibility();
 </script>
+        <div id="sectionAdminWhatsapp" style="display: none; padding: 16px 20px; border-bottom: 1px solid var(--border-color);">
+          <label class="muted" style="font-size:12px; font-weight:700;">NOMOR WHATSAPP ADMIN:</label>
+          <input type="text" id="adminWaInput" placeholder="Contoh: 62812345678" style="margin-bottom:8px;">
+          <button class="btn-small success" onclick="simpanNomorAdmin()">Update Nomor</button>
+        </div>
 </body>
 </html>
