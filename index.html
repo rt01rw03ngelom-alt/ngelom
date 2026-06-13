@@ -2431,7 +2431,6 @@
     </div>
 
     <!-- Filter Tabel Transaksi Karang Taruna -->
-    <div class="filter-table">
     <div class="filter-table filter-controls">
       <div class="filter-group">
         <label>Filter Tabel Bulan</label>
@@ -2445,8 +2444,6 @@
         <input type="number" id="ktFilterTahunTransaksi" value="2026" style="width:100px;">
       </div>
       <div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
         <label style="visibility: hidden;">Action</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()" style="background:var(--kt-blue); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
@@ -2985,8 +2982,6 @@
         <label>Tahun</label>
         <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div>
-        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
       <div class="filter-group">
         <label style="visibility: hidden;">Action</label>
         <button class="btn-small" onclick="filterTabelTransaksi()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
@@ -7769,6 +7764,7 @@ function bukaJadwal() {
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
+    console.log('[KAS WARGA] muatDataKas start');
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
@@ -7799,6 +7795,7 @@ function bukaJadwal() {
       }
       kasBackendTotalsGlobal = backendTotals;
 
+      console.log('[KAS WARGA] render berhasil');
 
       var pemasukanList = [];
       var pengeluaranList = [];
@@ -7823,7 +7820,7 @@ function bukaJadwal() {
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
-    }).withFailureHandler(() => renderErrorState('listUsers', 'muatDataUser()')).getAllUsersWithWarga();
+    }).getKasWarga();
   }
 
   function filterTabelTransaksi() {
@@ -8883,6 +8880,7 @@ function bukaJadwal() {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
+    console.log('[KAS WARGA] bukaLaporanKasWarga');
     sembunyikanSemuaLayar();
     document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
