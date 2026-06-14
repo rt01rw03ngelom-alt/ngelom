@@ -4503,6 +4503,14 @@
       google.script.run
         .withSuccessHandler(function (res) {
           if (res && res.status === 'success') {
+            // 10XTHINK: Validate user data before proceeding
+            if (!res.role || !res.email) {
+              console.error("Invalid session data received", res);
+              localStorage.removeItem('sessionToken');
+              location.reload();
+              return;
+            }
+            
             currentUser = res;
             currentToken = res.token;
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
@@ -5145,12 +5153,16 @@
 
   function renderMenu(tabName) {
     var container = document.getElementById('menuContainer');
+    if (!container) return;
+    
     container.innerHTML = '';
     var availableMenus = menus[tabName] || menus.warga;
     
     // Refresh user name in welcome banner
     var welcomeSection = document.getElementById('welcomeUserName');
-    if(welcomeSection) welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
+    if(welcomeSection && currentUser) {
+      welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
+    }
 
 
     // Update Ringkasan Dashboard (Banner) berdasarkan Tab
@@ -5202,6 +5214,12 @@
     for (var i = 0; i < availableMenus.length; i++) {
       var menu = availableMenus[i];
       
+      // Safety check for currentUser object
+      if (!currentUser || !currentUser.role) {
+        console.warn("User role not found during menu render");
+        continue;
+      }
+
       // Cek apakah role diizinkan ATAU memiliki izin spesifik (perm)
       var roleMatch = menu.roles.indexOf(currentUser.role) !== -1;
       var permMatch = hasPermission(menu.perm);
@@ -9218,9 +9236,11 @@ function bukaJadwal() {
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
     renderSkeleton('pkkListJadwal', 'card', 4);
+    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataJadwal');
     console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
+      console.log('[PKK DEBUG] renderJadwalPKK triggered');
       if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('pkkListJadwal', 'Belum ada jadwal kegiatan PKK terdaftar.');
       if (res.data && res.data.length) {
@@ -9259,11 +9279,12 @@ function bukaJadwal() {
             </div>`;
         }
       }
-    }).pkkGetJadwal();
+    }).withFailureHandler(() => renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()')).pkkGetJadwal();
   }
 
   function bukaPkkKader() {
     sembunyikanSemuaLayar();
+    console.log('[PKK DEBUG] showPKKPage: bukaPkkKader');
     document.getElementById('pkkKaderView').style.display = 'block';
     history.pushState({view: 'pkkKaderView', tab: 'pkk', onLoad: 'pkkMuatDataKader'}, '', '#pkkKader');
     if (hasPermission('pkk_kader_crud')) { // Kontrol visibilitas tombol Tambah Kader PKK
@@ -9363,8 +9384,10 @@ function bukaJadwal() {
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
     renderSkeleton('pkkListKader', 'profile', 4);
+    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataKader');
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
+      console.log('[PKK DEBUG] renderKaderPKK triggered');
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -9459,17 +9482,20 @@ function bukaJadwal() {
 
   function bukaPkkHistori() {
     sembunyikanSemuaLayar();
+    console.log('[PKK DEBUG] showPKKPage: bukaPkkHistori');
     document.getElementById('pkkHistoriView').style.display = 'block';
     history.pushState({view: 'pkkHistoriView', tab: 'pkk', onLoad: 'pkkMuatDataHistori'}, '', '#pkkHistori');
     pkkMuatDataHistori();
   }
 
   function pkkMuatDataHistori() {
+    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataHistori');
     var list = document.getElementById('pkkListHistori');
     renderSkeleton('pkkListHistori', 'card', 3);
 
-    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
+    google.script.run.withSuccessHandler(function(res) { 
       list.innerHTML = '';
+      console.log('[PKK DEBUG] renderHistoryPKK triggered');
       if (res.data && res.data.length) {
         var allImgs = [];
         for (var i = 0; i < res.data.length; i++) {
@@ -9500,12 +9526,13 @@ function bukaJadwal() {
             + fotoHTML
             + '</div>';
         }
-      } else renderEmptyState('listLaporanSemua', 'Belum ada laporan pengaduan masuk.');
-    }).pkkGetLaporanByPelapor(currentUser.nama);
+      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK Anda.');
+    }).withFailureHandler(() => renderErrorState('pkkListHistori', 'pkkMuatDataHistori()')).pkkGetLaporanByPelapor(currentUser.nama);
   }
 
   function bukaPkkGaleri() {
     sembunyikanSemuaLayar();
+    console.log('[PKK DEBUG] showPKKPage: bukaPkkGaleri');
     document.getElementById('pkkGaleriView').style.display = 'block';
     history.pushState({view: 'pkkGaleriView', tab: 'pkk', onLoad: 'pkkMuatDataGaleri'}, '', '#pkkGaleri');
     if (hasPermission('pkk_galeri_crud')) { // Kontrol visibilitas tombol Tambah Galeri PKK
@@ -9614,10 +9641,12 @@ function bukaJadwal() {
   }
 
   function pkkMuatDataGaleri() {
+    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataGaleri');
     var container = document.getElementById('pkkListGaleri');
     renderSkeleton('pkkListGaleri', 'grid', 8);
-    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
+    google.script.run.withSuccessHandler(function(res) { 
       container.innerHTML = '';
+      console.log('[PKK DEBUG] renderGaleriPKK triggered');
       if(res.status==='error'){ 
         showError(res.pesan); 
         container.innerHTML = '<p class="muted">Gagal memuat database PKK.</p>';
@@ -9650,7 +9679,7 @@ function bukaJadwal() {
             + '</div></div>';
         }
       } else {
-        container.innerHTML = '<p>Belum ada foto di galeri PKK.</p>';
+        renderEmptyState('pkkListGaleri', 'Belum ada foto di galeri PKK.');
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -9762,10 +9791,6 @@ function bukaJadwal() {
       if (event.data.action === 'navigate' && event.data.page) {
         handleNotifLihat(event.data.page);
       }
-      if (res.status === 'error') return renderErrorState('pkkListHistori', 'pkkMuatDataHistori()');
-      if (!res.data || res.data.length === 0) return renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK.');
-      if (res.status === 'error') return renderErrorState('listGaleri', 'muatDataGaleri()');
-      if (!res.data || res.data.length === 0) return renderEmptyState('listGaleri', 'Belum ada dokumentasi di galeri RT.');
     });
   }
 
