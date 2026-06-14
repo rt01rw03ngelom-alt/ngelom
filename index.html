@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.5';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -2291,7 +2291,7 @@
           <option value="2025">2025</option>
           <option value="2026" selected>2026</option>
         </select>
-        <button class="btn-small" onclick="ktMuatGrafikKas()">Update Grafik</button>
+        <button class="btn-small" onclick="ktMuatGrafikKas()">Tampilkan Grafik</button>
         <button class="btn-small success" onclick="ktCetakLaporanKas()">Cetak Laporan</button>
       </div>
     </div>
@@ -2391,7 +2391,8 @@
         <label>Tahun</label>
         <input type="number" id="ktFilterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
       </div>
     </div>
@@ -2927,7 +2928,8 @@
         <label>Tahun</label>
         <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
         <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
       </div>
     </div>
@@ -4489,7 +4491,7 @@
   }
 
   // 10XTHINK: DEFAULT LOGO & STRICT ISOLATION
-  const DEFAULT_LOGO_KOP = 'https://drive.google.com/uc?export=view&id=1ymswVKV1HRYICMHrBPWYDioYoaLoKa4u';
+  const DEFAULT_LOGO_KOP = getDirectUrl('1ymswVKV1HRYICMHrBPWYDioYoaLoKa4u'); // Menggunakan getDirectUrl untuk thumbnail
 
   /**
    * TEMPLATE KOP SURAT PRESISI (HTML PRINT LAYOUT)
@@ -5694,15 +5696,114 @@
       data: {
         labels: labels,
         datasets: [
-          { label: 'Pemasukan KT', data: pemasukanPerBulan, borderColor: '#10b981', backgroundColor: 'transparent', borderWidth: 3, tension: 0.3, pointRadius: 4 },
-          { label: 'Pengeluaran KT', data: pengeluaranPerBulan, borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 3, tension: 0.3, pointRadius: 4 }
+          { 
+            label: 'Pemasukan', 
+            data: pemasukanPerBulan, 
+            borderColor: '#10b981', 
+            backgroundColor: 'transparent', 
+            borderWidth: 3, 
+            fill: false,
+            tension: 0.3, 
+            pointRadius: 5,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          },
+          { 
+            label: 'Pengeluaran', 
+            data: pengeluaranPerBulan, 
+            borderColor: '#ef4444', 
+            backgroundColor: 'transparent', 
+            borderWidth: 3, 
+            fill: false,
+            tension: 0.3, 
+            pointRadius: 5,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }
         ]
       },
       options: { 
         responsive: true, 
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: true, ticks: { callback: function(v) { return 'Rp ' + v.toLocaleString('id-ID'); } } } }
+        maintainAspectRatio: true,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        onClick: function(event, activeElements) {
+          if (activeElements.length > 0) {
+            var index = activeElements[0].index;
+            var bulan = labels[index];
+            var tahunGrafik = parseInt(document.getElementById('ktTahunKasSelect').value);
+            tampilkanDetailBulanKT(index, bulan, tahunGrafik);
+          }
+        },
+        plugins: { 
+          legend: { 
+            labels: { usePointStyle: true, padding: 20 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
+              }
+            }
+          }
+        },
+        scales: { 
+          y: { 
+            beginAtZero: true, 
+            ticks: { callback: function(v) { return 'Rp ' + v.toLocaleString('id-ID'); } } 
+          } 
+        }
       }
+    });
+  }
+
+  /**
+   * Menampilkan modal detail transaksi bulanan untuk Karang Taruna
+   */
+  function tampilkanDetailBulanKT(index, bulan, tahunGrafik) {
+    var transaksi = ktAllKasData.filter(function(t) {
+      var parts = t.tanggal.split('-');
+      return parts.length === 3 && parseInt(parts[0]) === tahunGrafik && parseInt(parts[1]) === (index + 1);
+    });
+
+    if (transaksi.length === 0) {
+      return Swal.fire('Info', 'Tidak ada transaksi pada ' + bulan + ' ' + tahunGrafik, 'info');
+    }
+
+    var totalIn = 0, totalOut = 0;
+    var listHtml = transaksi.map(function(item) {
+      var isPemasukan = item.jenis === 'Pemasukan';
+      var nominal = item.nominal || 0;
+      if (isPemasukan) totalIn += nominal; else totalOut += nominal;
+      var color = isPemasukan ? '#10b981' : '#ef4444';
+      
+      return `<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border-color);">
+                <div style="max-width:70%;">
+                  <div style="font-size:13px; font-weight:600; color:var(--text-main);">${item.keterangan || 'Tanpa keterangan'}</div>
+                  <span style="font-size:10px; background:var(--bg-app); padding:2px 6px; border-radius:4px; color:var(--text-muted); font-weight:600;">${item.tanggal.split('-')[2]}/${item.tanggal.split('-')[1]}</span>
+                </div>
+                <div style="font-size:14px; font-weight:700; color:${color};">${isPemasukan ? '+' : '-'} ${nominal.toLocaleString('id-ID')}</div>
+              </div>`;
+    }).join('');
+
+    var headerHtml = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; background:var(--bg-app); padding:15px; border-radius:12px; border:1px solid var(--border-color); color:var(--text-main);">
+                        <div><div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">Pemasukan</div><div style="font-size:16px; font-weight:700; color:#10b981;">Rp ${totalIn.toLocaleString('id-ID')}</div></div>
+                        <div><div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">Pengeluaran</div><div style="font-size:16px; font-weight:700; color:#ef4444;">Rp ${totalOut.toLocaleString('id-ID')}</div></div>
+                        <div style="grid-column: span 2; border-top:1px solid var(--border-color); padding-top:10px; margin-top:5px;"><div style="font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; margin-top:8px;">Total Saldo Bulan Ini</div><div style="font-size:18px; font-weight:800; color:var(--primary-dark);">Rp ${(totalIn - totalOut).toLocaleString('id-ID')}</div></div>
+                      </div>`;
+
+    Swal.fire({
+      title: '<div style="font-size:18px; font-weight:800; color:var(--text-main);">Detail Kas KT ' + bulan + ' ' + tahunGrafik + '</div>',
+      background: 'var(--bg-surface)',
+      html: `<div style="text-align:left; font-family:'Inter',sans-serif;">${headerHtml}<div style="max-height:350px; overflow-y:auto; padding-right:5px;">${listHtml}</div></div>`,
+      width: 'min(90%, 450px)',
+      showCloseButton: true,
+      showConfirmButton: false,
+      customClass: { popup: 'professional-modal-radius' }
     });
   }
 
