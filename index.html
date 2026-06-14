@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.5';
+    const APP_VERSION = '1.2.6';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -4466,6 +4466,7 @@
 
   // ======================== SESSION & LOGIN ========================
   window.addEventListener('load', function () {
+    console.log('[DEBUG] initApp: Aplikasi memulai booting...');
     applyDarkModePreference();
 
     // Dengar perubahan pengaturan sistem secara real-time
@@ -5152,6 +5153,7 @@
   };
 
   function renderMenu(tabName) {
+    console.log('[DEBUG] renderDashboard: Memulai render menu untuk tab ' + tabName);
     var container = document.getElementById('menuContainer');
     if (!container) return;
     
@@ -9249,7 +9251,7 @@ function bukaJadwal() {
           var aksi = '';
           if (hasPermission('pkk_jadwal_crud')) {
             aksi = `
-              <div class="card-actions" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:12px;">
+              <div class="card-actions" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:12px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;">
                 <button class="btn-action-subtle success-hover" onclick="pkkEditJadwal('${item.id}','${(item.nama || '').replace(/'/g, "\\'")}','${(item.waktu || '').replace(/'/g, "\\'")}','${(item.tempat || '').replace(/'/g, "\\'")}','${(item.pic || '').replace(/'/g, "\\'")}','${(item.keterangan || '').replace(/'/g, "\\'")} ')">
                   <i class="material-icons">edit_note</i> Edit
                 </button>
@@ -9401,15 +9403,15 @@ function bukaJadwal() {
           var avatar = item.fotoUrl ? `<img src="${getDirectUrl(item.fotoUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;">` : `<i class="material-icons" style="font-size:32px;">person</i>`;
 
           list.innerHTML += `
-            <div class="card-item" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
-              <div style="display:flex; align-items:center; gap:16px;">
-                <div style="background:var(--primary-red); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
+            <div class="card-item pkk-kader-card" style="margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
+              <div class="pkk-kader-item" style="display:flex; align-items:center; gap:16px;">
+                <div class="pkk-kader-avatar" style="background:var(--pkk-green); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-sm);">
                   ${avatar}
                 </div>
-                <div style="flex:1;">
-                  <div style="font-weight:800; font-size:12px; color:var(--primary-color); text-transform:uppercase;">${item.jabatan || 'Anggota'}</div>
+                <div style="flex:1; min-width: 0;">
+                  <div style="font-weight:800; font-size:11px; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px;">${item.jabatan || 'Anggota'}</div>
                   <div style="font-weight:700; font-size:16px; color:var(--text-main);">${item.nama}</div>
-                  <div style="font-size:13px; color:var(--primary-color);">${item.nohp || '-'}</div>
+                  <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:14px;">phone</i> ${item.nohp || '-'}</div>
                 </div>
               </div>
               ${aksi}
@@ -9512,16 +9514,16 @@ function bukaJadwal() {
           var fotoHTML = '';
           if (item.fotoUrl) {
             fotoHTML = '<img src="' + directUrl + '" class="img-thumbnail" style="border:1px solid var(--border-color);" '
-              + 'onclick="openLightbox(\'' + directUrl + '\', '
+              + 'onclick="openLightbox(\'' + directUrl + '\', ' 
               + JSON.stringify(allImgs).replace(/"/g, '&quot;') + ',' + j + ')">';
           }
 
-          list.innerHTML += '<div class="card-item">'
+          list.innerHTML += '<div class="card-item pkk-histori-item">'
             + '<div><strong>' + (item.pelapor || '-') + '</strong> - ' + (item.tanggal || '-') + '</div>'
-            + '<div class="status-badge ' + statusClass + '" style="margin-top:5px;">' + (item.status || '-') + '</div>'
-            + '<div style="margin-top:10px;">'
+            + '<div class="status-badge ' + statusClass + '" style="margin-top:8px; display:inline-flex; align-items:center; white-space:nowrap;">' + (item.status || '-') + '</div>'
+            + '<div style="margin-top:12px; word-break:break-word;">'
             + '<div style="font-weight:600; color:var(--text-main);">' + (item.judul || '-') + '</div>'
-            + '<div>' + (item.deskripsi || '-') + '</div>'
+            + '<div style="font-size:14px; color:var(--text-muted); line-height:1.5;">' + (item.deskripsi || '-') + '</div>'
             + '</div>'
             + fotoHTML
             + '</div>';
@@ -9643,7 +9645,8 @@ function bukaJadwal() {
   function pkkMuatDataGaleri() {
     console.log('[PKK DEBUG] loadPKKData: pkkMuatDataGaleri');
     var container = document.getElementById('pkkListGaleri');
-    renderSkeleton('pkkListGaleri', 'grid', 8);
+    if(container) container.className = "pkk-galeri-grid-adaptive";
+    renderSkeleton('pkkListGaleri', 'grid', 6);
     google.script.run.withSuccessHandler(function(res) { 
       container.innerHTML = '';
       console.log('[PKK DEBUG] renderGaleriPKK triggered');
@@ -9670,7 +9673,7 @@ function bukaJadwal() {
 
           container.innerHTML += '<div class="galeri-card" style="position:relative;">'
             + icon
-            + '<img src="' + thumb + '" class="galeri-img" onclick="openLightbox(\'' + safeImageUrl + '\', '
+            + '<img src="' + thumb + '" class="galeri-img pkk-galeri-item-img" onclick="openLightbox(\'' + safeImageUrl + '\', ' 
             + JSON.stringify(allMediaUrls).replace(/"/g, '&quot;') + ',' + j + ')">'
             + '<div style="padding:12px;">'
             + '<div style="font-weight:600;">' + safeCaption + '</div>'
@@ -9679,7 +9682,7 @@ function bukaJadwal() {
             + '</div></div>';
         }
       } else {
-        renderEmptyState('pkkListGaleri', 'Belum ada foto di galeri PKK.');
+        renderEmptyState('pkkListGaleri', 'Belum ada dokumentasi di galeri PKK.');
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -9761,7 +9764,7 @@ function bukaJadwal() {
 
   function installPWA() {
     if (!deferredPrompt) return;
-    // Tampilkan prompt instalasi asli dari sistem operasi (Android/iOS)
+
     deferredPrompt.prompt();
     // Tunggu jawaban dari user
     deferredPrompt.userChoice.then((choiceResult) => {
@@ -9775,7 +9778,6 @@ function bukaJadwal() {
 
   function dismissPWAInstall() {
     if (pwaBanner) pwaBanner.style.display = 'none';
-    // Simpan timestamp penolakan agar banner tidak muncul setiap kali aplikasi dibuka
     localStorage.setItem('pwaDismissedTs', Date.now().toString());
   }
 
@@ -9785,7 +9787,7 @@ function bukaJadwal() {
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
 
-  // Listener untuk pesan dari Service Worker (Navigasi saat notifikasi diklik)
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', function(event) {
       if (event.data.action === 'navigate' && event.data.page) {
