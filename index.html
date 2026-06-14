@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.5';
+    const APP_VERSION = '1.2.7';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1681,6 +1681,7 @@
       align-items: center;
       justify-content: center;
       margin: 8px 0 !important; 
+      margin: 0 !important; 
       padding: 0 24px !important;
       border-radius: 12px !important;
       font-weight: 700;
@@ -1721,6 +1722,35 @@
       color: var(--text-main);
     }
 
+    /* PERBAIKAN ALIGNMENT FILTER (Garis Horizontal Sejajar) */
+    .filter-controls, .filter-table, .filter-bar {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 16px !important;
+      align-items: flex-end !important; /* Menyejajarkan bagian bawah elemen */
+    }
+
+    /* Standarisasi tinggi elemen agar sejajar presisi */
+    .filter-controls .filter-group input, 
+    .filter-controls .filter-group select,
+    .filter-controls button,
+    .filter-table .filter-group input, 
+    .filter-table .filter-group select,
+    .filter-table button.btn-small,
+    .filter-bar .filter-group input, 
+    .filter-bar .filter-group select,
+    .filter-bar button.btn-small {
+      margin: 0 !important; /* Hilangkan margin yang menyebabkan "drop" pixel */
+      height: 44px !important;
+      box-sizing: border-box;
+    }
+
+    .filter-controls button, .filter-table .btn-small, .filter-bar .btn-small {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .rekapitulasi {
       background: rgba(var(--primary-color-rgb), 0.1);
       border-radius: var(--border-radius);
@@ -1757,6 +1787,10 @@
       }
 
       .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filter-table {
         flex-direction: column;
         align-items: stretch;
       }
@@ -2093,7 +2127,7 @@
         </div>
         <div class="summary-info" id="rondaBannerContent" style="transition: opacity 0.3s ease; flex:1;">
           <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706;">Jadwal Ronda Malam</h3>
-          <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;">Memuat jadwal...</div>
+          <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;"><div class="skeleton-line" style="width:80%; height:12px; margin:8px 0;"></div><div class="skeleton-line" style="width:60%; height:10px;"></div></div>
           <!-- Dot indicators -->
           <div style="display:flex; gap:4px; margin-top:8px;">
             <div class="ronda-dot active" style="width:12px; height:4px; border-radius:2px; background:#d97706; transition:0.3s;"></div>
@@ -2364,6 +2398,7 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
+        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatKtRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2396,7 +2431,7 @@
     </div>
 
     <!-- Filter Tabel Transaksi Karang Taruna -->
-    <div class="filter-table">
+    <div class="filter-table filter-controls">
       <div class="filter-group">
         <label>Filter Tabel Bulan</label>
         <select id="ktFilterBulanTransaksi">
@@ -2409,8 +2444,8 @@
         <input type="number" id="ktFilterTahunTransaksi" value="2026" style="width:100px;">
       </div>
       <div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
+        <label style="visibility: hidden;">Action</label>
+        <button class="btn-small" onclick="filterKtTabelTransaksi()" style="background:var(--kt-blue); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
@@ -2633,6 +2668,7 @@
       <h3>Jadwal Ronda Malam</h3>
     </div>
     <div class="filter-bar">
+    <div class="filter-bar filter-controls">
       <div class="filter-group">
         <label>Bulan</label>
         <select id="rondaFilterBulan" onchange="muatDataRonda()">
@@ -2887,6 +2923,7 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
+        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2945,8 +2982,9 @@
         <label>Tahun</label>
         <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div>
-        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
+      <div class="filter-group">
+        <label style="visibility: hidden;">Action</label>
+        <button class="btn-small" onclick="filterTabelTransaksi()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
       </div>
     </div>
 
@@ -3267,6 +3305,8 @@
   window.pengaduanDataGlobal = [];
   window.pkkLaporanDataGlobal = [];
   
+  var currentPengaduanStatusFilter = 'Semua'; // Global variable for current filter status
+
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
   var currentThisWeekEntries = []; // Storage untuk Share WA
   var currentNextWeekEntries = []; // Storage untuk Share WA
@@ -3277,47 +3317,95 @@
   var pickedRondaWeek1 = null;
   var pickedRondaWeek2 = null;
 
-  // 10XTHINK: Modern Loading & Error State Engine
-  const SPINNER_HTML = `<div class="loading-container"><div class="bbx-spinner"></div><p>Menghubungkan ke database...</p></div>`;
+  // ======================== 10XTHINK: GLOBAL UI ENGINE ========================
 
-  function renderSkeleton(containerId, count = 3) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    let html = SPINNER_HTML;
+  function getSkeletonHtml(type = 'card', count = 3) {
+    let html = '';
     for (let i = 0; i < count; i++) {
-      html += `<div class="card-item skeleton-card">
-        <div class="skeleton-line" style="width:40%; height:20px;"></div>
-        <div class="skeleton-line" style="width:100%; height:12px;"></div>
-        <div class="skeleton-line" style="width:85%; height:12px;"></div>
-      </div>`;
+      if (type === 'profile') {
+        html += `<div class="card-item skeleton-card fade-up-in">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div class="skeleton-avatar"></div>
+            <div style="flex:1;">
+              <div class="skeleton-line" style="width:30%; height:12px;"></div>
+              <div class="skeleton-line" style="width:70%; height:18px;"></div>
+              <div class="skeleton-line" style="width:50%; height:12px; margin:0;"></div>
+            </div>
+          </div></div>`;
+      } else if (type === 'grid') {
+        html += `<div class="galeri-card skeleton-card fade-up-in" style="padding:0; border:none; background:var(--bg-surface);">
+          <div class="skeleton-img" style="border-radius:20px 20px 0 0;"></div>
+          <div style="padding:16px;">
+            <div class="skeleton-line" style="width:80%; height:16px;"></div>
+            <div class="skeleton-line" style="width:40%; height:12px; margin:0;"></div>
+          </div></div>`;
+      } else if (type === 'table') {
+        html += `<tr>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
+          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
+        </tr>`;
+      } else if (type === 'chart') {
+        html += `<div class="skeleton-card fade-up-in" style="height:220px; display:flex; align-items:flex-end; gap:8px; padding:20px;">
+          <div class="skeleton-line" style="flex:1; height:40%;"></div>
+          <div class="skeleton-line" style="flex:1; height:70%;"></div>
+          <div class="skeleton-line" style="flex:1; height:50%;"></div>
+          <div class="skeleton-line" style="flex:1; height:90%;"></div>
+          <div class="skeleton-line" style="flex:1; height:60%;"></div>
+        </div>`;
+      } else if (type === 'stats') {
+        html += `<div class="summary-card skeleton-card fade-up-in" style="width:100%; margin-bottom:0;">
+          <div class="skeleton-avatar" style="width:40px; height:40px;"></div>
+          <div style="flex:1;">
+            <div class="skeleton-line" style="width:40%; height:10px;"></div>
+            <div class="skeleton-line" style="width:80%; height:18px; margin:0;"></div>
+          </div></div>`;
+      } else if (type === 'badge_card') {
+        html += `<div class="card-item skeleton-card fade-up-in"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><div class="skeleton-line" style="width:40%; height:16px; margin:0;"></div><div class="skeleton-line" style="width:60px; height:20px; border-radius:20px; margin:0;"></div></div><div class="skeleton-line" style="width:100%; height:12px;"></div><div class="skeleton-line" style="width:85%; height:12px; margin:0;"></div></div>`;
+      } else {
+        html += `<div class="card-item skeleton-card fade-up-in">
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+            <div class="skeleton-line" style="width:40%; height:16px;"></div>
+            <div class="skeleton-line" style="width:20%; height:16px; border-radius:8px;"></div>
+          </div>
+          <div class="skeleton-line" style="width:100%; height:12px;"></div>
+          <div class="skeleton-line" style="width:85%; height:12px; margin:0;"></div>
+        </div>`;
+      }
     }
-    el.innerHTML = html;
+    return html;
+  }
+
+  function renderSkeleton(containerId, type = 'card', count = 3) {
+    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
+    if (!el) return;
+    el.innerHTML = getSkeletonHtml(type, count);
+  }
+
+  function renderLoadingState(containerId, type = 'card', count = 3) {
+    renderSkeleton(containerId, type, count);
+  }
+
+  function renderEmptyState(containerId, message) {
+    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
+    if (!el) return;
+    el.innerHTML = `<div class="empty-state fade-up-in">
+        <span class="material-icons">inbox</span>
+        <h3>Belum Ada Data</h3>
+        <p>${escapeHtml(message || 'Data belum tersedia saat ini.')}</p>
+      </div>`;
   }
 
   function renderErrorState(containerId, retryFn) {
-    const el = document.getElementById(containerId);
+    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
     if (!el) return;
-    el.innerHTML = `<div class="error-state">
-      <i class="material-icons" style="font-size:48px; color:var(--primary-color);">cloud_off</i>
-      <div style="font-weight:800; margin:10px 0;">Gagal memuat data</div>
-      <p class="muted" style="font-size:12px; margin-bottom:15px;">Periksa koneksi internet Anda</p>
-      <button class="btn-small" onclick="${retryFn}">Coba Lagi</button>
-    </div>`;
-  }
-
-  // Empty state standar (anti "layar kosong")
-  function renderEmptyState(containerId, message) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = `
-      <div class="state-container" style="padding:48px 20px;">
-        <div class="state-icon">
-          <i class="material-icons">event_busy</i>
-        </div>
-        <div class="state-title">${escapeHtml(message || 'Data tidak tersedia')}</div>
-        <div class="state-msg">Silakan coba lagi nanti atau tambah data jika Anda memiliki akses.</div>
-      </div>
-    `;
+    el.innerHTML = `<div class="error-state fade-up-in">
+        <span class="material-icons">error_outline</span>
+        <h3>Gagal Memuat Data</h3>
+        <p>Silakan coba kembali.</p>
+        <button class="btn-primary" style="width:auto; padding:10px 24px; border-radius:12px; margin-top:15px;" onclick="${retryFn}">Muat Ulang</button>
+      </div>`;
   }
 
   // Definisi daftar izin yang tersedia untuk Kelola Role
@@ -4204,7 +4292,7 @@
   function showLoading(msg, withProgress = false) {
     const progressHtml = `<div class="bbx-loader-container"><div class="bbx-loader-bar"></div></div>
       <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">
-        <span id="bbxLoadingMsg">${msg || 'Menghubungkan Database'}</span>
+        <span id="bbxLoadingMsg">${msg || 'Sinkronisasi...'}</span>
       </div>`;
 
     // loading custom: spinner modern + teks, terlihat jelas tanpa perlu ganti content halaman
@@ -4214,7 +4302,7 @@
         '<div style="display:flex; align-items:center; gap:14px; padding:6px 2px; min-height:70px;">'
           + '  <div class="bbx-spinner" style="border-width:4px;"></div>'
           + '  <div style="text-align:left; flex:1;">'
-          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Mohon Tunggu</div>'
+          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Sinkronisasi...</div>'
           +      progressHtml
           + '  </div>'
           + '</div>',
@@ -5158,7 +5246,7 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
-    renderSkeleton('ktListJadwal', 'card', 3);
+    renderLoadingState('ktListJadwal');
     console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[KT JADWAL] response:', res);
@@ -5251,7 +5339,7 @@
 
   function ktMuatDataKader() {
     var list = document.getElementById('ktListKader');
-    renderSkeleton('ktListKader', 'profile', 3);
+    renderSkeleton('ktListKader', 'profile', 4);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -5338,7 +5426,9 @@
 
   function bukaKtKas() {
     sembunyikanSemuaLayar();
-    document.getElementById('ktKasView').style.display = 'block';
+    var viewEl = document.getElementById('ktKasView');
+    if (viewEl) viewEl.style.display = 'block';
+    
     history.pushState({view: 'ktKasView', tab: 'karangtaruna', onLoad: 'ktMuatDataKas'}, '', '#ktkas');
     
     var actionDiv = document.getElementById('ktActionButtonsKas');
@@ -5350,73 +5440,16 @@
     }
       
       // Inisialisasi default filter disamakan dengan Kas Warga
-      document.getElementById('ktTahunLaporanTahunan').value = new Date().getFullYear();
-      document.getElementById('ktFilterTahunTransaksi').value = new Date().getFullYear();
+      var inputTahun = document.getElementById('ktTahunLaporanTahunan');
+      if (inputTahun) inputTahun.value = new Date().getFullYear();
+      
+      var inputFilter = document.getElementById('ktFilterTahunTransaksi');
+      if (inputFilter) inputFilter.value = new Date().getFullYear();
       
     ktMuatDataKas();
-      toggleKtLaporanMode();
     }
-
-  function ktMuatDataKas() {
-    var totalEl = document.getElementById('ktTotalKas');
-    if (totalEl) {
-      totalEl.classList.add('skeleton-text');
-      totalEl.innerText = 'Rp 0.000.000';
-    }
-    renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
-    
-    google.script.run.withSuccessHandler(function(res) {
-      if (totalEl) totalEl.classList.remove('skeleton-text');
-      if (res.status === 'success') {
-        ktAllKasData = res.data || [];
-        document.getElementById('ktTotalKas').innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
-        
-        // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
-        renderRekapKasKT(ktAllKasData);
-        filterKtTabelTransaksi(); // Inisialisasi filter default
-        ktMuatGrafikKas();
-      }
-    }).ktGetKas();
-  }
 
   function renderTabelKasKT(data) {
-    var tbodyP = document.getElementById('ktTbodyPemasukan');
-    var tbodyG = document.getElementById('ktTbodyPengeluaran');
-    
-    console.log('[KT KAS] renderTabelKasKT Debug:', {P: tbodyP, G: tbodyG});
-
-    if (!tbodyP || !tbodyG) {
-       console.warn('[KT KAS] renderTabelKasKT: Elemen tabel terpisah tidak ditemukan. Mengalihkan ke rekap tunggal.');
-       renderRekapKasKT(data);
-       return;
-    }
-
-    tbodyP.innerHTML = ''; 
-    tbodyG.innerHTML = '';
-    // Gunakan pengecekan role yang lebih stabil untuk KT
-    var role = (currentUser.role || "").toLowerCase();
-    var canEdit = role === 'admin' || role.includes('karang taruna');
-    
-    data.forEach(function(item) {
-      var isOut = item.jenis === 'Pengeluaran';
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + item.tanggal + '</td>'
-                   + '<td>' + item.keterangan + '</td>'
-                   + '<td style="color:' + (isOut ? '#ef4444' : '#10b981') + '; font-weight:700;">Rp ' + item.nominal.toLocaleString('id-ID') + '</td>';
-      
-      var tdAksi = document.createElement('td');
-      if (canEdit) {
-        var eb = document.createElement('button'); eb.className = 'btn-small'; eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-        eb.onclick = function() { ktEditKas(item.id, item.tanggal, item.jenis, item.keterangan, item.nominal); };
-        var db = document.createElement('button'); db.className = 'btn-small danger'; db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
-        db.onclick = function() { ktHapusDataKas(item.id); };
-        tdAksi.appendChild(eb); tdAksi.appendChild(db);
-      } else { tdAksi.innerText = '-'; }
-      
-      tr.appendChild(tdAksi);
-      if (item.jenis === 'Pemasukan') tbodyP.appendChild(tr);
-      else tbodyG.appendChild(tr);
-    });
   }
 
   // ========================================
@@ -5497,7 +5530,7 @@
           if (res.data[i].jenis === 'Pemasukan') {
             totalPemasukan += res.data[i].nominal;
           } else {
-            totalPemasukan -= res.data[i].nominal;
+            totalPengeluaran += res.data[i].nominal;
           }
         }
       }
@@ -5505,9 +5538,12 @@
       var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
       var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
       var elSelisih = document.getElementById('ktRekapSelisih');
+      
+      console.log('[KT KAS] Rekap Elements:', {in: elPemasukan, out: elPengeluaran, total: elSelisih});
+
       if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan + totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
     }).withFailureHandler(function(err) {
       Swal.close();
       showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
@@ -6030,11 +6066,11 @@ function bukaJadwal() {
     var bulan = document.getElementById('rondaFilterBulan').value;
     var tahun = document.getElementById('rondaFilterTahun').value;
     var list = document.getElementById('listRonda');
-    list.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+    list.innerHTML = `<div class="table-wrapper"><table>
       <thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead>
-      <tbody id="rondaSkeletonBody"></tbody>
-    </table>`;
-    renderSkeleton('rondaSkeletonBody', 'table', 8);
+      <tbody id="rondaSkeletonBody"></tbody></table></div>`;
+    renderSkeleton('rondaSkeletonBody', 'table', 5);
+    
     showLoading('Memuat data ronda...');
     
     google.script.run.withSuccessHandler(function(res) {
@@ -6063,7 +6099,7 @@ function bukaJadwal() {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
 
-    info.innerHTML = `<div style="display:flex; justify-content:center; padding:15px;"><div class="bbx-spinner" style="width:20px; height:20px;"></div></div>`;
+    info.innerHTML = getSkeletonHtml('stats', 1);
 
     const now = new Date();
     const curMonth = now.getMonth() + 1;
@@ -6570,6 +6606,7 @@ function bukaJadwal() {
       if (p.length !== 3) return false;
       var itemThn = parseInt(p[0]);
       var itemBln = parseInt(p[1]);
+      document.getElementById('ktRekapitulasiBox').style.display = 'block'; // Ensure ktRekapitulasiBox is visible when filtered
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
@@ -6643,6 +6680,7 @@ function bukaJadwal() {
 
   // ======================== KONTAK ========================
   function bukaKontak() {
+    console.log('[KAS WARGA] start');
     sembunyikanSemuaLayar();
     document.getElementById('kontakView').style.display = 'block';
     history.pushState({view: 'kontakView', tab: 'warga', onLoad: 'muatDataKontak'}, '', '#kontak');
@@ -6659,7 +6697,7 @@ function bukaJadwal() {
 
   function muatDataKontak() {
     var list = document.getElementById('listKontak');
-    renderSkeleton('listKontak', 'profile', 3);
+    renderSkeleton('listKontak', 'profile', 4);
     
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -6710,9 +6748,7 @@ function bukaJadwal() {
               ${aksi}
             </div>`;
         });
-      } else {
-        list.innerHTML = '<p class="muted">Belum ada data kader pengurus.</p>';
-      }
+      } else renderEmptyState('listKontak', 'Belum ada data kader pengurus.');
     }).withFailureHandler(() => renderErrorState('listKontak', 'muatDataKontak()')).getKontakPengurus();
   }
 
@@ -6865,7 +6901,7 @@ function bukaJadwal() {
   function muatDataUser() {
     var list = document.getElementById('listUsers');
     renderSkeleton('listUsers', 'profile', 5);
-    showLoading('Memuat data user...');
+    
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -7418,6 +7454,32 @@ function bukaJadwal() {
     muatHistoriPengaduan();
   }
 
+  function setPengaduanFilter(status) {
+    currentPengaduanStatusFilter = status;
+    filterHistoriPengaduan();
+  }
+
+  function filterHistoriPengaduan() {
+    const keyword = document.getElementById('searchPengaduan').value.toLowerCase();
+    let filteredData = window.pengaduanDataGlobal;
+
+    // Apply keyword filter
+    if (keyword) {
+        filteredData = filteredData.filter(item =>
+            (item.judul && item.judul.toLowerCase().includes(keyword)) ||
+            (item.isi && item.isi.toLowerCase().includes(keyword))
+        );
+    }
+
+    // Apply status filter
+    if (currentPengaduanStatusFilter !== 'Semua') {
+        filteredData = filteredData.filter(item =>
+            item.status === currentPengaduanStatusFilter
+        );
+    }
+    renderListHistoriUI(filteredData);
+  }
+
   /**
    * Refactored: Render dari State Lokal
    */
@@ -7425,7 +7487,7 @@ function bukaJadwal() {
     const list = document.getElementById('listHistori');
     list.innerHTML = '';
     if (!data || !data.length) {
-      list.innerHTML = '<p>Belum ada histori.</p>';
+      renderEmptyState('listHistori', 'Belum ada histori pengaduan Anda.');
       return;
     }
 
@@ -7451,7 +7513,7 @@ function bukaJadwal() {
     var list = document.getElementById('listHistori');
     // Cek cache dulu agar instan
     if (window.pengaduanDataGlobal.length > 0) renderListHistoriUI(window.pengaduanDataGlobal);
-    else list.innerHTML = SPINNER_HTML;
+    else renderLoadingState('listHistori', 'badge_card', 3);
 
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'error') return showError(res.pesan);
@@ -7469,7 +7531,7 @@ function bukaJadwal() {
 
   function muatLaporanPengaduanAdmin() {
     var list = document.getElementById('listLaporanSemua');
-    renderSkeleton('listLaporanSemua', 'card', 4);
+    renderSkeleton('listLaporanSemua', 'card', 5);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -7638,6 +7700,7 @@ function bukaJadwal() {
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
+    console.log('[KAS WARGA] muatDataKas start');
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
@@ -7647,6 +7710,10 @@ function bukaJadwal() {
         el.innerText = '0.000.000';
       }
     });
+
+    // Add skeleton loading for the tables
+    renderSkeleton('tbodyPemasukan', 'table', 5);
+    renderSkeleton('tbodyPengeluaran', 'table', 5);
 
     google.script.run.withSuccessHandler(function(res) {
       targets.forEach(id => {
@@ -7668,6 +7735,7 @@ function bukaJadwal() {
       }
       kasBackendTotalsGlobal = backendTotals;
 
+      console.log('[KAS WARGA] render berhasil');
 
       var pemasukanList = [];
       var pengeluaranList = [];
@@ -7689,6 +7757,7 @@ function bukaJadwal() {
       if (callback) {
         callback();
       }
+      console.log('[KAS WARGA] data loaded from backend');
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
@@ -7740,8 +7809,17 @@ function bukaJadwal() {
   function renderTabelTransaksi(pemasukanList, pengeluaranList) {
     var tbodyP = document.getElementById('tbodyPemasukan');
     var tbodyG = document.getElementById('tbodyPengeluaran');
+    
+    if(!tbodyP || !tbodyG){ console.error('[KAS WARGA] container tabel tidak ditemukan'); return; }
+
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
+    if (!pemasukanList.length && !pengeluaranList.length) {
+      renderEmptyState('tbodyPemasukan', 'Tidak ada transaksi pada periode ini.');
+      renderEmptyState('tbodyPengeluaran', 'Tidak ada transaksi pada periode ini.');
+      console.log('[KAS WARGA] render success (empty state)');
+      return;
+    }
     var isAdmin = hasPermission('rt_iuran_manage');
     for (var p = 0; p < pemasukanList.length; p++) {
       var item = pemasukanList[p];
@@ -8752,8 +8830,11 @@ function bukaJadwal() {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
+    console.log('[KAS WARGA] start');
+    const view = document.getElementById('kasView');
+    if(!view){ console.error('[KAS WARGA] container kasView tidak ditemukan'); return; }
     sembunyikanSemuaLayar();
-    document.getElementById('kasView').style.display = 'block';
+    view.style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
     var iuranAdminDiv = document.getElementById('iuranAdminButtons');
@@ -9088,11 +9169,9 @@ function bukaJadwal() {
 
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
-    renderSkeleton('pkkListJadwal', 'card', 3);
+    renderSkeleton('pkkListJadwal', 'card', 4);
     console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
-      console.log('[PKK JADWAL] response:', res);
-      console.log('[PKK JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('pkkListJadwal', 'Belum ada jadwal kegiatan PKK terdaftar.');
@@ -9307,6 +9386,7 @@ function bukaJadwal() {
       btn.disabled = true;
       kirimLaporanPkk(obj, btn);
     }
+    console.log('[KAS WARGA] render success');
   }
 
   function kirimLaporanPkk(obj, btn) {
@@ -9373,7 +9453,7 @@ function bukaJadwal() {
             + fotoHTML
             + '</div>';
         }
-      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK.');
+      } else renderEmptyState('listLaporanSemua', 'Belum ada laporan pengaduan masuk.');
     }).pkkGetLaporanByPelapor(currentUser.nama);
   }
 
@@ -9540,7 +9620,6 @@ function bukaJadwal() {
   function pkkMuatDataLaporanAdmin() {
     var list = document.getElementById('pkkListLaporanAdmin'); 
     renderSkeleton('pkkListLaporanAdmin', 'card', 5);
-    showLoading('Memuat laporan admin PKK...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       if (res.data && res.data.length) {
@@ -9629,15 +9708,3 @@ function bukaJadwal() {
     if (pwaBanner) pwaBanner.style.display = 'none';
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
-
-  // Listener untuk pesan dari Service Worker (Navigasi saat notifikasi diklik)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', function(event) {
-      if (event.data.action === 'navigate' && event.data.page) {
-        handleNotifLihat(event.data.page);
-      }
-    });
-  }
-
-  refreshNavVisibility();
-</script>
