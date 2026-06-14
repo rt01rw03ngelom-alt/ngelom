@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.5';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1681,7 +1681,6 @@
       align-items: center;
       justify-content: center;
       margin: 8px 0 !important; 
-      margin: 0 !important; 
       padding: 0 24px !important;
       border-radius: 12px !important;
       font-weight: 700;
@@ -1722,35 +1721,6 @@
       color: var(--text-main);
     }
 
-    /* PERBAIKAN ALIGNMENT FILTER (Garis Horizontal Sejajar) */
-    .filter-controls, .filter-table, .filter-bar {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      gap: 16px !important;
-      align-items: flex-end !important; /* Menyejajarkan bagian bawah elemen */
-    }
-
-    /* Standarisasi tinggi elemen agar sejajar presisi */
-    .filter-controls .filter-group input, 
-    .filter-controls .filter-group select,
-    .filter-controls button,
-    .filter-table .filter-group input, 
-    .filter-table .filter-group select,
-    .filter-table button.btn-small,
-    .filter-bar .filter-group input, 
-    .filter-bar .filter-group select,
-    .filter-bar button.btn-small {
-      margin: 0 !important; /* Hilangkan margin yang menyebabkan "drop" pixel */
-      height: 44px !important;
-      box-sizing: border-box;
-    }
-
-    .filter-controls button, .filter-table .btn-small, .filter-bar .btn-small {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .rekapitulasi {
       background: rgba(var(--primary-color-rgb), 0.1);
       border-radius: var(--border-radius);
@@ -1787,10 +1757,6 @@
       }
 
       .filter-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .filter-table {
         flex-direction: column;
         align-items: stretch;
       }
@@ -2127,7 +2093,7 @@
         </div>
         <div class="summary-info" id="rondaBannerContent" style="transition: opacity 0.3s ease; flex:1;">
           <h3 id="rondaBannerTitle" style="font-size:10px; text-transform:uppercase; color:#d97706;">Jadwal Ronda Malam</h3>
-          <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;"><div class="skeleton-line" style="width:80%; height:12px; margin:8px 0;"></div><div class="skeleton-line" style="width:60%; height:10px;"></div></div>
+          <div id="rondaTodayInfo" style="font-size:13px; font-weight:700; color:var(--text-main); line-height:1.3; margin-top:2px;">Memuat jadwal...</div>
           <!-- Dot indicators -->
           <div style="display:flex; gap:4px; margin-top:8px;">
             <div class="ronda-dot active" style="width:12px; height:4px; border-radius:2px; background:#d97706; transition:0.3s;"></div>
@@ -2398,7 +2364,6 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
-        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatKtRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2431,7 +2396,7 @@
     </div>
 
     <!-- Filter Tabel Transaksi Karang Taruna -->
-    <div class="filter-table filter-controls">
+    <div class="filter-table">
       <div class="filter-group">
         <label>Filter Tabel Bulan</label>
         <select id="ktFilterBulanTransaksi">
@@ -2444,8 +2409,8 @@
         <input type="number" id="ktFilterTahunTransaksi" value="2026" style="width:100px;">
       </div>
       <div class="filter-group">
-        <label style="visibility: hidden;">Action</label>
-        <button class="btn-small" onclick="filterKtTabelTransaksi()" style="background:var(--kt-blue); color:white; font-weight:700;">Terapkan Filter</button>
+        <label>&nbsp;</label>
+        <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
       </div>
     </div>
 
@@ -2668,7 +2633,6 @@
       <h3>Jadwal Ronda Malam</h3>
     </div>
     <div class="filter-bar">
-    <div class="filter-bar filter-controls">
       <div class="filter-group">
         <label>Bulan</label>
         <select id="rondaFilterBulan" onchange="muatDataRonda()">
@@ -2923,7 +2887,6 @@
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
-        <label style="visibility: hidden;">Action</label>
         <button class="btn-small success btn-rekap" onclick="muatRekapPeriode()">Rekap</button>
       </div>
     </div>
@@ -2982,9 +2945,8 @@
         <label>Tahun</label>
         <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;">
       </div>
-      <div class="filter-group">
-        <label style="visibility: hidden;">Action</label>
-        <button class="btn-small" onclick="filterTabelTransaksi()" style="background:var(--primary-red); color:white; font-weight:700;">Terapkan Filter</button>
+      <div>
+        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
       </div>
     </div>
 
@@ -3305,8 +3267,6 @@
   window.pengaduanDataGlobal = [];
   window.pkkLaporanDataGlobal = [];
   
-  var currentPengaduanStatusFilter = 'Semua'; // Global variable for current filter status
-
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
   var currentThisWeekEntries = []; // Storage untuk Share WA
   var currentNextWeekEntries = []; // Storage untuk Share WA
@@ -3317,95 +3277,47 @@
   var pickedRondaWeek1 = null;
   var pickedRondaWeek2 = null;
 
-  // ======================== 10XTHINK: GLOBAL UI ENGINE ========================
+  // 10XTHINK: Modern Loading & Error State Engine
+  const SPINNER_HTML = `<div class="loading-container"><div class="bbx-spinner"></div><p>Menghubungkan ke database...</p></div>`;
 
-  function getSkeletonHtml(type = 'card', count = 3) {
-    let html = '';
+  function renderSkeleton(containerId, count = 3) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    let html = SPINNER_HTML;
     for (let i = 0; i < count; i++) {
-      if (type === 'profile') {
-        html += `<div class="card-item skeleton-card fade-up-in">
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div class="skeleton-avatar"></div>
-            <div style="flex:1;">
-              <div class="skeleton-line" style="width:30%; height:12px;"></div>
-              <div class="skeleton-line" style="width:70%; height:18px;"></div>
-              <div class="skeleton-line" style="width:50%; height:12px; margin:0;"></div>
-            </div>
-          </div></div>`;
-      } else if (type === 'grid') {
-        html += `<div class="galeri-card skeleton-card fade-up-in" style="padding:0; border:none; background:var(--bg-surface);">
-          <div class="skeleton-img" style="border-radius:20px 20px 0 0;"></div>
-          <div style="padding:16px;">
-            <div class="skeleton-line" style="width:80%; height:16px;"></div>
-            <div class="skeleton-line" style="width:40%; height:12px; margin:0;"></div>
-          </div></div>`;
-      } else if (type === 'table') {
-        html += `<tr>
-          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
-          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
-          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
-          <td><div class="skeleton-line" style="width:100%; height:16px; margin:0;"></div></td>
-        </tr>`;
-      } else if (type === 'chart') {
-        html += `<div class="skeleton-card fade-up-in" style="height:220px; display:flex; align-items:flex-end; gap:8px; padding:20px;">
-          <div class="skeleton-line" style="flex:1; height:40%;"></div>
-          <div class="skeleton-line" style="flex:1; height:70%;"></div>
-          <div class="skeleton-line" style="flex:1; height:50%;"></div>
-          <div class="skeleton-line" style="flex:1; height:90%;"></div>
-          <div class="skeleton-line" style="flex:1; height:60%;"></div>
-        </div>`;
-      } else if (type === 'stats') {
-        html += `<div class="summary-card skeleton-card fade-up-in" style="width:100%; margin-bottom:0;">
-          <div class="skeleton-avatar" style="width:40px; height:40px;"></div>
-          <div style="flex:1;">
-            <div class="skeleton-line" style="width:40%; height:10px;"></div>
-            <div class="skeleton-line" style="width:80%; height:18px; margin:0;"></div>
-          </div></div>`;
-      } else if (type === 'badge_card') {
-        html += `<div class="card-item skeleton-card fade-up-in"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><div class="skeleton-line" style="width:40%; height:16px; margin:0;"></div><div class="skeleton-line" style="width:60px; height:20px; border-radius:20px; margin:0;"></div></div><div class="skeleton-line" style="width:100%; height:12px;"></div><div class="skeleton-line" style="width:85%; height:12px; margin:0;"></div></div>`;
-      } else {
-        html += `<div class="card-item skeleton-card fade-up-in">
-          <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-            <div class="skeleton-line" style="width:40%; height:16px;"></div>
-            <div class="skeleton-line" style="width:20%; height:16px; border-radius:8px;"></div>
-          </div>
-          <div class="skeleton-line" style="width:100%; height:12px;"></div>
-          <div class="skeleton-line" style="width:85%; height:12px; margin:0;"></div>
-        </div>`;
-      }
-    }
-    return html;
-  }
-
-  function renderSkeleton(containerId, type = 'card', count = 3) {
-    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
-    if (!el) return;
-    el.innerHTML = getSkeletonHtml(type, count);
-  }
-
-  function renderLoadingState(containerId, type = 'card', count = 3) {
-    renderSkeleton(containerId, type, count);
-  }
-
-  function renderEmptyState(containerId, message) {
-    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
-    if (!el) return;
-    el.innerHTML = `<div class="empty-state fade-up-in">
-        <span class="material-icons">inbox</span>
-        <h3>Belum Ada Data</h3>
-        <p>${escapeHtml(message || 'Data belum tersedia saat ini.')}</p>
+      html += `<div class="card-item skeleton-card">
+        <div class="skeleton-line" style="width:40%; height:20px;"></div>
+        <div class="skeleton-line" style="width:100%; height:12px;"></div>
+        <div class="skeleton-line" style="width:85%; height:12px;"></div>
       </div>`;
+    }
+    el.innerHTML = html;
   }
 
   function renderErrorState(containerId, retryFn) {
-    const el = (typeof containerId === 'string' && containerId !== '') ? document.getElementById(containerId) : containerId;
+    const el = document.getElementById(containerId);
     if (!el) return;
-    el.innerHTML = `<div class="error-state fade-up-in">
-        <span class="material-icons">error_outline</span>
-        <h3>Gagal Memuat Data</h3>
-        <p>Silakan coba kembali.</p>
-        <button class="btn-primary" style="width:auto; padding:10px 24px; border-radius:12px; margin-top:15px;" onclick="${retryFn}">Muat Ulang</button>
-      </div>`;
+    el.innerHTML = `<div class="error-state">
+      <i class="material-icons" style="font-size:48px; color:var(--primary-color);">cloud_off</i>
+      <div style="font-weight:800; margin:10px 0;">Gagal memuat data</div>
+      <p class="muted" style="font-size:12px; margin-bottom:15px;">Periksa koneksi internet Anda</p>
+      <button class="btn-small" onclick="${retryFn}">Coba Lagi</button>
+    </div>`;
+  }
+
+  // Empty state standar (anti "layar kosong")
+  function renderEmptyState(containerId, message) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = `
+      <div class="state-container" style="padding:48px 20px;">
+        <div class="state-icon">
+          <i class="material-icons">event_busy</i>
+        </div>
+        <div class="state-title">${escapeHtml(message || 'Data tidak tersedia')}</div>
+        <div class="state-msg">Silakan coba lagi nanti atau tambah data jika Anda memiliki akses.</div>
+      </div>
+    `;
   }
 
   // Definisi daftar izin yang tersedia untuk Kelola Role
@@ -4292,7 +4204,7 @@
   function showLoading(msg, withProgress = false) {
     const progressHtml = `<div class="bbx-loader-container"><div class="bbx-loader-bar"></div></div>
       <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">
-        <span id="bbxLoadingMsg">${msg || 'Sinkronisasi...'}</span>
+        <span id="bbxLoadingMsg">${msg || 'Menghubungkan Database'}</span>
       </div>`;
 
     // loading custom: spinner modern + teks, terlihat jelas tanpa perlu ganti content halaman
@@ -4302,7 +4214,7 @@
         '<div style="display:flex; align-items:center; gap:14px; padding:6px 2px; min-height:70px;">'
           + '  <div class="bbx-spinner" style="border-width:4px;"></div>'
           + '  <div style="text-align:left; flex:1;">'
-          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Sinkronisasi...</div>'
+          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Mohon Tunggu</div>'
           +      progressHtml
           + '  </div>'
           + '</div>',
@@ -4466,7 +4378,6 @@
 
   // ======================== SESSION & LOGIN ========================
   window.addEventListener('load', function () {
-    console.log('[DEBUG] initApp: Aplikasi memulai booting...');
     applyDarkModePreference();
 
     // Dengar perubahan pengaturan sistem secara real-time
@@ -4504,14 +4415,6 @@
       google.script.run
         .withSuccessHandler(function (res) {
           if (res && res.status === 'success') {
-            // 10XTHINK: Validate user data before proceeding
-            if (!res.role || !res.email) {
-              console.error("Invalid session data received", res);
-              localStorage.removeItem('sessionToken');
-              location.reload();
-              return;
-            }
-            
             currentUser = res;
             currentToken = res.token;
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
@@ -5153,18 +5056,13 @@
   };
 
   function renderMenu(tabName) {
-    console.log('[DEBUG] renderDashboard: Memulai render menu untuk tab ' + tabName);
     var container = document.getElementById('menuContainer');
-    if (!container) return;
-    
     container.innerHTML = '';
     var availableMenus = menus[tabName] || menus.warga;
     
     // Refresh user name in welcome banner
     var welcomeSection = document.getElementById('welcomeUserName');
-    if(welcomeSection && currentUser) {
-      welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
-    }
+    if(welcomeSection) welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
 
 
     // Update Ringkasan Dashboard (Banner) berdasarkan Tab
@@ -5216,12 +5114,6 @@
     for (var i = 0; i < availableMenus.length; i++) {
       var menu = availableMenus[i];
       
-      // Safety check for currentUser object
-      if (!currentUser || !currentUser.role) {
-        console.warn("User role not found during menu render");
-        continue;
-      }
-
       // Cek apakah role diizinkan ATAU memiliki izin spesifik (perm)
       var roleMatch = menu.roles.indexOf(currentUser.role) !== -1;
       var permMatch = hasPermission(menu.perm);
@@ -5266,7 +5158,7 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
-    renderLoadingState('ktListJadwal');
+    renderSkeleton('ktListJadwal', 'card', 3);
     console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[KT JADWAL] response:', res);
@@ -5359,7 +5251,7 @@
 
   function ktMuatDataKader() {
     var list = document.getElementById('ktListKader');
-    renderSkeleton('ktListKader', 'profile', 4);
+    renderSkeleton('ktListKader', 'profile', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -5446,9 +5338,7 @@
 
   function bukaKtKas() {
     sembunyikanSemuaLayar();
-    var viewEl = document.getElementById('ktKasView');
-    if (viewEl) viewEl.style.display = 'block';
-    
+    document.getElementById('ktKasView').style.display = 'block';
     history.pushState({view: 'ktKasView', tab: 'karangtaruna', onLoad: 'ktMuatDataKas'}, '', '#ktkas');
     
     var actionDiv = document.getElementById('ktActionButtonsKas');
@@ -5460,11 +5350,8 @@
     }
       
       // Inisialisasi default filter disamakan dengan Kas Warga
-      var inputTahun = document.getElementById('ktTahunLaporanTahunan');
-      if (inputTahun) inputTahun.value = new Date().getFullYear();
-      
-      var inputFilter = document.getElementById('ktFilterTahunTransaksi');
-      if (inputFilter) inputFilter.value = new Date().getFullYear();
+      document.getElementById('ktTahunLaporanTahunan').value = new Date().getFullYear();
+      document.getElementById('ktFilterTahunTransaksi').value = new Date().getFullYear();
       
     ktMuatDataKas();
       toggleKtLaporanMode();
@@ -5476,19 +5363,13 @@
       totalEl.classList.add('skeleton-text');
       totalEl.innerText = 'Rp 0.000.000';
     }
-    
     renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
-
+    
     google.script.run.withSuccessHandler(function(res) {
       if (totalEl) totalEl.classList.remove('skeleton-text');
-      if (res && res.status === 'success') {
+      if (res.status === 'success') {
         ktAllKasData = res.data || [];
-        
-        var displayEl = document.getElementById('ktTotalKas');
-        console.log('[KT KAS] Element Total Saldo:', displayEl);
-        if (displayEl) {
-          displayEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
-        }
+        document.getElementById('ktTotalKas').innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
         
         // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
         renderRekapKasKT(ktAllKasData);
@@ -5616,7 +5497,7 @@
           if (res.data[i].jenis === 'Pemasukan') {
             totalPemasukan += res.data[i].nominal;
           } else {
-            totalPengeluaran += res.data[i].nominal;
+            totalPemasukan -= res.data[i].nominal;
           }
         }
       }
@@ -5624,12 +5505,9 @@
       var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
       var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
       var elSelisih = document.getElementById('ktRekapSelisih');
-      
-      console.log('[KT KAS] Rekap Elements:', {in: elPemasukan, out: elPengeluaran, total: elSelisih});
-
       if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan + totalPengeluaran).toLocaleString('id-ID');
     }).withFailureHandler(function(err) {
       Swal.close();
       showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
@@ -6152,11 +6030,11 @@ function bukaJadwal() {
     var bulan = document.getElementById('rondaFilterBulan').value;
     var tahun = document.getElementById('rondaFilterTahun').value;
     var list = document.getElementById('listRonda');
-    list.innerHTML = `<div class="table-wrapper"><table>
+    list.innerHTML = `<table style="width:100%; border-collapse:collapse;">
       <thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead>
-      <tbody id="rondaSkeletonBody"></tbody></table></div>`;
-    renderSkeleton('rondaSkeletonBody', 'table', 5);
-    
+      <tbody id="rondaSkeletonBody"></tbody>
+    </table>`;
+    renderSkeleton('rondaSkeletonBody', 'table', 8);
     showLoading('Memuat data ronda...');
     
     google.script.run.withSuccessHandler(function(res) {
@@ -6185,7 +6063,7 @@ function bukaJadwal() {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
 
-    info.innerHTML = getSkeletonHtml('stats', 1);
+    info.innerHTML = `<div style="display:flex; justify-content:center; padding:15px;"><div class="bbx-spinner" style="width:20px; height:20px;"></div></div>`;
 
     const now = new Date();
     const curMonth = now.getMonth() + 1;
@@ -6201,15 +6079,6 @@ function bukaJadwal() {
         google.script.run.getRonda(curMonth, curYear),
         google.script.run.getRonda(nextMonth, nextYear)
       ]);
-
-      // Perbaikan: Tambahkan proteksi jika res1 atau res2 gagal/offline
-      if (!res1 || !res2 || res1.status === 'offline' || res2.status === 'offline' || res1.status === 'error') {
-        info.innerHTML = `<div class="muted" style="text-align:center; padding:15px; font-size:12px; line-height:1.4;">
-            <i class="material-icons" style="font-size:20px; color:var(--text-muted); display:block; margin-bottom:5px;">cloud_off</i> 
-            Jadwal gagal dimuat.<br>Sinyal tidak stabil.
-          </div>`;
-        return;
-      }
 
       let combinedData = [];
       if (res1 && res1.status === 'success') combinedData = combinedData.concat(res1.data);
@@ -6790,7 +6659,7 @@ function bukaJadwal() {
 
   function muatDataKontak() {
     var list = document.getElementById('listKontak');
-    renderSkeleton('listKontak', 'profile', 4);
+    renderSkeleton('listKontak', 'profile', 3);
     
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -6841,7 +6710,9 @@ function bukaJadwal() {
               ${aksi}
             </div>`;
         });
-      } else renderEmptyState('listKontak', 'Belum ada data kader pengurus.');
+      } else {
+        list.innerHTML = '<p class="muted">Belum ada data kader pengurus.</p>';
+      }
     }).withFailureHandler(() => renderErrorState('listKontak', 'muatDataKontak()')).getKontakPengurus();
   }
 
@@ -6994,7 +6865,7 @@ function bukaJadwal() {
   function muatDataUser() {
     var list = document.getElementById('listUsers');
     renderSkeleton('listUsers', 'profile', 5);
-    
+    showLoading('Memuat data user...');
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
@@ -7547,32 +7418,6 @@ function bukaJadwal() {
     muatHistoriPengaduan();
   }
 
-  function setPengaduanFilter(status) {
-    currentPengaduanStatusFilter = status;
-    filterHistoriPengaduan();
-  }
-
-  function filterHistoriPengaduan() {
-    const keyword = document.getElementById('searchPengaduan').value.toLowerCase();
-    let filteredData = window.pengaduanDataGlobal;
-
-    // Apply keyword filter
-    if (keyword) {
-        filteredData = filteredData.filter(item =>
-            (item.judul && item.judul.toLowerCase().includes(keyword)) ||
-            (item.isi && item.isi.toLowerCase().includes(keyword))
-        );
-    }
-
-    // Apply status filter
-    if (currentPengaduanStatusFilter !== 'Semua') {
-        filteredData = filteredData.filter(item =>
-            item.status === currentPengaduanStatusFilter
-        );
-    }
-    renderListHistoriUI(filteredData);
-  }
-
   /**
    * Refactored: Render dari State Lokal
    */
@@ -7580,7 +7425,7 @@ function bukaJadwal() {
     const list = document.getElementById('listHistori');
     list.innerHTML = '';
     if (!data || !data.length) {
-      renderEmptyState('listHistori', 'Belum ada histori pengaduan Anda.');
+      list.innerHTML = '<p>Belum ada histori.</p>';
       return;
     }
 
@@ -7606,7 +7451,7 @@ function bukaJadwal() {
     var list = document.getElementById('listHistori');
     // Cek cache dulu agar instan
     if (window.pengaduanDataGlobal.length > 0) renderListHistoriUI(window.pengaduanDataGlobal);
-    else renderLoadingState('listHistori', 'badge_card', 3);
+    else list.innerHTML = SPINNER_HTML;
 
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'error') return showError(res.pesan);
@@ -7624,7 +7469,7 @@ function bukaJadwal() {
 
   function muatLaporanPengaduanAdmin() {
     var list = document.getElementById('listLaporanSemua');
-    renderSkeleton('listLaporanSemua', 'card', 5);
+    renderSkeleton('listLaporanSemua', 'card', 4);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
       if (res.data && res.data.length) {
@@ -7793,7 +7638,6 @@ function bukaJadwal() {
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
-    console.log('[KAS WARGA] muatDataKas start');
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
@@ -7824,7 +7668,6 @@ function bukaJadwal() {
       }
       kasBackendTotalsGlobal = backendTotals;
 
-      console.log('[KAS WARGA] render berhasil');
 
       var pemasukanList = [];
       var pengeluaranList = [];
@@ -8909,7 +8752,6 @@ function bukaJadwal() {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
-    console.log('[KAS WARGA] bukaLaporanKasWarga');
     sembunyikanSemuaLayar();
     document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
@@ -8992,7 +8834,7 @@ function bukaJadwal() {
             <img src="${thumb}" class="galeri-img" onclick="openLightbox('${safeImageUrl}', ${JSON.stringify(allMedia).replace(/"/g, '&quot;')}, ${j})" style="aspect-ratio:16/9; object-fit:cover;">
             <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
               <div style="font-weight:800; font-size:15px; color:var(--text-main); line-height:1.4; margin-bottom:4px;">${safeCaption}</div>
-                <div style="font-size:11px; font-weight:600; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
+              <div style="font-size:11px; font-weight:600; color:var(--primary-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
                 <i class="material-icons" style="font-size:14px;">calendar_today</i> ${safeTanggal}
               </div>
               <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:12px; flex:1;">
@@ -9246,8 +9088,11 @@ function bukaJadwal() {
 
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
-    renderSkeleton('pkkListJadwal', 'card', 4);
+    renderSkeleton('pkkListJadwal', 'card', 3);
+    console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
+      console.log('[PKK JADWAL] response:', res);
+      console.log('[PKK JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('pkkListJadwal', 'Belum ada jadwal kegiatan PKK terdaftar.');
@@ -9267,14 +9112,14 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--pkk-green); animation-delay:${i*0.05}s;">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(16,185,129,0.1); color:var(--pkk-green); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">PKK Ngelom</span>
               </div>
               <div style="display:grid; gap:8px;">
                 <div class="row" style="align-items:flex-start;"><i class="material-icons" style="font-size:18px; color:var(--pkk-green); margin-top:2px;">info_outline</i> 
-                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Rapat/Kegiatan Rutin PKK'}</div>
+                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Kegiatan PKK'}</div>
                 </div>
                 <div class="row"><i class="material-icons" style="font-size:18px; color:var(--pkk-green);">schedule</i> 
                   <div style="font-size:14px; color:var(--text-main); font-weight:500;">${formatIndoDate(item.waktu)}</div>
@@ -9287,7 +9132,7 @@ function bukaJadwal() {
             </div>`;
         }
       }
-    }).withFailureHandler(() => renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()')).pkkGetJadwal();
+    }).pkkGetJadwal();
   }
 
   function bukaPkkKader() {
@@ -9406,15 +9251,15 @@ function bukaJadwal() {
           var avatar = item.fotoUrl ? `<img src="${getDirectUrl(item.fotoUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;">` : `<i class="material-icons" style="font-size:32px;">person</i>`;
 
           list.innerHTML += `
-            <div class="card-item pkk-kader-card" style="margin-bottom:12px; cursor:pointer; overflow:hidden;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
-              <div class="pkk-kader-item" style="display:flex; align-items:center; gap:16px;">
-                <div class="pkk-kader-avatar" style="background:var(--pkk-green); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-sm);">
+            <div class="card-item" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
+              <div style="display:flex; align-items:center; gap:16px;">
+                <div style="background:var(--primary-red); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
                   ${avatar}
                 </div>
-                <div class="pkk-kader-info" style="flex:1; min-width: 0;">
-                  <div style="font-weight:800; font-size:11px; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px;">${item.jabatan || 'Anggota'}</div>
+                <div style="flex:1;">
+                  <div style="font-weight:800; font-size:12px; color:var(--primary-color); text-transform:uppercase;">${item.jabatan || 'Anggota'}</div>
                   <div style="font-weight:700; font-size:16px; color:var(--text-main);">${item.nama}</div>
-                  <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:14px;">phone</i> ${item.nohp || '-'}</div>
+                  <div style="font-size:13px; color:var(--primary-color);">${item.nohp || '-'}</div>
                 </div>
               </div>
               ${aksi}
@@ -9437,10 +9282,6 @@ function bukaJadwal() {
     if (!deskripsi) return showWarning('Detail laporan wajib diisi!');
 
     var btn = document.querySelector('#pkkKirimLaporanView .btn-primary');
-    btn.disabled = true;
-
-    showLoading('Menyiapkan laporan...', true);
-    updateProgress(5, 'Validasi data...');
     
     var obj = {
       pelapor: currentUser.nama,
@@ -9453,22 +9294,23 @@ function bukaJadwal() {
 
     var fileInput = document.getElementById('pkkFotoLaporan');
     if (fileInput.files.length) {
+      btn.disabled = true;
       var file = fileInput.files[0];
+      // Refactoring: Hapus calls ke fungsi undefined (updateProgress) dan perbaiki callback
       compressImage(file, function(base64, mime) {
         obj.dataFile = base64;
         obj.mimeType = mime;
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
-        startSimulatedUpload();
         kirimLaporanPkk(obj, btn);
       }, 800); // Gunakan 800px agar upload sangat cepat
     } else {
-      updateProgress(50, 'Mengirim data...');
+      btn.disabled = true;
       kirimLaporanPkk(obj, btn);
     }
   }
 
   function kirimLaporanPkk(obj, btn) {
-    startSimulatedUpload();
+    showLoading('Mengunggah laporan ke server...');
     btn.innerHTML = '<span class="loading-spinner"></span> Mengirim...';
     
     google.script.run.withSuccessHandler(function(res) {
@@ -9521,21 +9363,18 @@ function bukaJadwal() {
               + JSON.stringify(allImgs).replace(/"/g, '&quot;') + ',' + j + ')">';
           }
 
-          list.innerHTML += `
-            <div class="card-item pkk-histori-item fade-up-in" style="margin-bottom:12px; border-left-color: var(--pkk-green);">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:13px; color:var(--text-muted); font-weight:600;">${item.tanggal}</div>
-                <div class="status-badge ${statusClass}">${item.status}</div>
-              </div>
-              <div style="margin-top:12px;">
-                <div style="font-weight:700; color:var(--text-main); font-size:16px; margin-bottom:4px;">${item.judul || 'Laporan Tanpa Judul'}</div>
-                <div style="font-size:14px; color:var(--text-muted); line-height:1.5;">${item.deskripsi}</div>
-              </div>
-              ${fotoHTML}
-            </div>`;
+          list.innerHTML += '<div class="card-item">'
+            + '<div><strong>' + (item.pelapor || '-') + '</strong> - ' + (item.tanggal || '-') + '</div>'
+            + '<div class="status-badge ' + statusClass + '" style="margin-top:5px;">' + (item.status || '-') + '</div>'
+            + '<div style="margin-top:10px;">'
+            + '<div style="font-weight:600; color:var(--text-main);">' + (item.judul || '-') + '</div>'
+            + '<div>' + (item.deskripsi || '-') + '</div>'
+            + '</div>'
+            + fotoHTML
+            + '</div>';
         }
-      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK Anda.');
-    }).withFailureHandler(() => renderErrorState('pkkListHistori', 'pkkMuatDataHistori()')).pkkGetLaporanByPelapor(currentUser.nama);
+      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK.');
+    }).pkkGetLaporanByPelapor(currentUser.nama);
   }
 
   function bukaPkkGaleri() {
@@ -9650,7 +9489,7 @@ function bukaJadwal() {
   function pkkMuatDataGaleri() {
     var container = document.getElementById('pkkListGaleri');
     renderSkeleton('pkkListGaleri', 'grid', 8);
-    google.script.run.withSuccessHandler(function(res) { 
+    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = '';
       if(res.status==='error'){ 
         showError(res.pesan); 
@@ -9684,7 +9523,7 @@ function bukaJadwal() {
             + '</div></div>';
         }
       } else {
-        renderEmptyState('pkkListGaleri', 'Belum ada dokumentasi di galeri PKK.');
+        container.innerHTML = '<p>Belum ada foto di galeri PKK.</p>';
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -9701,6 +9540,7 @@ function bukaJadwal() {
   function pkkMuatDataLaporanAdmin() {
     var list = document.getElementById('pkkListLaporanAdmin'); 
     renderSkeleton('pkkListLaporanAdmin', 'card', 5);
+    showLoading('Memuat laporan admin PKK...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       if (res.data && res.data.length) {
@@ -9766,7 +9606,7 @@ function bukaJadwal() {
 
   function installPWA() {
     if (!deferredPrompt) return;
-
+    // Tampilkan prompt instalasi asli dari sistem operasi (Android/iOS)
     deferredPrompt.prompt();
     // Tunggu jawaban dari user
     deferredPrompt.userChoice.then((choiceResult) => {
@@ -9780,6 +9620,7 @@ function bukaJadwal() {
 
   function dismissPWAInstall() {
     if (pwaBanner) pwaBanner.style.display = 'none';
+    // Simpan timestamp penolakan agar banner tidak muncul setiap kali aplikasi dibuka
     localStorage.setItem('pwaDismissedTs', Date.now().toString());
   }
 
@@ -9789,7 +9630,7 @@ function bukaJadwal() {
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
 
-
+  // Listener untuk pesan dari Service Worker (Navigasi saat notifikasi diklik)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', function(event) {
       if (event.data.action === 'navigate' && event.data.page) {
