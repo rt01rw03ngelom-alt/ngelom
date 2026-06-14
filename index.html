@@ -6202,11 +6202,11 @@ function bukaJadwal() {
         google.script.run.getRonda(nextMonth, nextYear)
       ]);
 
-      // UX RESILIENCE: Cek jika salah satu respons adalah fallback offline
-      if (res1.status === 'offline' || res2.status === 'offline') {
+      // Perbaikan: Tambahkan proteksi jika res1 atau res2 gagal/offline
+      if (!res1 || !res2 || res1.status === 'offline' || res2.status === 'offline' || res1.status === 'error') {
         info.innerHTML = `<div class="muted" style="text-align:center; padding:15px; font-size:12px; line-height:1.4;">
-            <i class="material-icons" style="font-size:20px; vertical-align:middle; color:var(--text-muted); display:block; margin-bottom:5px;">cloud_off</i> 
-            Gagal memuat jadwal terbaru.<br>Periksa koneksi internet Anda.
+            <i class="material-icons" style="font-size:20px; color:var(--text-muted); display:block; margin-bottom:5px;">cloud_off</i> 
+            Jadwal gagal dimuat.<br>Sinyal tidak stabil.
           </div>`;
         return;
       }
@@ -8992,7 +8992,7 @@ function bukaJadwal() {
             <img src="${thumb}" class="galeri-img" onclick="openLightbox('${safeImageUrl}', ${JSON.stringify(allMedia).replace(/"/g, '&quot;')}, ${j})" style="aspect-ratio:16/9; object-fit:cover;">
             <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
               <div style="font-weight:800; font-size:15px; color:var(--text-main); line-height:1.4; margin-bottom:4px;">${safeCaption}</div>
-              <div style="font-size:11px; font-weight:600; color:var(--primary-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
+                <div style="font-size:11px; font-weight:600; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
                 <i class="material-icons" style="font-size:14px;">calendar_today</i> ${safeTanggal}
               </div>
               <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:12px; flex:1;">
@@ -9247,11 +9247,8 @@ function bukaJadwal() {
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
     renderSkeleton('pkkListJadwal', 'card', 4);
-    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataJadwal');
-    console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
-      console.log('[PKK DEBUG] renderJadwalPKK triggered');
       if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
       if (!res.data || res.data.length === 0) return renderEmptyState('pkkListJadwal', 'Belum ada jadwal kegiatan PKK terdaftar.');
       if (res.data && res.data.length) {
@@ -9260,7 +9257,7 @@ function bukaJadwal() {
           var aksi = '';
           if (hasPermission('pkk_jadwal_crud')) {
             aksi = `
-              <div class="card-actions" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:12px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;">
+              <div class="card-actions" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:12px;">
                 <button class="btn-action-subtle success-hover" onclick="pkkEditJadwal('${item.id}','${(item.nama || '').replace(/'/g, "\\'")}','${(item.waktu || '').replace(/'/g, "\\'")}','${(item.tempat || '').replace(/'/g, "\\'")}','${(item.pic || '').replace(/'/g, "\\'")}','${(item.keterangan || '').replace(/'/g, "\\'")} ')">
                   <i class="material-icons">edit_note</i> Edit
                 </button>
@@ -9270,14 +9267,14 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--pkk-green); animation-delay:${i*0.05}s;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(16,185,129,0.1); color:var(--pkk-green); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">PKK Ngelom</span>
               </div>
               <div style="display:grid; gap:8px;">
                 <div class="row" style="align-items:flex-start;"><i class="material-icons" style="font-size:18px; color:var(--pkk-green); margin-top:2px;">info_outline</i> 
-                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Kegiatan PKK'}</div>
+                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Rapat/Kegiatan Rutin PKK'}</div>
                 </div>
                 <div class="row"><i class="material-icons" style="font-size:18px; color:var(--pkk-green);">schedule</i> 
                   <div style="font-size:14px; color:var(--text-main); font-weight:500;">${formatIndoDate(item.waktu)}</div>
@@ -9295,7 +9292,6 @@ function bukaJadwal() {
 
   function bukaPkkKader() {
     sembunyikanSemuaLayar();
-    console.log('[PKK DEBUG] showPKKPage: bukaPkkKader');
     document.getElementById('pkkKaderView').style.display = 'block';
     history.pushState({view: 'pkkKaderView', tab: 'pkk', onLoad: 'pkkMuatDataKader'}, '', '#pkkKader');
     if (hasPermission('pkk_kader_crud')) { // Kontrol visibilitas tombol Tambah Kader PKK
@@ -9395,10 +9391,8 @@ function bukaJadwal() {
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
     renderSkeleton('pkkListKader', 'profile', 4);
-    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataKader');
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
-      console.log('[PKK DEBUG] renderKaderPKK triggered');
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -9443,6 +9437,10 @@ function bukaJadwal() {
     if (!deskripsi) return showWarning('Detail laporan wajib diisi!');
 
     var btn = document.querySelector('#pkkKirimLaporanView .btn-primary');
+    btn.disabled = true;
+
+    showLoading('Menyiapkan laporan...', true);
+    updateProgress(5, 'Validasi data...');
     
     var obj = {
       pelapor: currentUser.nama,
@@ -9455,23 +9453,22 @@ function bukaJadwal() {
 
     var fileInput = document.getElementById('pkkFotoLaporan');
     if (fileInput.files.length) {
-      btn.disabled = true;
       var file = fileInput.files[0];
-      // Refactoring: Hapus calls ke fungsi undefined (updateProgress) dan perbaiki callback
       compressImage(file, function(base64, mime) {
         obj.dataFile = base64;
         obj.mimeType = mime;
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+        startSimulatedUpload();
         kirimLaporanPkk(obj, btn);
       }, 800); // Gunakan 800px agar upload sangat cepat
     } else {
-      btn.disabled = true;
+      updateProgress(50, 'Mengirim data...');
       kirimLaporanPkk(obj, btn);
     }
   }
 
   function kirimLaporanPkk(obj, btn) {
-    showLoading('Mengunggah laporan ke server...');
+    startSimulatedUpload();
     btn.innerHTML = '<span class="loading-spinner"></span> Mengirim...';
     
     google.script.run.withSuccessHandler(function(res) {
@@ -9493,20 +9490,17 @@ function bukaJadwal() {
 
   function bukaPkkHistori() {
     sembunyikanSemuaLayar();
-    console.log('[PKK DEBUG] showPKKPage: bukaPkkHistori');
     document.getElementById('pkkHistoriView').style.display = 'block';
     history.pushState({view: 'pkkHistoriView', tab: 'pkk', onLoad: 'pkkMuatDataHistori'}, '', '#pkkHistori');
     pkkMuatDataHistori();
   }
 
   function pkkMuatDataHistori() {
-    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataHistori');
     var list = document.getElementById('pkkListHistori');
     renderSkeleton('pkkListHistori', 'card', 3);
 
-    google.script.run.withSuccessHandler(function(res) { 
+    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
-      console.log('[PKK DEBUG] renderHistoryPKK triggered');
       if (res.data && res.data.length) {
         var allImgs = [];
         for (var i = 0; i < res.data.length; i++) {
@@ -9523,19 +9517,22 @@ function bukaJadwal() {
           var fotoHTML = '';
           if (item.fotoUrl) {
             fotoHTML = '<img src="' + directUrl + '" class="img-thumbnail" style="border:1px solid var(--border-color);" '
-              + 'onclick="openLightbox(\'' + directUrl + '\', ' 
+              + 'onclick="openLightbox(\'' + directUrl + '\', '
               + JSON.stringify(allImgs).replace(/"/g, '&quot;') + ',' + j + ')">';
           }
 
-          list.innerHTML += '<div class="card-item pkk-histori-item" style="margin-bottom:12px;">'
-            + '<div><strong>' + (item.pelapor || '-') + '</strong> - ' + (item.tanggal || '-') + '</div>'
-            + '<div class="status-badge ' + statusClass + '" style="margin-top:8px; display:inline-flex; align-items:center; white-space:nowrap;">' + (item.status || '-') + '</div>'
-            + '<div style="margin-top:12px; word-break:break-word; min-width:0;">'
-            + '<div style="font-weight:600; color:var(--text-main);">' + (item.judul || '-') + '</div>'
-            + '<div style="font-size:14px; color:var(--text-muted); line-height:1.5;">' + (item.deskripsi || '-') + '</div>'
-            + '</div>'
-            + fotoHTML
-            + '</div>';
+          list.innerHTML += `
+            <div class="card-item pkk-histori-item fade-up-in" style="margin-bottom:12px; border-left-color: var(--pkk-green);">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:13px; color:var(--text-muted); font-weight:600;">${item.tanggal}</div>
+                <div class="status-badge ${statusClass}">${item.status}</div>
+              </div>
+              <div style="margin-top:12px;">
+                <div style="font-weight:700; color:var(--text-main); font-size:16px; margin-bottom:4px;">${item.judul || 'Laporan Tanpa Judul'}</div>
+                <div style="font-size:14px; color:var(--text-muted); line-height:1.5;">${item.deskripsi}</div>
+              </div>
+              ${fotoHTML}
+            </div>`;
         }
       } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK Anda.');
     }).withFailureHandler(() => renderErrorState('pkkListHistori', 'pkkMuatDataHistori()')).pkkGetLaporanByPelapor(currentUser.nama);
@@ -9543,7 +9540,6 @@ function bukaJadwal() {
 
   function bukaPkkGaleri() {
     sembunyikanSemuaLayar();
-    console.log('[PKK DEBUG] showPKKPage: bukaPkkGaleri');
     document.getElementById('pkkGaleriView').style.display = 'block';
     history.pushState({view: 'pkkGaleriView', tab: 'pkk', onLoad: 'pkkMuatDataGaleri'}, '', '#pkkGaleri');
     if (hasPermission('pkk_galeri_crud')) { // Kontrol visibilitas tombol Tambah Galeri PKK
@@ -9652,13 +9648,10 @@ function bukaJadwal() {
   }
 
   function pkkMuatDataGaleri() {
-    console.log('[PKK DEBUG] loadPKKData: pkkMuatDataGaleri');
     var container = document.getElementById('pkkListGaleri');
-    if(container) container.className = "pkk-galeri-grid-adaptive";
-    renderSkeleton('pkkListGaleri', 'grid', 6);
+    renderSkeleton('pkkListGaleri', 'grid', 8);
     google.script.run.withSuccessHandler(function(res) { 
       container.innerHTML = '';
-      console.log('[PKK DEBUG] renderGaleriPKK triggered');
       if(res.status==='error'){ 
         showError(res.pesan); 
         container.innerHTML = '<p class="muted">Gagal memuat database PKK.</p>';
@@ -9682,7 +9675,7 @@ function bukaJadwal() {
 
           container.innerHTML += '<div class="galeri-card" style="position:relative;">'
             + icon
-            + '<img src="' + thumb + '" class="galeri-img pkk-galeri-item-img" onclick="openLightbox(\'' + safeImageUrl + '\', ' 
+            + '<img src="' + thumb + '" class="galeri-img" onclick="openLightbox(\'' + safeImageUrl + '\', '
             + JSON.stringify(allMediaUrls).replace(/"/g, '&quot;') + ',' + j + ')">'
             + '<div style="padding:12px;">'
             + '<div style="font-weight:600;">' + safeCaption + '</div>'
