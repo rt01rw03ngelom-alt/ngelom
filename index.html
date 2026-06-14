@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.6';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3247,6 +3247,7 @@
   
   // STATE MANAGEMENT: Local Cache untuk Optimistic Update
   window.pengaduanDataGlobal = [];
+  var currentPengaduanFilter = 'Semua';
   window.pkkLaporanDataGlobal = [];
   
   var activeNotifications = []; // Helper untuk simpan list notif saat ini
@@ -7415,6 +7416,29 @@ function bukaJadwal() {
     });
   }
 
+  function setPengaduanFilter(status) {
+    currentPengaduanFilter = status;
+    filterHistoriPengaduan();
+  }
+
+  function filterHistoriPengaduan() {
+    var keyword = (document.getElementById('searchPengaduan').value || '').toLowerCase();
+    var data = window.pengaduanDataGlobal || [];
+    
+    var filtered = data.filter(function(item) {
+      var matchKeyword = (item.isi || '').toLowerCase().includes(keyword);
+      var matchStatus = (currentPengaduanFilter === 'Semua');
+      if (!matchStatus) {
+        var status = (item.status || '').toLowerCase();
+        var filter = currentPengaduanFilter.toLowerCase();
+        if (filter === 'menunggu') matchStatus = (status === 'belum teratasi');
+        else matchStatus = (status === filter);
+      }
+      return matchKeyword && matchStatus;
+    });
+    renderListHistoriUI(filtered);
+  }
+
   function muatHistoriPengaduan() {
     var list = document.getElementById('listHistori');
     // Cek cache dulu agar instan
@@ -7425,7 +7449,7 @@ function bukaJadwal() {
       if (res.status === 'error') return showError(res.pesan);
       window.pengaduanDataGlobal = res.data || [];
       filterHistoriPengaduan(); // Terapkan filter/search yang mungkin sedang aktif
-    }).getHistoriPengaduan(currentUser.email);
+    }).getHistoriPengaduan(currentUser.nama);
   }
 
   function bukaLaporanAdmin() {
