@@ -2819,7 +2819,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_URL = "https://script.google.com/macros/s/AKfycbxC11ZL4FwrY_w1G9RlhjYZjpsFJqhXEyanaO9ayzLXIPWoATj5E75KJaDGNc1YJtQTZQ/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -2863,9 +2863,11 @@
       }
 
       // Kirim Subscription ke GAS
-      google.script.run.withSuccessHandler(function(res) {
-        console.log('Web Push Subscription tersinkronisasi ke server.');
-      }).savePushSubscription(JSON.stringify(subscription), currentUser.email);
+      if (currentUser && currentUser.email) {
+        google.script.run.withSuccessHandler(function(res) {
+          console.log('Web Push Subscription tersinkronisasi ke server.');
+        }).saveOneSignalId(currentUser.email, JSON.stringify(subscription));
+      }
 
     } catch (err) {
       console.error('Gagal registrasi Web Push:', err);
@@ -2893,7 +2895,7 @@
               const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
 
               try {
-                const urlBase = GAS_BASE_URL;
+                  const urlBase = GAS_WEB_URL;
                 const separator = urlBase.includes('?') ? '&' : '?';
                 const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
                 
