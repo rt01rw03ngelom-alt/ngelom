@@ -3467,6 +3467,32 @@ window.google = {
     checkAndRequestNotificationPermission(false);
   }
 
+  // 10XTHINK: Engine Registrasi Service Worker & Web Push
+  function registrasiWebPush() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js?v=' + APP_VERSION).then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        // Otomatis sinkron jika izin sudah ada
+        if (Notification.permission === 'granted') {
+          subscribeUserToPush(true);
+        }
+      }).catch(function(err) {
+        console.warn('ServiceWorker registration failed: ', err);
+      });
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
   function triggerSystemNotification(judul, isi, targetPage) {
     if (Notification.permission === "granted") {
       const options = {
