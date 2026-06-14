@@ -3234,8 +3234,8 @@
         const createRunner = (handlers) => {
           return new Proxy({}, {
             get(target, prop) {
-              if (prop === 'withSuccessHandler') return (h) => createRunner({ ...handlers, success: h });
-              if (prop === 'withFailureHandler') return (h) => createRunner({ ...handlers, failure: h });
+              if (prop === 'withSuccessHandler') return (h) => createRunner(Object.assign({}, handlers, { success: h }));
+              if (prop === 'withFailureHandler') return (h) => createRunner(Object.assign({}, handlers, { failure: h }));
 
               return async (...args) => {
                 // 10XTHINK: Identifikasi Aksi Penulisan (Data Berat)
@@ -3244,7 +3244,7 @@
                 const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
 
                 try {
-                  const urlBase = GAS_WEB_APP_URL;
+                  const urlBase = typeof GAS_WEB_APP_URL !== 'undefined' ? GAS_WEB_APP_URL : '';
                   const separator = urlBase.includes('?') ? '&' : '?';
                   const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
                   
@@ -4601,6 +4601,7 @@
         })
         .withFailureHandler(function (err) {
           console.error(err);
+          if (err instanceof ReferenceError || err instanceof TypeError) return; 
           localStorage.removeItem('sessionToken');
           location.reload();
         })
