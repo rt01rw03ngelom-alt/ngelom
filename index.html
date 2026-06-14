@@ -6202,6 +6202,15 @@ function bukaJadwal() {
         google.script.run.getRonda(nextMonth, nextYear)
       ]);
 
+      // UX RESILIENCE: Cek jika salah satu respons adalah fallback offline
+      if (res1.status === 'offline' || res2.status === 'offline') {
+        info.innerHTML = `<div class="muted" style="text-align:center; padding:15px; font-size:12px; line-height:1.4;">
+            <i class="material-icons" style="font-size:20px; vertical-align:middle; color:var(--text-muted); display:block; margin-bottom:5px;">cloud_off</i> 
+            Gagal memuat jadwal terbaru.<br>Periksa koneksi internet Anda.
+          </div>`;
+        return;
+      }
+
       let combinedData = [];
       if (res1 && res1.status === 'success') combinedData = combinedData.concat(res1.data);
       if (res2 && res2.status === 'success') combinedData = combinedData.concat(res2.data);
@@ -9403,12 +9412,12 @@ function bukaJadwal() {
           var avatar = item.fotoUrl ? `<img src="${getDirectUrl(item.fotoUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;">` : `<i class="material-icons" style="font-size:32px;">person</i>`;
 
           list.innerHTML += `
-            <div class="card-item pkk-kader-card" style="margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
+            <div class="card-item pkk-kader-card" style="margin-bottom:12px; cursor:pointer; overflow:hidden;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
               <div class="pkk-kader-item" style="display:flex; align-items:center; gap:16px;">
                 <div class="pkk-kader-avatar" style="background:var(--pkk-green); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-sm);">
                   ${avatar}
                 </div>
-                <div style="flex:1; min-width: 0;">
+                <div class="pkk-kader-info" style="flex:1; min-width: 0;">
                   <div style="font-weight:800; font-size:11px; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px;">${item.jabatan || 'Anggota'}</div>
                   <div style="font-weight:700; font-size:16px; color:var(--text-main);">${item.nama}</div>
                   <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:14px;">phone</i> ${item.nohp || '-'}</div>
@@ -9518,10 +9527,10 @@ function bukaJadwal() {
               + JSON.stringify(allImgs).replace(/"/g, '&quot;') + ',' + j + ')">';
           }
 
-          list.innerHTML += '<div class="card-item pkk-histori-item">'
+          list.innerHTML += '<div class="card-item pkk-histori-item" style="margin-bottom:12px;">'
             + '<div><strong>' + (item.pelapor || '-') + '</strong> - ' + (item.tanggal || '-') + '</div>'
             + '<div class="status-badge ' + statusClass + '" style="margin-top:8px; display:inline-flex; align-items:center; white-space:nowrap;">' + (item.status || '-') + '</div>'
-            + '<div style="margin-top:12px; word-break:break-word;">'
+            + '<div style="margin-top:12px; word-break:break-word; min-width:0;">'
             + '<div style="font-weight:600; color:var(--text-main);">' + (item.judul || '-') + '</div>'
             + '<div style="font-size:14px; color:var(--text-muted); line-height:1.5;">' + (item.deskripsi || '-') + '</div>'
             + '</div>'
