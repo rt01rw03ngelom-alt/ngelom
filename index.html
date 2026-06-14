@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.6';
+    const APP_VERSION = '1.2.5';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3118,10 +3118,10 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
-  var VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
+  const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
 
   function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -3174,7 +3174,7 @@
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
    */
-  var google = {
+  const google = {
     script: {
       run: (function() {
         const createRunner = (handlers) => {
@@ -4628,22 +4628,13 @@
       </div>`;
   }
 
-
-
-
-
   function doLogin() {
     var email = document.getElementById('email').value;
     var pass = document.getElementById('password').value;
-
     if (!email || !pass) {
       return showWarning("Email dan Password harus diisi!");
     }
-
-
-
     var btn = document.getElementById('btnLogin');
-
     btn.innerHTML = '<span class="loading-spinner"></span>';
     btn.disabled = true;
     google.script.run
@@ -4683,9 +4674,6 @@
       })
       .prosesLoginStay(email, pass);
   }
-
-  // Expose globally for inline onclick="doLogin()"
-  window.doLogin = doLogin;
 
   function updateDarkModeIcons() {
     var isDark = document.body.classList.contains('dark-mode');
@@ -5459,7 +5447,76 @@
       if (inputFilter) inputFilter.value = new Date().getFullYear();
       
     ktMuatDataKas();
+      toggleKtLaporanMode();
     }
+
+  function ktMuatDataKas() {
+    var totalEl = document.getElementById('ktTotalKas');
+    if (totalEl) {
+      totalEl.classList.add('skeleton-text');
+      totalEl.innerText = 'Rp 0.000.000';
+    }
+    
+    renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (totalEl) totalEl.classList.remove('skeleton-text');
+      if (res && res.status === 'success') {
+        ktAllKasData = res.data || [];
+        
+        var displayEl = document.getElementById('ktTotalKas');
+        console.log('[KT KAS] Element Total Saldo:', displayEl);
+        if (displayEl) {
+          displayEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        }
+        
+        // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
+        renderRekapKasKT(ktAllKasData);
+        filterKtTabelTransaksi(); // Inisialisasi filter default
+        ktMuatGrafikKas();
+      }
+    }).ktGetKas();
+  }
+
+  function renderTabelKasKT(data) {
+    var tbodyP = document.getElementById('ktTbodyPemasukan');
+    var tbodyG = document.getElementById('ktTbodyPengeluaran');
+    
+    console.log('[KT KAS] renderTabelKasKT Debug:', {P: tbodyP, G: tbodyG});
+
+    if (!tbodyP || !tbodyG) {
+       console.warn('[KT KAS] renderTabelKasKT: Elemen tabel terpisah tidak ditemukan. Mengalihkan ke rekap tunggal.');
+       renderRekapKasKT(data);
+       return;
+    }
+
+    tbodyP.innerHTML = ''; 
+    tbodyG.innerHTML = '';
+    // Gunakan pengecekan role yang lebih stabil untuk KT
+    var role = (currentUser.role || "").toLowerCase();
+    var canEdit = role === 'admin' || role.includes('karang taruna');
+    
+    data.forEach(function(item) {
+      var isOut = item.jenis === 'Pengeluaran';
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + item.tanggal + '</td>'
+                   + '<td>' + item.keterangan + '</td>'
+                   + '<td style="color:' + (isOut ? '#ef4444' : '#10b981') + '; font-weight:700;">Rp ' + item.nominal.toLocaleString('id-ID') + '</td>';
+      
+      var tdAksi = document.createElement('td');
+      if (canEdit) {
+        var eb = document.createElement('button'); eb.className = 'btn-small'; eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+        eb.onclick = function() { ktEditKas(item.id, item.tanggal, item.jenis, item.keterangan, item.nominal); };
+        var db = document.createElement('button'); db.className = 'btn-small danger'; db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        db.onclick = function() { ktHapusDataKas(item.id); };
+        tdAksi.appendChild(eb); tdAksi.appendChild(db);
+      } else { tdAksi.innerText = '-'; }
+      
+      tr.appendChild(tdAksi);
+      if (item.jenis === 'Pemasukan') tbodyP.appendChild(tr);
+      else tbodyG.appendChild(tr);
+    });
+  }
 
   // ========================================
   // FILTER MODE MANAGEMENT FOR KT KAS
@@ -6615,7 +6672,6 @@ function bukaJadwal() {
       if (p.length !== 3) return false;
       var itemThn = parseInt(p[0]);
       var itemBln = parseInt(p[1]);
-      document.getElementById('ktRekapitulasiBox').style.display = 'block'; // Ensure ktRekapitulasiBox is visible when filtered
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
@@ -6689,7 +6745,6 @@ function bukaJadwal() {
 
   // ======================== KONTAK ========================
   function bukaKontak() {
-    console.log('[KAS WARGA] start');
     sembunyikanSemuaLayar();
     document.getElementById('kontakView').style.display = 'block';
     history.pushState({view: 'kontakView', tab: 'warga', onLoad: 'muatDataKontak'}, '', '#kontak');
@@ -7720,10 +7775,6 @@ function bukaJadwal() {
       }
     });
 
-    // Add skeleton loading for the tables
-    renderSkeleton('tbodyPemasukan', 'table', 5);
-    renderSkeleton('tbodyPengeluaran', 'table', 5);
-
     google.script.run.withSuccessHandler(function(res) {
       targets.forEach(id => {
         const el = document.getElementById(id);
@@ -7766,7 +7817,6 @@ function bukaJadwal() {
       if (callback) {
         callback();
       }
-      console.log('[KAS WARGA] data loaded from backend');
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
@@ -7818,17 +7868,8 @@ function bukaJadwal() {
   function renderTabelTransaksi(pemasukanList, pengeluaranList) {
     var tbodyP = document.getElementById('tbodyPemasukan');
     var tbodyG = document.getElementById('tbodyPengeluaran');
-    
-    if(!tbodyP || !tbodyG){ console.error('[KAS WARGA] container tabel tidak ditemukan'); return; }
-
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
-    if (!pemasukanList.length && !pengeluaranList.length) {
-      renderEmptyState('tbodyPemasukan', 'Tidak ada transaksi pada periode ini.');
-      renderEmptyState('tbodyPengeluaran', 'Tidak ada transaksi pada periode ini.');
-      console.log('[KAS WARGA] render success (empty state)');
-      return;
-    }
     var isAdmin = hasPermission('rt_iuran_manage');
     for (var p = 0; p < pemasukanList.length; p++) {
       var item = pemasukanList[p];
@@ -8839,11 +8880,9 @@ function bukaJadwal() {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
-    console.log('[KAS WARGA] start');
-    const view = document.getElementById('kasView');
-    if(!view){ console.error('[KAS WARGA] container kasView tidak ditemukan'); return; }
+    console.log('[KAS WARGA] bukaLaporanKasWarga');
     sembunyikanSemuaLayar();
-    view.style.display = 'block';
+    document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
     var iuranAdminDiv = document.getElementById('iuranAdminButtons');
@@ -9395,7 +9434,6 @@ function bukaJadwal() {
       btn.disabled = true;
       kirimLaporanPkk(obj, btn);
     }
-    console.log('[KAS WARGA] render success');
   }
 
   function kirimLaporanPkk(obj, btn) {
@@ -9717,3 +9755,19 @@ function bukaJadwal() {
     if (pwaBanner) pwaBanner.style.display = 'none';
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
+
+  // Listener untuk pesan dari Service Worker (Navigasi saat notifikasi diklik)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function(event) {
+      if (event.data.action === 'navigate' && event.data.page) {
+        handleNotifLihat(event.data.page);
+      }
+      if (res.status === 'error') return renderErrorState('pkkListHistori', 'pkkMuatDataHistori()');
+      if (!res.data || res.data.length === 0) return renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK.');
+      if (res.status === 'error') return renderErrorState('listGaleri', 'muatDataGaleri()');
+      if (!res.data || res.data.length === 0) return renderEmptyState('listGaleri', 'Belum ada dokumentasi di galeri RT.');
+    });
+  }
+
+  refreshNavVisibility();
+</script>
