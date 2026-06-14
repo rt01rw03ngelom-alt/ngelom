@@ -3244,7 +3244,7 @@
                 const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
 
                 try {
-                const urlBase = GAS_WEB_APP_URL;
+                  const urlBase = GAS_WEB_URL;
                   const separator = urlBase.includes('?') ? '&' : '?';
                   const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
                   
@@ -4686,57 +4686,6 @@
 
 
 
-  function doLogin() {
-    var email = document.getElementById('email').value;
-    var pass = document.getElementById('password').value;
-
-    if (!email || !pass) {
-      return showWarning("Email dan Password harus diisi!");
-    }
-
-
-
-    var btn = document.getElementById('btnLogin');
-
-    btn.innerHTML = '<span class="loading-spinner"></span>';
-    btn.disabled = true;
-    google.script.run
-      .withSuccessHandler(function(res) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        if (res.status === 'success') {
-          currentUser = res;
-          currentToken = res.token;
-          // Perbaikan: Update nama di dashboard saat login sukses
-          var nameEl = document.getElementById('welcomeUserName');
-          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
-
-          localStorage.setItem('sessionToken', res.token);
-          syncTokenToIDB(res.token); // Sinkronisasi ke IDB
-
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('mainApp').style.display = 'block';
-          // Set state awal setelah login
-          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
-          window.resolveLoginReady(); // Resolve the login promise here (Point 2)
-          
-          // Jalankan Registrasi Push setelah login sukses
-          registrasiWebPush();
-
-          currentTab = 'warga';
-          kembaliKeDashboard();
-          showSuccess('Selamat datang, ' + currentUser.nama + '!');
-        } else {
-          showError(res.pesan);
-        }
-      })
-      .withFailureHandler(function(err) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        showError('Gagal menghubungi server: ' + err.message);
-      })
-      .prosesLoginStay(email, pass);
-  }
 
   function updateDarkModeIcons() {
     var isDark = document.body.classList.contains('dark-mode');
