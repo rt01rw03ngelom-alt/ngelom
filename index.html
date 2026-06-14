@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.6';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3116,9 +3116,155 @@
 </div>
 
 <script>
+  console.log('Script mulai: Memulai parsing logika Portal RT...');
+
   // ======================== CLOUD HOSTING ADAPTER ========================
-  // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  // Gunakan var untuk kompatibilitas browser lama
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+
+  // ======================== CORE AUTH & UI FUNCTIONS (TOP-LEVEL) ========================
+  // Definisi fungsi di awal untuk mencegah ReferenceError jika script bawah error.
+  
+  window.doLogin = function() {
+    console.log('[Auth] doLogin dipanggil');
+    var email = document.getElementById('email').value;
+    var pass = document.getElementById('password').value;
+    if (!email || !pass) {
+      return window.showWarning("Email dan Password harus diisi!");
+    }
+    var btn = document.getElementById('btnLogin');
+    btn.innerHTML = '<span class="loading-spinner"></span>';
+    btn.disabled = true;
+    
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.innerHTML = 'Masuk Sekarang';
+        btn.disabled = false;
+        if (res.status === 'success') {
+          currentUser = res;
+          currentToken = res.token;
+          var nameEl = document.getElementById('welcomeUserName');
+          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
+          localStorage.setItem('sessionToken', res.token);
+          syncTokenToIDB(res.token);
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('mainApp').style.display = 'block';
+          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
+          window.resolveLoginReady();
+          registrasiWebPush();
+          currentTab = 'warga';
+          kembaliKeDashboard();
+          window.showSuccess('Selamat datang, ' + currentUser.nama + '!');
+        } else {
+          window.showError(res.pesan);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.innerHTML = 'Masuk Sekarang';
+        btn.disabled = false;
+        window.showError('Gagal menghubungi server: ' + err.message);
+      })
+      .prosesLoginStay(email, pass);
+  };
+
+  window.togglePassword = function(inputId, iconEl) {
+    var input = document.getElementById(inputId);
+    if (input.type === "password") {
+      input.type = "text";
+      iconEl.textContent = "visibility";
+    } else {
+      input.type = "password";
+      iconEl.textContent = "visibility_off";
+    }
+  };
+
+  window.showLoading = function(msg, withProgress) {
+    if (withProgress === undefined) withProgress = false;
+    Swal.fire({
+      title: '',
+      html: '<div style="display:flex; align-items:center; gap:14px; padding:6px 2px; min-height:70px;">'
+          + '  <div class="bbx-spinner" style="border-width:4px;"></div>'
+          + '  <div style="text-align:left; flex:1;">'
+          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Sinkronisasi...</div>'
+          + '    <div class="bbx-loader-container"><div class="bbx-loader-bar"></div></div>'
+          + '    <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">'
+          + '      <span id="bbxLoadingMsg">' + (msg || 'Memproses...') + '</span>'
+          + '    </div>'
+          + '  </div>'
+          + '</div>',
+      allowOutsideClick: false, showConfirmButton: false, background: 'var(--bg-surface)', width: 'min(calc(100% - 60px), 380px)',
+      customClass: { popup: 'swal2-modern-loading' }
+    });
+  };
+
+  window.showError = function(msg) {
+    Swal.fire({ icon: 'error', title: 'Oops...', text: msg, confirmButtonColor: '#d32f2f' });
+  };
+
+  window.showWarning = function(msg) {
+    Swal.fire({ icon: 'warning', title: 'Perhatian', text: msg, confirmButtonColor: '#d32f2f' });
+  };
+
+  window.showSuccess = function(msg) {
+    Swal.fire({ icon: 'success', title: 'Berhasil!', text: msg, timer: 2000, showConfirmButton: false });
+  };
+
+  window.showConfirm = function(msg) {
+    return Swal.fire({ title: 'Konfirmasi', text: msg, icon: 'question', showCancelButton: true, confirmButtonColor: '#d32f2f', cancelButtonColor: '#64748b', confirmButtonText: 'Ya' });
+  };
+
+  window.lupaPassword = function() {
+    Swal.fire({
+      title: 'Reset Password', input: 'email', inputLabel: 'Masukkan email Anda', inputPlaceholder: 'email@contoh.com', showCancelButton: true, confirmButtonText: 'Reset'
+    }).then(function(result) {
+      if (result.isConfirmed && result.value) {
+        window.showLoading('Memproses...');
+        google.script.run.withSuccessHandler(function(res) {
+          Swal.close();
+          if (res.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'Berhasil!', html: '<p>Password baru Anda: <strong>' + res.passwordBaru + '</strong></p>' });
+          } else { window.showError(res.pesan); }
+        }).resetPasswordDirect(result.value);
+      }
+    });
+  };
+
+  window.logout = function() {
+    window.showConfirm('Yakin ingin keluar?').then(function(res) {
+      if (res.isConfirmed) {
+        localStorage.removeItem('sessionToken');
+        location.reload();
+      }
+    });
+  };
+
+  window.doRegister = function() {
+    var nama = document.getElementById('regNama').value.trim();
+    var email = document.getElementById('regEmail').value.trim();
+    var pass = document.getElementById('regPassword').value;
+    if (!nama || !email || !pass) return window.showWarning("Lengkapi data!");
+    var btn = document.getElementById('btnDaftar');
+    btn.innerHTML = '<span class="loading-spinner"></span>';
+    btn.disabled = true;
+    google.script.run.withSuccessHandler(function(res) {
+      btn.innerHTML = 'Daftar Sekarang'; btn.disabled = false;
+      if (res.status === 'success') {
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.pesan }).then(function() { window.tutupFormDaftar(); });
+      } else { window.showError(res.pesan); }
+    }).prosesDaftar(nama, email, pass);
+  };
+
+  window.bukaFormDaftar = function() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('registerScreen').style.display = 'flex';
+  };
+
+  window.tutupFormDaftar = function() {
+    document.getElementById('registerScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  };
+
+  console.log('[DEBUG] Core functions defined on window.');
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -3137,46 +3283,57 @@
   /**
    * Registrasi Web Push Native (Background Capability)
    */
-  async function registrasiWebPush() {
+  function registrasiWebPush() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       console.warn('Web Push tidak didukung di browser ini.');
       return;
     }
 
-    try {
-      const registration = await navigator.serviceWorker.register('sw.js');
-      console.log('Service Worker aktif:', registration.scope);
-
-      // Minta izin notifikasi
-      const permission = await Notification.requestPermission();
+    navigator.serviceWorker.register('sw.js')
+    .then(function(registration) {
+      console.log('SW aktif:', registration.scope);
+      return Notification.requestPermission();
+    })
+    .then(function(permission) {
       if (permission !== 'granted') return;
-
-      // Subscribe ke Push Service
-      let subscription = await registration.pushManager.getSubscription();
-      
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
-      }
-
-      // Kirim Subscription ke GAS
-      google.script.run.withSuccessHandler(function(res) {
-        console.log('Web Push Subscription tersinkronisasi ke server.');
+      return navigator.serviceWorker.ready;
+    })
+    .then(function(reg) {
+      if (!reg) return;
+      return reg.pushManager.getSubscription()
+      .then(function(subscription) {
+        if (!subscription) {
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+        }
+        return subscription;
+      });
+    })
+    .then(function(subscription) {
+      if (!subscription) return;
+      google.script.run.withSuccessHandler(function() {
+        console.log('Push synced.');
       }).savePushSubscription(JSON.stringify(subscription), currentUser.email);
-
-    } catch (err) {
-      console.error('Gagal registrasi Web Push:', err);
-    }
+    })
+    .catch(function(err) {
+      console.error('Push Error:', err);
+    });
   }
 
   /**
    * Polyfill google.script.run menggunakan Proxy untuk mendukung hosting eksternal
    */
-  const google = {
+  // 2. Bungkus Polyfill dalam try-catch untuk mencegah crash di browser lama (Android 5/6)
+  try {
+    window.google = window.google || {
     script: {
       run: (function() {
+        if (typeof Proxy === 'undefined') {
+          console.warn('Browser tidak mendukung Proxy API. google.script.run mungkin tidak bekerja.');
+          return {};
+        }
         const createRunner = (handlers) => {
           return new Proxy({}, {
             get(target, prop) {
@@ -3252,19 +3409,25 @@
         return createRunner({ success: null, failure: null });
       })()
     }
-  };
+    };
+  } catch (e) {
+    console.error('Gagal memuat polyfill google.script.run:', e);
+  }
 
   /**
    * 10XTHINK: SINKRONISASI OTOMATIS GLOBAL (STATE MANAGEMENT)
    * Mengelola data lokal agar UI terupdate instan tanpa fetch ulang.
    */
   window.updateGlobalDatabaseState = function(newData, menuType) {
-    console.log(`[State] Optimistic Update for: ${menuType}`);
+    console.log('[State] Optimistic Update for: ' + menuType);
     
     if (menuType === 'pengaduan') {
       // Jika ID sudah ada (update), ganti. Jika belum (create), unshift ke paling atas.
-      const index = window.pengaduanDataGlobal.findIndex(it => it.id === newData.id);
-      if (index > -1) window.pengaduanDataGlobal[index] = newData;
+      var idx = -1;
+      for(var i=0; i<window.pengaduanDataGlobal.length; i++) {
+        if(window.pengaduanDataGlobal[i].id === newData.id) { idx = i; break; }
+      }
+      if (idx > -1) window.pengaduanDataGlobal[idx] = newData;
       else window.pengaduanDataGlobal.unshift(newData);
       
       // Trigger re-render hanya pada komponen terkait
@@ -3570,16 +3733,7 @@
     }
   }
 
-  function togglePassword(inputId, iconEl) {
-    var input = document.getElementById(inputId);
-    if (input.type === "password") {
-      input.type = "text";
-      iconEl.textContent = "visibility";
-    } else {
-      input.type = "password";
-      iconEl.textContent = "visibility_off";
-    }
-  }
+  // togglePassword dipindahkan ke atas
 
   function isVideoLink(url) {
     if (!url) return false;
@@ -4216,114 +4370,7 @@
       </div>`;
   }
 
-  function showSuccess(msg) {
-    Swal.fire({
-      icon: 'success',
-      title: 'Berhasil!',
-      text: msg,
-      timer: 2000,
-      showConfirmButton: false,
-      iconColor: '#d32f2f'
-    });
-  }
-
-  function showError(msg) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Oops...',
-      text: msg,
-      confirmButtonColor: '#d32f2f'
-    });
-  }
-
-  function showWarning(msg) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Perhatian',
-      text: msg,
-      confirmButtonColor: '#d32f2f'
-    });
-  }
-
-  function showConfirm(msg) {
-    return Swal.fire({
-      title: 'Konfirmasi',
-      text: msg,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#d32f2f',
-      cancelButtonColor: '#666',
-      confirmButtonText: 'Ya'
-    });
-  }
-
-  var currentProgress = 0;
-  var progressInterval;
-
-  /**
-   * 10XTHINK: Global Progress Controller
-   * Mengontrol pengisian progress bar dan teks status secara real-time
-   */
-  function updateProgress(val, msg) {
-    currentProgress = val;
-    var progressFill = document.getElementById('bbxProgressFill');
-    var progressText = document.getElementById('bbxProgressText');
-    var loadingMsg = document.getElementById('bbxLoadingMsg');
-    if (progressFill) progressFill.style.width = val + '%';
-    if (progressText) progressText.innerText = val + '%';
-    if (loadingMsg && msg) loadingMsg.innerText = msg;
-  }
-
-  /**
-   * 10XTHINK: Simulated Progress for Server Response
-   * Memberikan efek progres "berjalan" saat menunggu respon Google Apps Script
-   */
-  function startSimulatedUpload() {
-    if (progressInterval) clearInterval(progressInterval);
-    let val = currentProgress > 80 ? currentProgress : 80;
-    progressInterval = setInterval(() => {
-      if (val < 98) {
-        val += Math.random() * 1.5;
-        updateProgress(Math.floor(val), 'Sinkronisasi database...');
-      }
-    }, 600);
-  }
-
-  function showLoading(msg, withProgress = false) {
-    const progressHtml = `<div class="bbx-loader-container"><div class="bbx-loader-bar"></div></div>
-      <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">
-        <span id="bbxLoadingMsg">${msg || 'Sinkronisasi...'}</span>
-      </div>`;
-
-    // loading custom: spinner modern + teks, terlihat jelas tanpa perlu ganti content halaman
-    Swal.fire({
-      title: '',
-      html:
-        '<div style="display:flex; align-items:center; gap:14px; padding:6px 2px; min-height:70px;">'
-          + '  <div class="bbx-spinner" style="border-width:4px;"></div>'
-          + '  <div style="text-align:left; flex:1;">'
-          + '    <div style="font-weight:800; color:var(--text-main); font-size:16px;">Sinkronisasi...</div>'
-          +      progressHtml
-          + '  </div>'
-          + '</div>',
-      allowOutsideClick: false,
-      showConfirmButton: false,
-      showCancelButton: false,
-      background: 'var(--bg-surface)',
-      width: 'min(calc(100% - 60px), 380px)',
-      padding: '16px',
-      customClass: {
-        popup: 'swal2-modern-loading'
-      },
-      didOpen: function() {
-        var el = Swal.getPopup();
-        if (el) {
-          el.style.border = '1px solid rgba(211, 47, 47, 0.15)';
-          el.style.boxShadow = '0 14px 40px rgba(2,6,23,0.12)';
-        }
-      }
-    });
-  }
+  // UI Helpers dipindahkan ke atas
 
 
 
@@ -4466,6 +4513,7 @@
 
   // ======================== SESSION & LOGIN ========================
   window.addEventListener('load', function () {
+    console.log('[DEBUG] initApp: Aplikasi memulai booting...');
     applyDarkModePreference();
 
     // Dengar perubahan pengaturan sistem secara real-time
@@ -4503,6 +4551,14 @@
       google.script.run
         .withSuccessHandler(function (res) {
           if (res && res.status === 'success') {
+            // 10XTHINK: Validate user data before proceeding
+            if (!res.role || !res.email) {
+              console.error("Invalid session data received", res);
+              localStorage.removeItem('sessionToken');
+              location.reload();
+              return;
+            }
+            
             currentUser = res;
             currentToken = res.token;
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
@@ -4940,7 +4996,7 @@
     try {
       // 1. Bersihkan semua state aktif dari elemen navigasi
       // Menggunakan querySelectorAll agar mencakup semua elemen dengan class .nav-item
-      const allNavs = document.querySelectorAll('.nav-item');
+      var allNavs = document.querySelectorAll('.nav-item');
       allNavs.forEach(el => {
         el.classList.remove('active');
         // Reset manual style jika ada inline-style dari manipulasi DOM liar
@@ -4954,8 +5010,10 @@
       }
 
       // 3. Sinkronisasi Tema Body (Termasuk tema kuning untuk profil)
-      const themes = ['theme-warga', 'theme-pkk', 'theme-karangtaruna', 'theme-profil'];
-      document.body.classList.remove(...themes);
+      var themes = ['theme-warga', 'theme-pkk', 'theme-karangtaruna', 'theme-profil'];
+      for(var i=0; i<themes.length; i++) {
+        document.body.classList.remove(themes[i]);
+      }
       document.body.classList.add('theme-' + targetTabId.replace('-', ''));
 
       // 4. Update Global State
@@ -5144,13 +5202,18 @@
   };
 
   function renderMenu(tabName) {
+    console.log('[DEBUG] renderDashboard: Memulai render menu untuk tab ' + tabName);
     var container = document.getElementById('menuContainer');
+    if (!container) return;
+    
     container.innerHTML = '';
     var availableMenus = menus[tabName] || menus.warga;
     
     // Refresh user name in welcome banner
     var welcomeSection = document.getElementById('welcomeUserName');
-    if(welcomeSection) welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
+    if(welcomeSection && currentUser) {
+      welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
+    }
 
 
     // Update Ringkasan Dashboard (Banner) berdasarkan Tab
@@ -5202,6 +5265,12 @@
     for (var i = 0; i < availableMenus.length; i++) {
       var menu = availableMenus[i];
       
+      // Safety check for currentUser object
+      if (!currentUser || !currentUser.role) {
+        console.warn("User role not found during menu render");
+        continue;
+      }
+
       // Cek apakah role diizinkan ATAU memiliki izin spesifik (perm)
       var roleMatch = menu.roles.indexOf(currentUser.role) !== -1;
       var permMatch = hasPermission(menu.perm);
@@ -5447,9 +5516,75 @@
       if (inputFilter) inputFilter.value = new Date().getFullYear();
       
     ktMuatDataKas();
+      toggleKtLaporanMode();
     }
 
+  function ktMuatDataKas() {
+    var totalEl = document.getElementById('ktTotalKas');
+    if (totalEl) {
+      totalEl.classList.add('skeleton-text');
+      totalEl.innerText = 'Rp 0.000.000';
+    }
+    
+    renderSkeleton('ktTbodyRekapTransaksi', 'table', 5);
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (totalEl) totalEl.classList.remove('skeleton-text');
+      if (res && res.status === 'success') {
+        ktAllKasData = res.data || [];
+        
+        var displayEl = document.getElementById('ktTotalKas');
+        console.log('[KT KAS] Element Total Saldo:', displayEl);
+        if (displayEl) {
+          displayEl.innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
+        }
+        
+        // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
+        renderRekapKasKT(ktAllKasData);
+        filterKtTabelTransaksi(); // Inisialisasi filter default
+        ktMuatGrafikKas();
+      }
+    }).ktGetKas();
+  }
+
   function renderTabelKasKT(data) {
+    var tbodyP = document.getElementById('ktTbodyPemasukan');
+    var tbodyG = document.getElementById('ktTbodyPengeluaran');
+    
+    console.log('[KT KAS] renderTabelKasKT Debug:', {P: tbodyP, G: tbodyG});
+
+    if (!tbodyP || !tbodyG) {
+       console.warn('[KT KAS] renderTabelKasKT: Elemen tabel terpisah tidak ditemukan. Mengalihkan ke rekap tunggal.');
+       renderRekapKasKT(data);
+       return;
+    }
+
+    tbodyP.innerHTML = ''; 
+    tbodyG.innerHTML = '';
+    // Gunakan pengecekan role yang lebih stabil untuk KT
+    var role = (currentUser.role || "").toLowerCase();
+    var canEdit = role === 'admin' || role.includes('karang taruna');
+    
+    data.forEach(function(item) {
+      var isOut = item.jenis === 'Pengeluaran';
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + item.tanggal + '</td>'
+                   + '<td>' + item.keterangan + '</td>'
+                   + '<td style="color:' + (isOut ? '#ef4444' : '#10b981') + '; font-weight:700;">Rp ' + item.nominal.toLocaleString('id-ID') + '</td>';
+      
+      var tdAksi = document.createElement('td');
+      if (canEdit) {
+        var eb = document.createElement('button'); eb.className = 'btn-small'; eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+        eb.onclick = function() { ktEditKas(item.id, item.tanggal, item.jenis, item.keterangan, item.nominal); };
+        var db = document.createElement('button'); db.className = 'btn-small danger'; db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        db.onclick = function() { ktHapusDataKas(item.id); };
+        tdAksi.appendChild(eb); tdAksi.appendChild(db);
+      } else { tdAksi.innerText = '-'; }
+      
+      tr.appendChild(tdAksi);
+      if (item.jenis === 'Pemasukan') tbodyP.appendChild(tr);
+      else tbodyG.appendChild(tr);
+    });
   }
 
   // ========================================
@@ -6116,6 +6251,15 @@ function bukaJadwal() {
         google.script.run.getRonda(nextMonth, nextYear)
       ]);
 
+      // Perbaikan: Tambahkan proteksi jika res1 atau res2 gagal/offline
+      if (!res1 || !res2 || res1.status === 'offline' || res2.status === 'offline' || res1.status === 'error') {
+        info.innerHTML = `<div class="muted" style="text-align:center; padding:15px; font-size:12px; line-height:1.4;">
+            <i class="material-icons" style="font-size:20px; color:var(--text-muted); display:block; margin-bottom:5px;">cloud_off</i> 
+            Jadwal gagal dimuat.<br>Sinyal tidak stabil.
+          </div>`;
+        return;
+      }
+
       let combinedData = [];
       if (res1 && res1.status === 'success') combinedData = combinedData.concat(res1.data);
       if (res2 && res2.status === 'success') combinedData = combinedData.concat(res2.data);
@@ -6606,7 +6750,6 @@ function bukaJadwal() {
       if (p.length !== 3) return false;
       var itemThn = parseInt(p[0]);
       var itemBln = parseInt(p[1]);
-      document.getElementById('ktRekapitulasiBox').style.display = 'block'; // Ensure ktRekapitulasiBox is visible when filtered
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
@@ -6680,7 +6823,6 @@ function bukaJadwal() {
 
   // ======================== KONTAK ========================
   function bukaKontak() {
-    console.log('[KAS WARGA] start');
     sembunyikanSemuaLayar();
     document.getElementById('kontakView').style.display = 'block';
     history.pushState({view: 'kontakView', tab: 'warga', onLoad: 'muatDataKontak'}, '', '#kontak');
@@ -7711,10 +7853,6 @@ function bukaJadwal() {
       }
     });
 
-    // Add skeleton loading for the tables
-    renderSkeleton('tbodyPemasukan', 'table', 5);
-    renderSkeleton('tbodyPengeluaran', 'table', 5);
-
     google.script.run.withSuccessHandler(function(res) {
       targets.forEach(id => {
         const el = document.getElementById(id);
@@ -7757,7 +7895,6 @@ function bukaJadwal() {
       if (callback) {
         callback();
       }
-      console.log('[KAS WARGA] data loaded from backend');
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
@@ -7809,17 +7946,8 @@ function bukaJadwal() {
   function renderTabelTransaksi(pemasukanList, pengeluaranList) {
     var tbodyP = document.getElementById('tbodyPemasukan');
     var tbodyG = document.getElementById('tbodyPengeluaran');
-    
-    if(!tbodyP || !tbodyG){ console.error('[KAS WARGA] container tabel tidak ditemukan'); return; }
-
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
-    if (!pemasukanList.length && !pengeluaranList.length) {
-      renderEmptyState('tbodyPemasukan', 'Tidak ada transaksi pada periode ini.');
-      renderEmptyState('tbodyPengeluaran', 'Tidak ada transaksi pada periode ini.');
-      console.log('[KAS WARGA] render success (empty state)');
-      return;
-    }
     var isAdmin = hasPermission('rt_iuran_manage');
     for (var p = 0; p < pemasukanList.length; p++) {
       var item = pemasukanList[p];
@@ -8830,11 +8958,9 @@ function bukaJadwal() {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
-    console.log('[KAS WARGA] start');
-    const view = document.getElementById('kasView');
-    if(!view){ console.error('[KAS WARGA] container kasView tidak ditemukan'); return; }
+    console.log('[KAS WARGA] bukaLaporanKasWarga');
     sembunyikanSemuaLayar();
-    view.style.display = 'block';
+    document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
     var iuranAdminDiv = document.getElementById('iuranAdminButtons');
@@ -8915,7 +9041,7 @@ function bukaJadwal() {
             <img src="${thumb}" class="galeri-img" onclick="openLightbox('${safeImageUrl}', ${JSON.stringify(allMedia).replace(/"/g, '&quot;')}, ${j})" style="aspect-ratio:16/9; object-fit:cover;">
             <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
               <div style="font-weight:800; font-size:15px; color:var(--text-main); line-height:1.4; margin-bottom:4px;">${safeCaption}</div>
-              <div style="font-size:11px; font-weight:600; color:var(--primary-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
+                <div style="font-size:11px; font-weight:600; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:4px;">
                 <i class="material-icons" style="font-size:14px;">calendar_today</i> ${safeTanggal}
               </div>
               <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:12px; flex:1;">
@@ -9170,7 +9296,6 @@ function bukaJadwal() {
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
     renderSkeleton('pkkListJadwal', 'card', 4);
-    console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()');
@@ -9191,14 +9316,14 @@ function bukaJadwal() {
               </div>`;
           }
           list.innerHTML += `
-            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--kt-blue);">
+            <div class="card-item fade-up-in" style="border-left-width: 5px; border-left-color: var(--pkk-green); animation-delay:${i*0.05}s;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <div style="font-size:17px; font-weight:800; color:var(--text-main); line-height:1.2; flex:1; padding-right:10px;">${item.nama}</div>
                 <span style="background:rgba(16,185,129,0.1); color:var(--pkk-green); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">PKK Ngelom</span>
               </div>
               <div style="display:grid; gap:8px;">
                 <div class="row" style="align-items:flex-start;"><i class="material-icons" style="font-size:18px; color:var(--pkk-green); margin-top:2px;">info_outline</i> 
-                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Kegiatan PKK'}</div>
+                  <div style="font-size:14px; color:var(--text-main); font-weight:500;">${item.keterangan || 'Rapat/Kegiatan Rutin PKK'}</div>
                 </div>
                 <div class="row"><i class="material-icons" style="font-size:18px; color:var(--pkk-green);">schedule</i> 
                   <div style="font-size:14px; color:var(--text-main); font-weight:500;">${formatIndoDate(item.waktu)}</div>
@@ -9211,7 +9336,7 @@ function bukaJadwal() {
             </div>`;
         }
       }
-    }).pkkGetJadwal();
+    }).withFailureHandler(() => renderErrorState('pkkListJadwal', 'pkkMuatDataJadwal()')).pkkGetJadwal();
   }
 
   function bukaPkkKader() {
@@ -9330,15 +9455,15 @@ function bukaJadwal() {
           var avatar = item.fotoUrl ? `<img src="${getDirectUrl(item.fotoUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;">` : `<i class="material-icons" style="font-size:32px;">person</i>`;
 
           list.innerHTML += `
-            <div class="card-item" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
-              <div style="display:flex; align-items:center; gap:16px;">
-                <div style="background:var(--primary-red); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
+            <div class="card-item pkk-kader-card" style="margin-bottom:12px; cursor:pointer; overflow:hidden;" onclick="tampilkanDetailKader('${(item.nama||'').replace(/'/g,"\\'")}','${(item.jabatan||'').replace(/'/g,"\\'")}','${item.nohp}','${item.fotoUrl}')">
+              <div class="pkk-kader-item" style="display:flex; align-items:center; gap:16px;">
+                <div class="pkk-kader-avatar" style="background:var(--pkk-green); color:white; width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-sm);">
                   ${avatar}
                 </div>
-                <div style="flex:1;">
-                  <div style="font-weight:800; font-size:12px; color:var(--primary-color); text-transform:uppercase;">${item.jabatan || 'Anggota'}</div>
+                <div class="pkk-kader-info" style="flex:1; min-width: 0;">
+                  <div style="font-weight:800; font-size:11px; color:var(--pkk-green); text-transform:uppercase; letter-spacing:0.5px;">${item.jabatan || 'Anggota'}</div>
                   <div style="font-weight:700; font-size:16px; color:var(--text-main);">${item.nama}</div>
-                  <div style="font-size:13px; color:var(--primary-color);">${item.nohp || '-'}</div>
+                  <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:14px;">phone</i> ${item.nohp || '-'}</div>
                 </div>
               </div>
               ${aksi}
@@ -9361,6 +9486,10 @@ function bukaJadwal() {
     if (!deskripsi) return showWarning('Detail laporan wajib diisi!');
 
     var btn = document.querySelector('#pkkKirimLaporanView .btn-primary');
+    btn.disabled = true;
+
+    showLoading('Menyiapkan laporan...', true);
+    updateProgress(5, 'Validasi data...');
     
     var obj = {
       pelapor: currentUser.nama,
@@ -9373,24 +9502,22 @@ function bukaJadwal() {
 
     var fileInput = document.getElementById('pkkFotoLaporan');
     if (fileInput.files.length) {
-      btn.disabled = true;
       var file = fileInput.files[0];
-      // Refactoring: Hapus calls ke fungsi undefined (updateProgress) dan perbaiki callback
       compressImage(file, function(base64, mime) {
         obj.dataFile = base64;
         obj.mimeType = mime;
         obj.fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+        startSimulatedUpload();
         kirimLaporanPkk(obj, btn);
       }, 800); // Gunakan 800px agar upload sangat cepat
     } else {
-      btn.disabled = true;
+      updateProgress(50, 'Mengirim data...');
       kirimLaporanPkk(obj, btn);
     }
-    console.log('[KAS WARGA] render success');
   }
 
   function kirimLaporanPkk(obj, btn) {
-    showLoading('Mengunggah laporan ke server...');
+    startSimulatedUpload();
     btn.innerHTML = '<span class="loading-spinner"></span> Mengirim...';
     
     google.script.run.withSuccessHandler(function(res) {
@@ -9443,18 +9570,21 @@ function bukaJadwal() {
               + JSON.stringify(allImgs).replace(/"/g, '&quot;') + ',' + j + ')">';
           }
 
-          list.innerHTML += '<div class="card-item">'
-            + '<div><strong>' + (item.pelapor || '-') + '</strong> - ' + (item.tanggal || '-') + '</div>'
-            + '<div class="status-badge ' + statusClass + '" style="margin-top:5px;">' + (item.status || '-') + '</div>'
-            + '<div style="margin-top:10px;">'
-            + '<div style="font-weight:600; color:var(--text-main);">' + (item.judul || '-') + '</div>'
-            + '<div>' + (item.deskripsi || '-') + '</div>'
-            + '</div>'
-            + fotoHTML
-            + '</div>';
+          list.innerHTML += `
+            <div class="card-item pkk-histori-item fade-up-in" style="margin-bottom:12px; border-left-color: var(--pkk-green);">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:13px; color:var(--text-muted); font-weight:600;">${item.tanggal}</div>
+                <div class="status-badge ${statusClass}">${item.status}</div>
+              </div>
+              <div style="margin-top:12px;">
+                <div style="font-weight:700; color:var(--text-main); font-size:16px; margin-bottom:4px;">${item.judul || 'Laporan Tanpa Judul'}</div>
+                <div style="font-size:14px; color:var(--text-muted); line-height:1.5;">${item.deskripsi}</div>
+              </div>
+              ${fotoHTML}
+            </div>`;
         }
-      } else renderEmptyState('listLaporanSemua', 'Belum ada laporan pengaduan masuk.');
-    }).pkkGetLaporanByPelapor(currentUser.nama);
+      } else renderEmptyState('pkkListHistori', 'Belum ada histori laporan PKK Anda.');
+    }).withFailureHandler(() => renderErrorState('pkkListHistori', 'pkkMuatDataHistori()')).pkkGetLaporanByPelapor(currentUser.nama);
   }
 
   function bukaPkkGaleri() {
@@ -9569,7 +9699,7 @@ function bukaJadwal() {
   function pkkMuatDataGaleri() {
     var container = document.getElementById('pkkListGaleri');
     renderSkeleton('pkkListGaleri', 'grid', 8);
-    google.script.run.withSuccessHandler(function(res) { // Clear skeleton
+    google.script.run.withSuccessHandler(function(res) { 
       container.innerHTML = '';
       if(res.status==='error'){ 
         showError(res.pesan); 
@@ -9603,7 +9733,7 @@ function bukaJadwal() {
             + '</div></div>';
         }
       } else {
-        container.innerHTML = '<p>Belum ada foto di galeri PKK.</p>';
+        renderEmptyState('pkkListGaleri', 'Belum ada dokumentasi di galeri PKK.');
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -9685,7 +9815,7 @@ function bukaJadwal() {
 
   function installPWA() {
     if (!deferredPrompt) return;
-    // Tampilkan prompt instalasi asli dari sistem operasi (Android/iOS)
+
     deferredPrompt.prompt();
     // Tunggu jawaban dari user
     deferredPrompt.userChoice.then((choiceResult) => {
@@ -9699,7 +9829,6 @@ function bukaJadwal() {
 
   function dismissPWAInstall() {
     if (pwaBanner) pwaBanner.style.display = 'none';
-    // Simpan timestamp penolakan agar banner tidak muncul setiap kali aplikasi dibuka
     localStorage.setItem('pwaDismissedTs', Date.now().toString());
   }
 
@@ -9708,3 +9837,28 @@ function bukaJadwal() {
     if (pwaBanner) pwaBanner.style.display = 'none';
     showSuccess("Aplikasi berhasil terpasang di layar utama!");
   });
+
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function(event) {
+      if (event.data.action === 'navigate' && event.data.page) {
+        handleNotifLihat(event.data.page);
+      }
+    });
+  }
+
+  refreshNavVisibility();
+  // ======================== DOM EVENT LISTENERS ========================
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('btnLogin');
+    if (btn) {
+      btn.addEventListener('click', function() {
+        if (window.doLogin) window.doLogin();
+        else console.error('Error: Fungsi doLogin tidak ditemukan saat tombol diklik.');
+      });
+    }
+    refreshNavVisibility();
+    console.log('[DEBUG] Portal RT: Inisialisasi DOM Selesai.');
+  });
+  console.log('Script selesai: Logika Portal RT siap.');
+</script>
