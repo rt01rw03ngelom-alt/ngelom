@@ -3244,7 +3244,7 @@
                 const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
 
                 try {
-                  const urlBase = GAS_WEB_URL;
+                  const urlBase = GAS_WEB_APP_URL;
                   const separator = urlBase.includes('?') ? '&' : '?';
                   const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
                   
