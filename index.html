@@ -1716,12 +1716,27 @@
       background: var(--bg-surface);
       padding: 0.75rem 1rem;
       border-radius: var(--border-radius);
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
       align-items: flex-end;
       box-shadow: var(--shadow-sm);
+    }
+
+    .filter-table .filter-group input,
+    .filter-table .filter-group select,
+    .filter-table .filter-group button {
+      margin: 0 !important;
+      height: 44px;
+      box-sizing: border-box;
+    }
+
+    .filter-table .filter-group button {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      min-width: 140px;
     }
 
     .kategori-badge {
