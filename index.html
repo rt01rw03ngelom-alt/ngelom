@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.6';
+    const APP_VERSION = '1.2.7';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1974,7 +1974,7 @@
       <a href="#" onclick="lupaPassword(); return false;" style="color:var(--primary-red); font-size: 14px; font-weight: 600; text-decoration: none;">Lupa Password?</a>
     </div>
 
-    <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="height: 54px; font-size: 16px; letter-spacing: 0.5px;">Masuk Sekarang</button>
+    <button class="btn-primary" id="btnLogin" style="height: 54px; font-size: 16px; letter-spacing: 0.5px;">Masuk Sekarang</button>
     
     <p style="margin-top:25px; font-size: 14px; color: var(--text-muted);">
       Belum punya akun?  
@@ -3341,6 +3341,14 @@
               if (prop === 'withFailureHandler') return (h) => createRunner({ ...handlers, failure: h });
 
               return async (...args) => {
+                // 1. Cek Koneksi Sebelum Request
+                if (!navigator.onLine) {
+                  const offErr = { status: 'error', pesan: 'Anda sedang offline. Silakan cek koneksi internet Anda.' };
+                  if (handlers.failure) handlers.failure(offErr);
+                  else if (window.showError) window.showError(offErr.pesan);
+                  return offErr;
+                }
+
                 // 10XTHINK: Identifikasi Aksi Penulisan (Data Berat)
                 const isWriteAction = /simpan|proses|kirim|upload|tambah|update|hapus|edit|save/i.test(prop);
                 const controller = new AbortController();
@@ -3353,7 +3361,6 @@
                   
                   const res = await fetch(requestUrl, { 
                     method: 'POST', 
-                    mode: 'cors', 
                     body: JSON.stringify({ action: prop, data: args }),
                     signal: controller.signal
                   });
@@ -3388,6 +3395,8 @@
 
                 } catch (err) {
                   clearTimeout(timeoutId);
+                  console.error(`[GAS Polyfill Error] Panggilan ke ${prop} gagal:`, err);
+
                   if (isWriteAction) {
                     console.warn("Write Action Error Bypassed for UX:", err);
                     const bypassSuccess = { status: 'success', pesan: 'Data sedang diproses server.', message: 'Data berhasil disimpan' };
@@ -3397,8 +3406,7 @@
                   
                   if (handlers.failure) handlers.failure(err);
                   else {
-                    console.error("Koneksi API Gagal:", err);
-                    showError("Gagal terhubung ke server. Periksa koneksi.");
+                    if (window.showError) window.showError("Koneksi API Gagal (Failed to fetch). Pastikan Web App GAS dideploy sebagai 'Anyone'.");
                   }
                   throw err;
                 }
@@ -4682,53 +4690,6 @@
           ${teksKop}
         </div>
       </div>`;
-  }
-
-  function doLogin() {
-    var email = document.getElementById('email').value;
-    var pass = document.getElementById('password').value;
-    if (!email || !pass) {
-      return showWarning("Email dan Password harus diisi!");
-    }
-    var btn = document.getElementById('btnLogin');
-    btn.innerHTML = '<span class="loading-spinner"></span>';
-    btn.disabled = true;
-    google.script.run
-      .withSuccessHandler(function(res) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        if (res.status === 'success') {
-          currentUser = res;
-          currentToken = res.token;
-          // Perbaikan: Update nama di dashboard saat login sukses
-          var nameEl = document.getElementById('welcomeUserName');
-          if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
-
-          localStorage.setItem('sessionToken', res.token);
-          syncTokenToIDB(res.token); // Sinkronisasi ke IDB
-
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('mainApp').style.display = 'block';
-          // Set state awal setelah login
-          history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
-          window.resolveLoginReady(); // Resolve the login promise here (Point 2)
-          
-          // Jalankan Registrasi Push setelah login sukses
-          registrasiWebPush();
-
-          currentTab = 'warga';
-          kembaliKeDashboard();
-          showSuccess('Selamat datang, ' + currentUser.nama + '!');
-        } else {
-          showError(res.pesan);
-        }
-      })
-      .withFailureHandler(function(err) {
-        btn.innerHTML = 'Masuk';
-        btn.disabled = false;
-        showError('Gagal menghubungi server: ' + err.message);
-      })
-      .prosesLoginStay(email, pass);
   }
 
   function updateDarkModeIcons() {
