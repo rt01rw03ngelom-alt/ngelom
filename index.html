@@ -4292,51 +4292,29 @@
         break;
       }
     }
-    
-    // Jika sedang di halaman Kelola User, langsung ke dashboard dan replaceState
+
+    // Kasus khusus: Kelola User harus selalu kembali ke dashboard dengan replaceState
     if (currentView === 'kelolaUserView') {
       sembunyikanSemuaLayar();
       document.getElementById('dashboardView').style.display = 'block';
-      // Ganti state terakhir dengan dashboard, bukan menambah entri baru
       history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
       if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
       renderMenu(currentTab);
       updateNavActiveState(currentTab);
       return;
     }
-    
-    // Logika default untuk halaman lain
+
+    // Default behavior
     if (history.state && history.state.view !== 'dashboardView') {
       history.back();
-    } else {
-      // Deteksi layar yang sedang aktif
-      var currentView = null;
-      var screens = document.querySelectorAll('.screen');
-      for (var i = 0; i < screens.length; i++) {
-        if (screens[i].style.display === 'block') {
-          currentView = screens[i].id;
-          break;
-        }
-      }
-      
-      // Jika sedang di halaman Kelola User, langsung ke dashboard dan replaceState
-      if (currentView === 'kelolaUserView') {
-        sembunyikanSemuaLayar();
-        document.getElementById('dashboardView').style.display = 'block';
-        // Ganti state terakhir dengan dashboard, bukan menambah entri baru
-        history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
-        if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
-        renderMenu(currentTab);
-        updateNavActiveState(currentTab);
-        return;
-      }
-      
-      sembunyikanSemuaLayar();
-      document.getElementById('dashboardView').style.display = 'block';
-      if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
-      renderMenu(currentTab);
-      updateNavActiveState(currentTab);
+      return;
     }
+
+    sembunyikanSemuaLayar();
+    document.getElementById('dashboardView').style.display = 'block';
+    if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
+    renderMenu(currentTab);
+    updateNavActiveState(currentTab);
   }
   window.addEventListener('popstate', function() {
     // Logika untuk menangani tombol back HP
