@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.5';
+    const APP_VERSION = '1.2.6';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1581,6 +1581,7 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       position: relative; /* Penting untuk konteks sticky */
+      background: transparent;
       margin-bottom: 1.5rem;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow-sm);
@@ -4278,11 +4279,11 @@
     var screens = document.querySelectorAll('.screen, #dashboardView');
     for (var i = 0; i < screens.length; i++) {
       screens[i].style.display = 'none';
-    }
+    } 
   }
 
   function kembaliKeDashboard() {
-    // Deteksi apakah layar yang sedang aktif adalah kelolaUserView
+    // Deteksi layar yang sedang aktif
     var currentView = null;
     var screens = document.querySelectorAll('.screen');
     for (var i = 0; i < screens.length; i++) {
@@ -4292,22 +4293,44 @@
       }
     }
     
-    // Jika sedang di halaman Kelola User, langsung tampilkan dashboard dan replaceState
+    // Jika sedang di halaman Kelola User, langsung ke dashboard dan replaceState
     if (currentView === 'kelolaUserView') {
       sembunyikanSemuaLayar();
       document.getElementById('dashboardView').style.display = 'block';
-      // Ganti history state tanpa menambah entri baru untuk mencegah loop navigasi
-      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#' + currentTab);
+      // Ganti state terakhir dengan dashboard, bukan menambah entri baru
+      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
       if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
       renderMenu(currentTab);
       updateNavActiveState(currentTab);
       return;
     }
     
-    // Logika default untuk halaman lain (menggunakan history back asli sistem)
+    // Logika default untuk halaman lain
     if (history.state && history.state.view !== 'dashboardView') {
       history.back();
     } else {
+      // Deteksi layar yang sedang aktif
+      var currentView = null;
+      var screens = document.querySelectorAll('.screen');
+      for (var i = 0; i < screens.length; i++) {
+        if (screens[i].style.display === 'block') {
+          currentView = screens[i].id;
+          break;
+        }
+      }
+      
+      // Jika sedang di halaman Kelola User, langsung ke dashboard dan replaceState
+      if (currentView === 'kelolaUserView') {
+        sembunyikanSemuaLayar();
+        document.getElementById('dashboardView').style.display = 'block';
+        // Ganti state terakhir dengan dashboard, bukan menambah entri baru
+        history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
+        if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
+        renderMenu(currentTab);
+        updateNavActiveState(currentTab);
+        return;
+      }
+      
       sembunyikanSemuaLayar();
       document.getElementById('dashboardView').style.display = 'block';
       if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
@@ -4315,7 +4338,6 @@
       updateNavActiveState(currentTab);
     }
   }
-
   window.addEventListener('popstate', function() {
     // Logika untuk menangani tombol back HP
     sembunyikanSemuaLayar();
