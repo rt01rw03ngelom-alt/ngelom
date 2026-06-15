@@ -8503,119 +8503,164 @@ function bukaJadwal() {
   }
 
   function renderTabelIuran(rows, tahun) {
-    var thead = document.getElementById('theadIuran');
-    var tbody = document.getElementById('tbodyIuran');
-    var bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    var headerHtml = '<tr><th>Nama</th><th>Kategori</th>';
-    for (var b = 0; b < 12; b++) {
-      headerHtml += '<th style="text-align:center;">' + bulanSingkat[b] + '</th>';
-    }
-    headerHtml += '<th>Aksi</th>';
+    const thead = document.getElementById('theadIuran');
+    const tbody = document.getElementById('tbodyIuran');
+    const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    // Header tabel (tetap)
+    let headerHtml = '<tr><th>Nama</th><th>Kategori</th>';
+    for (let b = 0; b < 12; b++) headerHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
+    headerHtml += '<th>Aksi</th></tr>';
     thead.innerHTML = headerHtml;
+
+    // Kosongkan body
     tbody.innerHTML = '';
-    var isAdmin = false;
-    if (currentUser.role === 'admin' || currentUser.role === 'pengurus rt') {
-      isAdmin = true;
+
+    const isAdmin = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
+
+    // 1. Kelompokkan data berdasarkan kategori
+    const groups = new Map();
+    for (const row of rows) {
+      const cat = row.kategori || 'Tanpa Kategori';
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(row);
     }
-    for (var idx = 0; idx < rows.length; idx++) {
-      var row = rows[idx];
-      var tr = document.createElement('tr');
-      
-      // Highlight jika lunas setahun (semua 12 bulan bernilai > 0)
-      var isLunas = row.iuranBulanan.every(function(v) { return v > 0; });
-      if (isLunas) tr.classList.add('row-lunas');
 
-      var tdNama = document.createElement('td');
-      tdNama.innerText = row.nama;
-      tr.appendChild(tdNama);
-      var tdKategori = document.createElement('td');
-      if (isAdmin) {
-        var select = document.createElement('select');
-        select.style.width = '100%';
-        select.style.padding = '4px 6px';
-        select.style.fontSize = '12px';
-        select.style.margin = '0';
-        var optEmpty = document.createElement('option');
-        optEmpty.value = '';
-        optEmpty.text = '-- Pilih --';
-        select.appendChild(optEmpty);
-        for (var k = 0; k < daftarKategori.length; k++) {
-          var opt = document.createElement('option');
-          opt.value = daftarKategori[k].nama;
-          opt.text = daftarKategori[k].nama + ' (Rp ' + daftarKategori[k].nominal.toLocaleString('id-ID') + ')';
-          if (row.kategori === daftarKategori[k].nama) {
-            opt.selected = true;
-          }
-          select.appendChild(opt);
-        }
-        (function(rowData, thn) {
-          select.addEventListener('change', function() {
-            rowData.kategori = this.value;
-            google.script.run.updateKategoriWarga(rowData.nama, thn, this.value);
-          });
-        })(row, tahun);
-        tdKategori.appendChild(select);
-      } else {
-        tdKategori.innerText = row.kategori || '-';
-      }
-      tr.appendChild(tdKategori);
-      for (var bln = 0; bln < 12; bln++) {
-        var td = document.createElement('td');
-        td.style.textAlign = 'center';
+    // 2. Urutkan kategori (abjad)
+    const sortedCategories = Array.from(groups.keys()).sort((a,b) => a.localeCompare(b));
+
+    // 3. Render per grup
+    for (const category of sortedCategories) {
+      const members = groups.get(category);
+      // Urutkan anggota berdasarkan nama
+      members.sort((a,b) => a.nama.localeCompare(b.nama));
+
+      // ----- Baris Header Grup -----
+      const groupRow = document.createElement('tr');
+      groupRow.classList.add('group-header-row');
+      groupRow.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
+      groupRow.style.borderTop = `2px solid var(--primary-color)`;
+      const tdGroup = document.createElement('td');
+      // Karena ada 15 kolom (1+1+12+1=15)
+      tdGroup.colSpan = 15;
+      tdGroup.style.padding = '12px 10px';
+      tdGroup.style.fontWeight = '800';
+      tdGroup.style.fontSize = '14px';
+      tdGroup.style.textTransform = 'uppercase';
+      tdGroup.style.letterSpacing = '1px';
+      tdGroup.style.color = `var(--primary-color)`;
+      tdGroup.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.05)`;
+      tdGroup.style.borderRadius = '8px 8px 0 0';
+      tdGroup.innerHTML = `<i class="material-icons" style="font-size:16px; vertical-align:middle;">label</i> ${category}`;
+      groupRow.appendChild(tdGroup);
+      tbody.appendChild(groupRow);
+
+      // ----- Baris data anggota -----
+      for (const row of members) {
+        const tr = document.createElement('tr');
+        
+        // Highlight jika lunas setahun
+        const isLunas = row.iuranBulanan.every(v => v > 0);
+        if (isLunas) tr.classList.add('row-lunas');
+
+        // Kolom Nama
+        const tdNama = document.createElement('td');
+        tdNama.innerText = row.nama;
+        tr.appendChild(tdNama);
+
+        // Kolom Kategori (dropdown untuk admin, teks biasa untuk warga)
+        const tdKategori = document.createElement('td');
         if (isAdmin) {
-          var chk = document.createElement('input');
-          chk.type = 'checkbox'; 
-          chk.style.width = '24px'; /* Lebih besar agar mudah ditekan jari */
-          chk.style.height = '24px';
-          chk.style.cursor = 'pointer';
-          chk.style.margin = '4px';
-          if (row.iuranBulanan[bln] > 0) {
-            chk.checked = true;
+          const select = document.createElement('select');
+          select.style.width = '100%';
+          select.style.padding = '4px 6px';
+          select.style.fontSize = '12px';
+          select.style.margin = '0';
+          const optEmpty = document.createElement('option');
+          optEmpty.value = '';
+          optEmpty.text = '-- Pilih --';
+          select.appendChild(optEmpty);
+          for (const k of daftarKategori) {
+            const opt = document.createElement('option');
+            opt.value = k.nama;
+            opt.text = `${k.nama} (Rp ${k.nominal.toLocaleString('id-ID')})`;
+            if (row.kategori === k.nama) opt.selected = true;
+            select.appendChild(opt);
           }
-          (function(rowData, blnIdx, thn, currentRow) {
-            chk.onchange = function(e) {
-              rowData.iuranBulanan[blnIdx] = e.target.checked ? 1 : 0;
-              // Update visual baris secara instan tanpa reload tabel
-              var lunasNow = rowData.iuranBulanan.every(function(v) { return v > 0; });
-              if (lunasNow) currentRow.classList.add('row-lunas');
-              else currentRow.classList.remove('row-lunas');
-
-              google.script.run.updateIuranCell(rowData.nama, thn, blnIdx+1, rowData.iuranBulanan[blnIdx]);
+          select.addEventListener('change', (function(r, thn) {
+            return function() {
+              r.kategori = this.value;
+              google.script.run.updateKategoriWarga(r.nama, thn, this.value);
             };
-          })(row, bln, tahun, tr);
-          td.appendChild(chk);
+          })(row, tahun));
+          tdKategori.appendChild(select);
         } else {
-          // Tampilan ikon modern untuk warga (bukan checkbox)
-          var icon = row.iuranBulanan[bln] > 0 ? 'check_circle' : 'cancel';
-          var color = row.iuranBulanan[bln] > 0 ? '#10b981' : '#cbd5e1';
-          td.innerHTML = `<i class="material-icons" style="font-size:18px; color:${color};">${icon}</i>`;
+          tdKategori.innerText = row.kategori || '-';
         }
-        tr.appendChild(td);
-      }
-      var tdAksi = document.createElement('td');
-      if (isAdmin) {
-        var editBtn = document.createElement('button');
-        editBtn.className = 'btn-small warning';
-        editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-        (function(n, t) {
-          editBtn.onclick = function() { editNamaWargaIuran(n); };
-        })(row.nama, tahun);
-        tdAksi.appendChild(editBtn);
+        tr.appendChild(tdKategori);
 
-        var delBtn = document.createElement('button');
-        delBtn.className = 'btn-small danger';
-        delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
-        (function(nama, thn) {
-          delBtn.onclick = function() {
-            hapusBarisIuran(nama, thn);
-          };
-        })(row.nama, tahun);
-        tdAksi.appendChild(delBtn);
-      } else {
-        tdAksi.innerText = '-';
+        // Kolom bulan (checkbox atau ikon)
+        for (let bln = 0; bln < 12; bln++) {
+          const td = document.createElement('td');
+          td.style.textAlign = 'center';
+          if (isAdmin) {
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.style.width = '24px';
+            chk.style.height = '24px';
+            chk.style.cursor = 'pointer';
+            chk.style.margin = '4px';
+            chk.checked = (row.iuranBulanan[bln] > 0);
+            chk.onchange = (function(r, blnIdx, thn, currentRow) {
+              return function(e) {
+                r.iuranBulanan[blnIdx] = e.target.checked ? 1 : 0;
+                const lunasNow = r.iuranBulanan.every(v => v > 0);
+                if (lunasNow) currentRow.classList.add('row-lunas');
+                else currentRow.classList.remove('row-lunas');
+                google.script.run.updateIuranCell(r.nama, thn, blnIdx+1, r.iuranBulanan[blnIdx]);
+              };
+            })(row, bln, tahun, tr);
+            td.appendChild(chk);
+          } else {
+            const icon = row.iuranBulanan[bln] > 0 ? 'check_circle' : 'cancel';
+            const color = row.iuranBulanan[bln] > 0 ? '#10b981' : '#cbd5e1';
+            td.innerHTML = `<i class="material-icons" style="font-size:18px; color:${color};">${icon}</i>`;
+          }
+          tr.appendChild(td);
+        }
+
+        // Kolom Aksi (edit & hapus)
+        const tdAksi = document.createElement('td');
+        if (isAdmin) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'btn-small warning';
+          editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+          editBtn.onclick = (function(n, t) { return function() { editNamaWargaIuran(n); }; })(row.nama, tahun);
+          tdAksi.appendChild(editBtn);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-small danger';
+          delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+          delBtn.onclick = (function(n, t) { return function() { hapusBarisIuran(n, t); }; })(row.nama, tahun);
+          tdAksi.appendChild(delBtn);
+        } else {
+          tdAksi.innerText = '-';
+        }
+        tr.appendChild(tdAksi);
+        tbody.appendChild(tr);
       }
-      tr.appendChild(tdAksi);
-      tbody.appendChild(tr);
+    }
+
+    // Jika tidak ada data sama sekali
+    if (rows.length === 0) {
+      const emptyRow = document.createElement('tr');
+      const tdEmpty = document.createElement('td');
+      tdEmpty.colSpan = 15;
+      tdEmpty.style.textAlign = 'center';
+      tdEmpty.style.padding = '40px';
+      tdEmpty.innerText = 'Belum ada data warga. Silakan tambah melalui tombol "Kelola Nama Warga".';
+      emptyRow.appendChild(tdEmpty);
+      tbody.appendChild(emptyRow);
     }
   }
 
