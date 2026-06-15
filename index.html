@@ -1428,114 +1428,93 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Compact & Modern Iuran Table for Mobile */
+    /* Compact & Modern Iuran Table Fixes */
     .iuran-table {
       width: 100%;
-      min-width: 1050px; /* Diperlebar sedikit agar teks tidak berdesakan */
-      font-size: 16px; /* Ukuran standar aksesibilitas */
-      border-collapse: separate; 
-      border-spacing: 0; 
+      min-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      font-size: 16px;
       margin: 0 auto;
-      table-layout: fixed; /* Memastikan lebar kolom presisi */
     }
 
-    /* Perbaikan Responsivitas Tabel Iuran untuk Layar HP Sangat Kecil */
+    /* Kolom Nama (kolom ke-1) */
+    .iuran-table th:nth-child(1),
+    .iuran-table td:nth-child(1) {
+      position: -webkit-sticky !important;
+      position: sticky !important;
+      left: 0;
+      z-index: 20;
+      background-color: var(--bg-surface) !important;
+      background-clip: padding-box;
+      min-width: 180px;
+      max-width: 180px;
+      width: 180px;
+      white-space: normal;
+      word-break: break-word;
+      font-weight: 800;
+      color: var(--text-main);
+      border-right: 1px solid var(--border-color);
+      padding: 15px 12px !important;
+      box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+    }
+
+    /* Kolom Kategori (kolom ke-2) */
+    .iuran-table th:nth-child(2),
+    .iuran-table td:nth-child(2) {
+      position: -webkit-sticky !important;
+      position: sticky !important;
+      left: 180px;
+      z-index: 10;
+      background-color: var(--bg-surface) !important;
+      background-clip: padding-box;
+      min-width: 130px;
+      max-width: 130px;
+      width: 130px;
+      font-size: 14px;
+      color: var(--text-muted);
+      border-right: 2px solid var(--primary-color) !important;
+      box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1);
+      padding: 15px 10px !important;
+    }
+
+    .iuran-table th {
+      background-color: var(--bg-app) !important;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      padding: 10px 6px !important;
+      z-index: 25 !important;
+    }
+
     @media (max-width: 500px) {
       .iuran-table {
-        min-width: 900px; /* Tetap pertahankan lebar minimum agar scroll aktif */
-        font-size: 15px; 
-        border-collapse: separate;
+        min-width: 900px;
+        font-size: 15px;
       }
-      
-      /* Perkecil kolom sticky agar area scroll lebih luas di layar HP */
       .iuran-table th:nth-child(1),
       .iuran-table td:nth-child(1) {
-        min-width: 150px; /* Cukup lebar untuk Nama di HP */
+        min-width: 150px;
         max-width: 150px;
+        width: 150px;
       }
-      
       .iuran-table th:nth-child(2),
       .iuran-table td:nth-child(2) {
-        left: 150px; /* Sesuai lebar kolom 1 */
+        left: 150px;
         min-width: 110px;
         max-width: 110px;
+        width: 110px;
       }
-      
-      /* Kolom bulan lebih ramping dan rapat */
       .iuran-table td:nth-child(n+3):nth-child(-n+14) {
         width: 45px;
         padding: 8px 2px !important;
       }
       .iuran-table input[type="checkbox"] {
-        width: 26px !important; /* Hit target lebih besar untuk jari orang tua */
+        width: 26px !important;
         height: 26px !important;
       }
-    }
-
-    /* Sticky Kolom Nama (Kolom 1) */
-    .iuran-table {
-      width: 100%;
-      min-width: 980px;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-
-    .iuran-table th,
-    .iuran-table td {
-      box-sizing: border-box;
-      vertical-align: middle;
-      overflow: hidden;
-    }
-
-    .iuran-table th:nth-child(1),
-    .iuran-table td:nth-child(1) {
-      position: sticky !important; 
-      left: 0;
-      z-index: 10;
-      background-color: var(--bg-surface) !important; /* Latar belakang solid agar tidak tembus */
-      background-clip: padding-box;
-      width: 180px;
-      min-width: 180px;
-      max-width: 180px;
-      white-space: normal;
-      word-break: break-word;
-      font-weight: 800; /* Teks Nama lebih tebal */
-      color: var(--text-main);
-      border-right: 1px solid var(--border-color);
-      padding: 15px 12px !important; /* Padding lebih lega */
-    }
-
-    /* Sticky Kolom Kategori (Kolom 2) */
-    .iuran-table th:nth-child(2),
-    .iuran-table td:nth-child(2) {
-      position: sticky !important;
-      left: 180px; /* Sesuai dengan lebar kolom pertama */
-      z-index: 9;
-      background-color: var(--bg-surface) !important;
-      background-clip: padding-box;
-      width: 130px;
-      min-width: 130px;
-      max-width: 130px;
-      font-size: 14px;
-      color: var(--text-muted);
-      /* Efek bayangan tipis sebagai pemisah visual saat discroll */
-      border-right: 2px solid var(--primary-color) !important;
-      box-shadow: 5px 0 10px -5px rgba(0,0,0,0.15);
-      padding: 15px 10px !important;
-    }
-
-    /* Header harus memiliki z-index lebih tinggi dari baris data */
-    .iuran-table th:nth-child(1),
-    .iuran-table th:nth-child(2) {
-      background-color: var(--bg-app) !important;
-      z-index: 20 !important; 
-    }
-
-    /* Peningkatan hit target checkbox */
-    .iuran-table input[type="checkbox"] {
-      cursor: pointer;
-      accent-color: var(--primary-color);
-      transform: scale(1.1);
     }
 
     body.dark-mode .iuran-table th:nth-child(1),
@@ -1549,24 +1528,24 @@
     .iuran-table td {
       padding: 8px 6px !important;
       white-space: nowrap;
+      vertical-align: middle;
     }
 
-    /* Mengatur lebar kolom bulan agar seragam dan kompak */
     .iuran-table td:nth-child(n+3):nth-child(-n+14) {
       width: 48px;
       text-align: center;
     }
 
-    .iuran-table th {
-      padding: 10px 6px !important;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .iuran-table input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: var(--primary-color);
+      transform: scale(1.1);
     }
 
     .table-wrapper {
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch; /* Scrolling lebih halus di iOS */
+      -webkit-overflow-scrolling: touch;
+      position: relative; /* Penting untuk konteks sticky */
       margin-bottom: 1.5rem;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow-sm);
