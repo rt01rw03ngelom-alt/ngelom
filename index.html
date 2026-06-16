@@ -4345,6 +4345,8 @@
   window.__activeViewToken = window.__activeViewToken || 0;
 
   function kembaliKeDashboard() {
+    window.kelolaUserLoaded = false;
+    
     // Deteksi layar yang sedang aktif
     var currentView = null;
     var screens = document.querySelectorAll('.screen');
@@ -4354,6 +4356,9 @@
         break;
       }
     }
+
+    // Proteksi: Jika dashboard sudah aktif, hentikan render ulang
+    if (document.getElementById('dashboardView').style.display === 'block') return;
 
     // Invalidate semua callback async view lama
     window.__activeViewToken++;
@@ -4391,12 +4396,13 @@
         }
 
         // Bersihkan kemungkinan state tersimpan
-        try { sessionStorage.removeItem('kelolaUserOpen'); } catch (e) {}
+        sessionStorage.removeItem('kelolaUserOpen');
+        localStorage.removeItem('lastSubmenu');
       } catch (e) {}
 
       sembunyikanSemuaLayar();
       document.getElementById('dashboardView').style.display = 'block';
-      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
+      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', location.pathname);
       if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
       renderMenu(currentTab);
       updateNavActiveState(currentTab);
@@ -7054,13 +7060,17 @@ function bukaJadwal() {
 
   // ======================== KELOLA USER ========================
   function bukaKelolaUser() {
+    // Proteksi render ganda
+    if (window.kelolaUserLoaded) return;
+    window.kelolaUserLoaded = true;
+
+    sessionStorage.setItem('kelolaUserOpen', 'true');
     sembunyikanSemuaLayar();
     document.getElementById('kelolaUserView').style.display = 'block';
     history.pushState({view: 'kelolaUserView', tab: 'warga', onLoad: 'muatDataUser'}, '', '#kelolaUser');
     
     // Muat pengaturan admin jika yang buka adalah admin
     loadAdminSettingsUI();
-    history.pushState({view: 'kelolaUserView', tab: 'warga', onLoad: 'muatDataUser'}, '', '#kelolaUser');
     
     // Muat daftar role dulu baru muat data user
     muatDaftarRole(function() {
@@ -7083,11 +7093,20 @@ function bukaJadwal() {
   };
 
   function muatDataUser() {
+    // Proteksi: Jangan jalankan pemuatan data jika user sudah di dashboard
+    if (document.getElementById('dashboardView').style.display === 'block') {
+      window.kelolaUserLoaded = false;
+      return;
+    }
+
     var list = document.getElementById('listUsers');
     renderSkeleton('listUsers', 3);
     showLoading('Memuat data user...');
     document.getElementById('userSearchInput').value = ''; // Reset pencarian saat buka menu
     google.script.run.withSuccessHandler(function(res) {
+      // Guard: Pastikan view masih aktif saat callback async selesai
+      if (document.getElementById('kelolaUserView').style.display !== 'block') return;
+
       Swal.close(); // Close loading modal
       if (res.data && res.data.length) {
         allUsers = res.data;
