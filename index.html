@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#d32f2f">
   <link rel="manifest" href="manifest.json">
 
@@ -1439,6 +1439,17 @@
       margin: 0 auto;
     }
 
+    /* FIX STICKY COLUMNS Manajemen Iuran Warga: scroll harus terjadi pada wrapper yang benar */
+    .iuran-scroll{
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      width: 100%;
+      border-radius: var(--border-radius);
+      background: transparent;
+    }
+
     /* ======================== Laporan Kas Warga Sticky Columns ======================== */
     .laporan-kas-scroll {
       overflow-x: auto;
@@ -1849,9 +1860,30 @@
     }
 
     @media (max-width: 640px) {
+      body { font-size: 14px; }
       #mainApp {
         padding: 12px 0 140px;
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
       }
+      .card-item { padding: 14px 14px; border-radius: 14px; }
+      .crud-form { padding: 14px 14px; border-radius: 14px; }
+      .page-header { padding-bottom: 1rem; margin-bottom: 1.2rem; }
+      .page-header h3 { font-size: 1.1rem; }
+      .btn-primary, .btn-secondary { border-radius: 14px; padding: 12px 14px; }
+      input, select, textarea { font-size: 14px; }
+      .filter-bar { padding: 0.9rem; }
+      .nav-bar-bottom { height: 68px; padding-bottom: env(safe-area-inset-bottom); }
+      .nav-item i { font-size: 20px; }
+      .nav-item span { font-size: 11px; }
+
+      /* Tabel iuran: hindari elemen terlalu lebar, namun tetap terbaca */
+      .iuran-table { font-size: 13px; }
+      .iuran-table th:nth-child(1), .iuran-table td:nth-child(1) { min-width: 140px; max-width: 140px; width: 140px; padding: 10px 10px !important; }
+      .iuran-table th:nth-child(2), .iuran-table td:nth-child(2) { min-width: 110px; max-width: 110px; width: 110px; left: 140px; padding: 10px 8px !important; }
+      .iuran-scroll { overflow-x: hidden; }
+
 
       .filter-bar {
         flex-direction: column;
