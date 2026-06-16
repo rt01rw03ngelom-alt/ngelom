@@ -1610,6 +1610,48 @@
       }
     }
 
+    /* Freeze columns (Excel-like) for Manajemen Iuran Warga */
+    .iuran-table thead th,
+    .iuran-table tbody td{
+      box-sizing:border-box;
+    }
+
+    /* Header sticky */
+    .iuran-table thead th{
+      position:sticky;
+      top:0;
+      z-index:50;
+      background:var(--bg-app);
+    }
+
+    /* Prioritas z-index untuk header */
+    .iuran-table thead th:nth-child(1){
+      z-index:60;
+    }
+    .iuran-table thead th:nth-child(2){
+      z-index:59;
+    }
+
+    /* Kolom NAMA sticky sudah didefinisikan di atas; tambah shadow pemisah */
+    .iuran-table th:nth-child(1),
+    .iuran-table td:nth-child(1){
+      box-shadow:2px 0 0 rgba(239,68,68,.35);
+    }
+
+    /* Kolom KATEGORI sticky */
+    .iuran-table th:nth-child(2),
+    .iuran-table td:nth-child(2){
+      box-shadow:3px 0 10px rgba(0,0,0,.08);
+    }
+
+    /* Dark mode aman */
+    body.dark-mode .iuran-table th:nth-child(1),
+    body.dark-mode .iuran-table td:nth-child(1),
+    body.dark-mode .iuran-table th:nth-child(2),
+    body.dark-mode .iuran-table td:nth-child(2){
+      background:var(--bg-surface) !important;
+    }
+
     body.dark-mode .iuran-table th:nth-child(1),
     body.dark-mode .iuran-table td:nth-child(1),
     body.dark-mode .iuran-table th:nth-child(2),
