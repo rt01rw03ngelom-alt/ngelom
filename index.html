@@ -1426,66 +1426,48 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* ======================== Manajemen Iuran Warga Sticky Columns (Excel Freeze) ======================== */
-    .iuran-scroll{
-      width:100%;
-      overflow-x:auto;
-      overflow-y:auto;
-      position:relative;
+    /* ======================== Split Table Layout (Fixed + Scroll) ======================== */
+    .iuran-master {
+      display: flex;
+      width: 100%;
+      position: relative;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      background: var(--bg-surface);
     }
-
-    .iuran-table{
-      border-collapse:separate;
-      border-spacing:0;
-      min-width:max-content;
+    .iuran-left {
+      flex: 0 0 280px;
+      z-index: 20;
+      background: var(--bg-surface);
+      border-right: 2px solid var(--primary-color);
     }
-
-    /* Freeze kolom pertama (NAMA) */
-    .iuran-table th:nth-child(1),
-    .iuran-table td:nth-child(1){
-      position:sticky;
-      left:0;
-      z-index:30;
-      background:var(--bg-surface);
-      min-width:150px;
-      width:150px;
-      box-shadow: 2px 0 0 rgba(239,68,68,.35);
+    .iuran-right {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--bg-surface);
     }
-
-    /* Freeze kolom kedua (KATEGORI) */
-    .iuran-table th:nth-child(2),
-    .iuran-table td:nth-child(2){
-      position:sticky;
-      left:150px;
-      z-index:29;
-      background:var(--bg-surface);
-      min-width:110px;
-      width:110px;
-      box-shadow: 3px 0 10px rgba(0,0,0,.08);
+    .iuran-left table, .iuran-right table {
+      border-collapse: collapse;
+      width: max-content;
     }
-
-    /* Header tetap di atas */
-    .iuran-table thead th{
-      position:sticky;
-      top:0;
-      z-index:50;
+    .iuran-left th, .iuran-left td {
+      width: 140px;
+      background: inherit;
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border-color);
     }
-
-    /* PRIORITAS HEADER STICKY */
-    .iuran-table thead th:nth-child(1){
-      z-index:60;
+    .iuran-right th, .iuran-right td {
+      min-width: 65px;
+      text-align: center;
+      padding: 12px 5px;
+      border-bottom: 1px solid var(--border-color);
     }
-
-    .iuran-table thead th:nth-child(2){
-      z-index:59;
-    }
-
-    /* Dark mode tetap aman */
-    body.dark-mode .iuran-table th:nth-child(1),
-    body.dark-mode .iuran-table td:nth-child(1),
-    body.dark-mode .iuran-table th:nth-child(2),
-    body.dark-mode .iuran-table td:nth-child(2) {
-      background-color: var(--bg-surface) !important;
+    .iuran-left thead, .iuran-right thead {
+      position: sticky;
+      top: 0;
+      z-index: 30;
     }
 
     .iuran-table input[type="checkbox"] {
@@ -1699,8 +1681,9 @@
       .iuran-table { font-size: 13px; }
       .iuran-table th:nth-child(1), .iuran-table td:nth-child(1) { min-width: 140px; max-width: 140px; width: 140px; padding: 10px 10px !important; }
       .iuran-table th:nth-child(2), .iuran-table td:nth-child(2) { min-width: 110px; max-width: 110px; width: 110px; left: 140px; padding: 10px 8px !important; }
-.iuran-scroll { overflow-x: auto; }
-
+      .iuran-left { flex: 0 0 250px; }
+      .iuran-left th, .iuran-left td { width: 125px; font-size: 12px; }
+      .iuran-right th, .iuran-right td { min-width: 55px; }
 
       .filter-bar {
         flex-direction: column;
@@ -3022,11 +3005,19 @@
       </select>
       <button class="btn-small" onclick="muatTabelIuran()">Tampilkan</button>
     </div>
-    <div class="iuran-scroll">
-      <table class="iuran-table" id="tabelIuran">
-        <thead id="theadIuran"></thead>
-        <tbody id="tbodyIuran"></tbody>
-      </table>
+    <div class="iuran-master">
+      <div class="iuran-left">
+        <table class="iuran-table">
+          <thead id="theadIuranLeft"></thead>
+          <tbody id="tbodyIuranLeft"></tbody>
+        </table>
+      </div>
+      <div class="iuran-right">
+        <table class="iuran-table">
+          <thead id="theadIuranRight"></thead>
+          <tbody id="tbodyIuranRight"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -8609,18 +8600,22 @@ function bukaJadwal() {
   }
 
   function renderTabelIuran(rows, tahun) {
-    const thead = document.getElementById('theadIuran');
-    const tbody = document.getElementById('tbodyIuran');
+    const theadL = document.getElementById('theadIuranLeft');
+    const tbodyL = document.getElementById('tbodyIuranLeft');
+    const theadR = document.getElementById('theadIuranRight');
+    const tbodyR = document.getElementById('tbodyIuranRight');
     const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-    // Header tabel (tetap)
-    let headerHtml = '<tr><th>Nama</th><th>Kategori</th>';
-    for (let b = 0; b < 12; b++) headerHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
-    headerHtml += '<th>Aksi</th></tr>';
-    thead.innerHTML = headerHtml;
+    // Render Headers
+    theadL.innerHTML = '<tr><th>Nama</th><th>Kategori</th></tr>';
+    let headerRHtml = '<tr>';
+    for (let b = 0; b < 12; b++) headerRHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
+    headerRHtml += '<th>Aksi</th></tr>';
+    theadR.innerHTML = headerRHtml;
 
-    // Kosongkan body
-    tbody.innerHTML = '';
+    // Kosongkan bodies
+    tbodyL.innerHTML = '';
+    tbodyR.innerHTML = '';
 
     const isAdmin = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
 
@@ -8641,38 +8636,44 @@ function bukaJadwal() {
       // Urutkan anggota berdasarkan nama
       members.sort((a,b) => a.nama.localeCompare(b.nama));
 
-      // ----- Baris Header Grup -----
-      const groupRow = document.createElement('tr');
-      groupRow.classList.add('group-header-row');
-      groupRow.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
-      groupRow.style.borderTop = `2px solid var(--primary-color)`;
-      const tdGroup = document.createElement('td');
-      // Karena ada 15 kolom (1+1+12+1=15)
-      tdGroup.colSpan = 15;
-      tdGroup.style.padding = '12px 10px';
-      tdGroup.style.fontWeight = '800';
-      tdGroup.style.fontSize = '14px';
-      tdGroup.style.textTransform = 'uppercase';
-      tdGroup.style.letterSpacing = '1px';
-      tdGroup.style.color = `var(--primary-color)`;
-      tdGroup.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.05)`;
-      tdGroup.style.borderRadius = '8px 8px 0 0';
-      tdGroup.innerHTML = `<i class="material-icons" style="font-size:16px; vertical-align:middle;">label</i> ${category}`;
-      groupRow.appendChild(tdGroup);
-      tbody.appendChild(groupRow);
+      // ----- Baris Header Grup (Split) -----
+      const groupRowL = document.createElement('tr');
+      groupRowL.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
+      const tdGroupL = document.createElement('td');
+      tdGroupL.colSpan = 2;
+      tdGroupL.style.padding = '12px 10px';
+      tdGroupL.style.fontWeight = '800';
+      tdGroupL.style.color = `var(--primary-color)`;
+      tdGroupL.innerHTML = `<i class="material-icons" style="font-size:16px; vertical-align:middle;">label</i> ${category}`;
+      groupRowL.appendChild(tdGroupL);
+      tbodyL.appendChild(groupRowL);
+
+      const groupRowR = document.createElement('tr');
+      groupRowR.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
+      const tdGroupR = document.createElement('td');
+      tdGroupR.colSpan = 13;
+      tdGroupR.innerHTML = '&nbsp;';
+      groupRowR.appendChild(tdGroupR);
+      tbodyR.appendChild(groupRowR);
 
       // ----- Baris data anggota -----
       for (const row of members) {
-        const tr = document.createElement('tr');
-        
+        // Baris Kiri (Fixed)
+        const trL = document.createElement('tr');
+        // Baris Kanan (Scroll)
+        const trR = document.createElement('tr');
+
         // Highlight jika lunas setahun
         const isLunas = row.iuranBulanan.every(v => v > 0);
-        if (isLunas) tr.classList.add('row-lunas');
+        if (isLunas) {
+          trL.classList.add('row-lunas');
+          trR.classList.add('row-lunas');
+        }
 
         // Kolom Nama
         const tdNama = document.createElement('td');
         tdNama.innerText = row.nama;
-        tr.appendChild(tdNama);
+        trL.appendChild(tdNama);
 
         // Kolom Kategori (dropdown untuk admin, teks biasa untuk warga)
         const tdKategori = document.createElement('td');
@@ -8703,7 +8704,8 @@ function bukaJadwal() {
         } else {
           tdKategori.innerText = row.kategori || '-';
         }
-        tr.appendChild(tdKategori);
+        trL.appendChild(tdKategori);
+        tbodyL.appendChild(trL);
 
         // Kolom bulan (checkbox atau ikon)
         for (let bln = 0; bln < 12; bln++) {
@@ -8717,22 +8719,27 @@ function bukaJadwal() {
             chk.style.cursor = 'pointer';
             chk.style.margin = '4px';
             chk.checked = (row.iuranBulanan[bln] > 0);
-            chk.onchange = (function(r, blnIdx, thn, currentRow) {
+            chk.onchange = (function(r, blnIdx, thn, rowL, rowR) {
               return function(e) {
                 r.iuranBulanan[blnIdx] = e.target.checked ? 1 : 0;
                 const lunasNow = r.iuranBulanan.every(v => v > 0);
-                if (lunasNow) currentRow.classList.add('row-lunas');
-                else currentRow.classList.remove('row-lunas');
+                if (lunasNow) {
+                  rowL.classList.add('row-lunas');
+                  rowR.classList.add('row-lunas');
+                } else {
+                  rowL.classList.remove('row-lunas');
+                  rowR.classList.remove('row-lunas');
+                }
                 google.script.run.updateIuranCell(r.nama, thn, blnIdx+1, r.iuranBulanan[blnIdx]);
               };
-            })(row, bln, tahun, tr);
+            })(row, bln, tahun, trL, trR);
             td.appendChild(chk);
           } else {
             const icon = row.iuranBulanan[bln] > 0 ? 'check_circle' : 'cancel';
             const color = row.iuranBulanan[bln] > 0 ? '#10b981' : '#cbd5e1';
             td.innerHTML = `<i class="material-icons" style="font-size:18px; color:${color};">${icon}</i>`;
           }
-          tr.appendChild(td);
+          trR.appendChild(td);
         }
 
         // Kolom Aksi (edit & hapus)
@@ -8752,22 +8759,38 @@ function bukaJadwal() {
         } else {
           tdAksi.innerText = '-';
         }
-        tr.appendChild(tdAksi);
-        tbody.appendChild(tr);
+        trR.appendChild(tdAksi);
+        tbodyR.appendChild(trR);
       }
     }
 
     // Jika tidak ada data sama sekali
     if (rows.length === 0) {
-      const emptyRow = document.createElement('tr');
-      const tdEmpty = document.createElement('td');
-      tdEmpty.colSpan = 15;
-      tdEmpty.style.textAlign = 'center';
-      tdEmpty.style.padding = '40px';
-      tdEmpty.innerText = 'Belum ada data warga. Silakan tambah melalui tombol "Kelola Nama Warga".';
-      emptyRow.appendChild(tdEmpty);
-      tbody.appendChild(emptyRow);
+      tbodyL.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px;">Belum ada data.</td></tr>';
+      tbodyR.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:20px;">-</td></tr>';
     }
+
+    // Sinkronkan tinggi baris setelah render
+    setTimeout(syncIuranRowHeights, 50);
+  }
+
+  function syncIuranRowHeights() {
+    const leftRows = document.querySelectorAll('.iuran-left tbody tr');
+    const rightRows = document.querySelectorAll('.iuran-right tbody tr');
+
+    leftRows.forEach((r, i) => {
+      if (rightRows[i]) {
+        // Reset dulu biar dapet tinggi natural
+        r.style.height = 'auto';
+        rightRows[i].style.height = 'auto';
+        
+        const h = Math.max(r.offsetHeight, rightRows[i].offsetHeight);
+        if (h > 0) {
+          r.style.height = h + 'px';
+          rightRows[i].style.height = h + 'px';
+        }
+      }
+    });
   }
 
   function editNamaWargaIuran(namaLama) {
