@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.6';
+    const APP_VERSION = '1.2.7';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1733,45 +1733,43 @@
       .kas-summary {
         grid-template-columns: 1fr;
       }
-      .menu-container {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: clamp(10px, 3.5vw, 16px);
-        padding: clamp(12px, 4.5vw, 20px);
-        margin-top: 5px;
-      }
 
-      .menu-item {
-        width: 100%;
-        height: auto;
-        aspect-ratio: auto;
-        min-height: 100px;
-        padding: 18px 10px;
-        border-radius: 28px;
+      /* ===== RESPONSIVE TABEL IURAN ===== */
+      .iuran-left {
+        flex: 0 0 120px;
       }
-
-      .menu-item i {
-        font-size: clamp(32px, 10vw, 42px);
-        margin-bottom: 10px;
+      .iuran-left td:first-child {
+        font-size: 11px;
+        padding-left: 8px;
+        max-width: 100px;
       }
-
-      .menu-item span {
-        font-size: clamp(11.5px, 3.5vw, 13px);
-        font-weight: 800;
-        line-height: 1.2;
+      .iuran-right td {
+        padding: 2px 0;
+        min-width: 28px;
       }
-
-      .filter-table {
-        flex-direction: column;
-        align-items: stretch;
+      .iuran-right thead th {
+        font-size: 8px;
+        padding: 4px 1px;
+        min-width: 28px;
       }
-
-      .fab {
-        right: 14px;
+      .iuran-table input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
       }
-      .card-item {
-        margin: 0 auto 1rem;
-        width: 100%;
-        padding: 1.25rem 1rem;
+      .status-badge {
+        font-size: 7px;
+        padding: 1px 6px;
+      }
+      .iuran-right td:last-child {
+        min-width: 60px;
+      }
+      .iuran-right td:last-child button {
+        padding: 1px 4px;
+        font-size: 10px;
+      }
+      .iuran-left td[colspan] {
+        font-size: 11px;
+        padding: 6px 8px;
       }
 
       .fab {
@@ -4029,9 +4027,6 @@
   let loginReadyPromise = new Promise(resolve => {
     window.resolveLoginReady = resolve; // Expose resolve function globally
   });
-
-  var originalPemasukanList = [];
-  var originalPengeluaranList = [];
 
   // ======================== HELPER FUNCTIONS ========================
   function getDirectUrl(url) {
@@ -7948,18 +7943,20 @@ function bukaJadwal() {
       return;
     }
 
-    var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    // Urutkan berdasarkan tanggal agar saldo berjalan benar
+    var sorted = [...data].sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
     var runningSaldo = 0;
-    var isAdmin = hasPermission('rt_kas_crud');
+    var isCRUD = hasPermission('rt_kas_crud');
 
     sorted.forEach(function(item) {
       var isPemasukan = (item.jenis === 'Pemasukan');
-      var nominal = item.jumlah || 0;
+      var nominal = parseFloat(item.jumlah) || 0;
 
       if (isPemasukan) runningSaldo += nominal;
       else runningSaldo -= nominal;
 
       var tr = document.createElement('tr');
+
       tr.innerHTML = `
         <td>${item.tanggal || '-'}</td>
         <td>${item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-'}</td>
@@ -7970,22 +7967,28 @@ function bukaJadwal() {
       `;
 
       var tdAksi = document.createElement('td');
-      if (isAdmin) {
+      if (isCRUD) {
+        tdAksi.style.whiteSpace = 'nowrap';
+
         var eb = document.createElement('button');
         eb.className = 'btn-small';
-        eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-        eb.onclick = function() { editKas(item.id, item.tanggal, item.kategori, item.deskripsi, item.jenis, item.jumlah); };
-        
+        eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i> '; // label kecil
+        eb.onclick = function() {
+          editKas(item.id, item.tanggal, item.kategori, item.deskripsi, item.jenis, item.jumlah);
+        };
+
         var db = document.createElement('button');
         db.className = 'btn-small danger';
-        db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i> ';
         db.onclick = function() { hapusKas(item.id); };
-        
+
         tdAksi.appendChild(eb);
         tdAksi.appendChild(db);
       } else {
         tdAksi.innerText = '-';
+        tdAksi.style.color = 'var(--text-muted)';
       }
+
       tr.appendChild(tdAksi);
       container.appendChild(tr);
     });
@@ -8715,30 +8718,23 @@ function bukaJadwal() {
   function syncIuranRowHeights() {
     var leftRows = document.querySelectorAll('.iuran-left tbody tr');
     var rightRows = document.querySelectorAll('.iuran-right tbody tr');
-
-    // Pastikan jumlah baris sama
     if (leftRows.length === 0 || leftRows.length !== rightRows.length) {
-      // Jika tidak sama, coba sinkronkan ulang setelah render selesai
       setTimeout(syncIuranRowHeights, 100);
       return;
     }
-
-    // Reset tinggi semua baris ke auto terlebih dahulu agar kalkulasi ulang akurat
     leftRows.forEach(function(row) { row.style.height = 'auto'; });
     rightRows.forEach(function(row) { row.style.height = 'auto'; });
+    
+    void document.body.offsetHeight; // Force reflow
 
-    // Gunakan requestAnimationFrame untuk memastikan layout sudah selesai
     requestAnimationFrame(function() {
       for (var i = 0; i < leftRows.length; i++) {
         var leftRow = leftRows[i];
         var rightRow = rightRows[i];
-        
-        // Ambil tinggi aktual (termasuk padding & border)
         var hLeft = leftRow.getBoundingClientRect().height;
         var hRight = rightRow.getBoundingClientRect().height;
-        var maxH = Math.max(hLeft, hRight, 44); // minimal 44px agar checkbox nyaman
+        var maxH = Math.max(hLeft, hRight, 44);
 
-        // Set tinggi yang sama
         leftRow.style.height = maxH + 'px';
         rightRow.style.height = maxH + 'px';
       }
