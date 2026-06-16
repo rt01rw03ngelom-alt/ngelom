@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.6';
+    const APP_VERSION = '1.2.8';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -1438,7 +1438,7 @@
     }
     /* Refined Split Table Layout */
     .iuran-left {
-      flex: 0 0 240px; /* Lebar optimal untuk Nama + Kategori di mobile */
+      flex: 0 0 160px; /* Diperkecil agar kolom bulan lebih luas */
       z-index: 20;
       background: var(--bg-surface);
       border-right: 2px solid var(--primary-color);
@@ -1457,10 +1457,18 @@
       width: 100%;
     }
     .iuran-left th, .iuran-left td {
-      width: 120px; /* Bagi rata 240px menjadi 2 kolom @120px */
+      width: auto;
       background: inherit;
       padding: 10px 8px;
       border-bottom: 1px solid var(--border-color);
+    }
+    .nama-cell {
+      text-align: left !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px; /* Sesuai flex basis 160px dikurangi padding */
+      padding: 10px 8px;
     }
     .iuran-right th, .iuran-right td {
       min-width: 55px; /* Sedikit lebih ramping agar lebih banyak bulan terlihat */
@@ -1683,13 +1691,14 @@
 
       /* Tabel iuran: hindari elemen terlalu lebar, namun tetap terbaca */
       .iuran-table { font-size: 13px; }
-      .iuran-left { flex: 0 0 210px; } /* Lebih ramping di HP kecil */
+      .iuran-left { flex: 0 0 120px; } 
       .iuran-left th, .iuran-left td { 
-        width: 105px; 
+        width: auto; 
         font-size: 12px; 
-        padding: 10px 6px; 
+        padding: 8px 4px; 
       }
-      .iuran-right th, .iuran-right td { min-width: 50px; font-size: 11px; }
+      .iuran-right th, .iuran-right td { min-width: 40px; font-size: 11px; padding: 8px 2px; }
+      .nama-cell { max-width: 110px; }
       .summary-info h2 { font-size: 1.1rem !important; }
 
       .filter-group select,
@@ -8612,7 +8621,7 @@ function bukaJadwal() {
     theadL.innerHTML = '<tr><th class="nama-cell">Nama</th></tr>';
     let headerRHtml = '<tr>';
     for (let b = 0; b < 12; b++) headerRHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
-    headerRHtml += '<th>Aksi</th></tr>';
+    headerRHtml += '<th>Status</th><th>Aksi</th></tr>';
     theadR.innerHTML = headerRHtml;
 
     // Kosongkan bodies
@@ -8653,7 +8662,7 @@ function bukaJadwal() {
       const groupRowR = document.createElement('tr');
       groupRowR.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
       const tdGroupR = document.createElement('td');
-      tdGroupR.colSpan = 13;
+      tdGroupR.colSpan = 14;
       tdGroupR.innerHTML = '&nbsp;';
       groupRowR.appendChild(tdGroupR);
       tbodyR.appendChild(groupRowR);
@@ -8702,6 +8711,14 @@ function bukaJadwal() {
                   rowL.classList.remove('row-lunas');
                   rowR.classList.remove('row-lunas');
                 }
+
+                // Update Status Cell secara dinamis (Indeks 12 setelah 12 kolom bulan)
+                if (rowR.cells[12]) {
+                  rowR.cells[12].innerHTML = lunasNow 
+                    ? '<span class="status-badge status-selesai" style="font-size:10px; padding:2px 8px;">Lunas</span>'
+                    : '<span class="status-badge status-belum" style="font-size:10px; padding:2px 8px;">Belum</span>';
+                }
+
                 google.script.run.updateIuranCell(r.nama, thn, blnIdx+1, r.iuranBulanan[blnIdx]);
               };
             })(row, bln, tahun, trL, trR);
@@ -8714,13 +8731,24 @@ function bukaJadwal() {
           trR.appendChild(td);
         }
 
+        // --- Kolom Status (Lunas / Belum) ---
+        const tdStatus = document.createElement('td');
+        tdStatus.style.textAlign = 'center';
+        const isLunasRow = row.iuranBulanan.every(v => v > 0);
+        tdStatus.innerHTML = isLunasRow 
+          ? '<span class="status-badge status-selesai" style="font-size:10px; padding:2px 8px;">Lunas</span>'
+          : '<span class="status-badge status-belum" style="font-size:10px; padding:2px 8px;">Belum</span>';
+        trR.appendChild(tdStatus);
+
         // Kolom Aksi (edit & hapus)
         const tdAksi = document.createElement('td');
         if (isAdmin) {
           const editBtn = document.createElement('button');
           editBtn.className = 'btn-small warning';
           editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-          editBtn.onclick = (function(n, t) { return function() { editNamaWargaIuran(n); }; })(row.nama, tahun);
+          editBtn.onclick = (function(n, k, t) { 
+            return function() { editWargaIuran(n, k, t); }; 
+          })(row.nama, row.kategori, tahun);
           tdAksi.appendChild(editBtn);
 
           const delBtn = document.createElement('button');
@@ -8787,6 +8815,64 @@ function bukaJadwal() {
         }).gantiNamaWargaIuran(namaLama, result.value);
       }
     });
+  }
+
+  function editWargaIuran(namaLama, kategoriLama, tahun) {
+    // Ambil daftar kategori terbaru
+    google.script.run.withSuccessHandler(function(kategoriList) {
+      // Buat opsi dropdown kategori
+      let options = '';
+      for (let k of kategoriList) {
+        const selected = (k.nama === kategoriLama) ? 'selected' : '';
+        options += `<option value="${k.nama}" ${selected}>${k.nama}</option>`;
+      }
+
+      Swal.fire({
+        title: 'Edit Data Warga',
+        html: `
+          <div style="text-align:left;">
+            <label class="muted">Nama Warga</label>
+            <input id="editNamaWarga" class="swal2-input" value="${escapeHtml(namaLama)}" style="margin:8px 0;">
+            <label class="muted">Kategori Iuran</label>
+            <select id="editKategoriWarga" class="swal2-input" style="margin:8px 0;">
+              ${options}
+            </select>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Perubahan',
+        confirmButtonColor: 'var(--primary-color)',
+        preConfirm: () => {
+          const namaBaru = document.getElementById('editNamaWarga').value.trim();
+          const kategoriBaru = document.getElementById('editKategoriWarga').value;
+          if (!namaBaru) {
+            Swal.showValidationMessage('Nama tidak boleh kosong');
+            return false;
+          }
+          return { namaBaru, kategoriBaru };
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const { namaBaru, kategoriBaru } = result.value;
+          showLoading('Menyimpan perubahan...');
+          google.script.run.withSuccessHandler(function(res) {
+            Swal.close();
+            if (res.status === 'success') {
+              showSuccess(res.pesan);
+              muatTabelIuran(); // refresh tabel
+            } else {
+              showError(res.pesan);
+            }
+          }).withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal menyimpan: ' + err.message);
+          }).updateNamaDanKategoriWarga(namaLama, namaBaru, kategoriBaru, tahun);
+        }
+      });
+    }).withFailureHandler(function(err) {
+      showError('Gagal memuat daftar kategori: ' + err.message);
+    }).getDaftarKategori();
   }
 
   function hapusBarisIuran(nama, tahun) {
@@ -9018,8 +9104,9 @@ function bukaJadwal() {
         + '<button class="btn-small danger" onclick="bukaFormKas(\'Pengeluaran\')">+ Tambah Pengeluaran</button>';
     } else { actionDiv.innerHTML = ''; }
     if (hasPermission('rt_iuran_manage')) { // Kontrol visibilitas tombol Kelola Iuran
-      // Hanya tampilkan tombol "Kelola Nama Warga" – tombol kategori dihilangkan
-      iuranAdminDiv.innerHTML = '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
+      iuranAdminDiv.innerHTML = 
+        '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button> ' +
+        '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
     } else {
       actionDiv.innerHTML = '';
       iuranAdminDiv.innerHTML = '';
