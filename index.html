@@ -1428,10 +1428,22 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Compact & Modern Iuran Table Fixes */
+    /* BUG 1 FIX: Modern Sticky Table for Iuran */
     .iuran-table {
       width: 100%;
-      min-width: 980px; /* Pastikan lebar minimum agar scroll horizontal aktif */
+      min-width: 1000px; 
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      font-size: 16px;
+    }
+
+    /* Vertical Sticky for Header */
+    .iuran-table thead th {
+      position: sticky !important;
+      top: 0;
+      z-index: 30;
+      background-color: var(--bg-app) !important;
       border-collapse: separate;
       border-spacing: 0;
       table-layout: fixed;
@@ -1452,7 +1464,7 @@
       position: -webkit-sticky !important;
       position: sticky !important;
       left: 0;
-      z-index: 26; /* Lebih tinggi dari sticky td dan th umum */
+      z-index: 45 !important; /* Highest for header corner */
       background-color: var(--bg-app) !important; /* Warna latar header */
       background-clip: padding-box;
       min-width: 180px;
@@ -1468,7 +1480,7 @@
       position: -webkit-sticky !important;
       position: sticky !important;
       left: 0;
-      z-index: 21; /* Lebih tinggi dari sticky td kolom 2 */
+      z-index: 25 !important;
       background-color: var(--bg-surface) !important; /* Warna latar body */
       background-clip: padding-box;
       min-width: 180px;
@@ -1488,12 +1500,12 @@
       position: -webkit-sticky !important;
       position: sticky !important;
       left: 180px;
-      z-index: 25; /* Lebih tinggi dari sticky td kolom 2, tapi di bawah sticky th kolom 1 */
+      z-index: 44 !important;
       background-color: var(--bg-app) !important; /* Warna latar header */
       background-clip: padding-box;
-      min-width: 130px;
-      max-width: 130px;
-      width: 130px;
+      min-width: 140px;
+      max-width: 140px;
+      width: 140px;
       border-right: 2px solid var(--primary-color) !important;
       box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1);
     }
@@ -1501,12 +1513,12 @@
       position: -webkit-sticky !important;
       position: sticky !important;
       left: 180px;
-      z-index: 20; /* Lebih rendah dari sticky td kolom 1 */
+      z-index: 24 !important;
       background-color: var(--bg-surface) !important; /* Warna latar body */
       background-clip: padding-box;
-      min-width: 130px;
-      max-width: 130px;
-      width: 130px;
+      min-width: 140px;
+      max-width: 140px;
+      width: 140px;
       font-size: 14px;
       color: var(--text-muted);
       padding: 15px 10px !important;
@@ -1538,9 +1550,9 @@
       .iuran-table th:nth-child(2),
       .iuran-table td:nth-child(2) {
         left: 150px;
-        min-width: 110px;
-        max-width: 110px;
-        width: 110px;
+        min-width: 120px;
+        max-width: 120px;
+        width: 120px;
       }
       .iuran-table td:nth-child(n+3):nth-child(-n+14) {
         width: 45px;
@@ -4282,6 +4294,19 @@
     } 
   }
 
+  // BUG 2 FIX: State Reset Helpers
+  function clearKelolaUserState() {
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) searchInput.value = '';
+    const list = document.getElementById('listUsers');
+    // Tidak menghapus allUsers (cache), tapi memastikan form tertutup
+    tutupForm('formCrudUser', 'wrapListUser');
+  }
+
+  function destroyKelolaUserListeners() {
+    // Memberishkan event jika ada addEventListener manual (saat ini dominan inline)
+  }
+
   function kembaliKeDashboard() {
     // Deteksi layar yang sedang aktif
     var currentView = null;
@@ -4294,10 +4319,15 @@
     }
 
     // Kasus khusus: Kelola User harus selalu kembali ke dashboard dengan replaceState
-    if (currentView === 'kelolaUserView') {
+    if (currentView === 'kelolaUserView' || location.hash === '#kelolaUser') {
+      destroyKelolaUserListeners();
+      clearKelolaUserState();
       sembunyikanSemuaLayar();
       document.getElementById('dashboardView').style.display = 'block';
-      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', '#dashboard');
+      
+      // Bersihkan history state dan hash URL secara total
+      history.replaceState({ view: 'dashboardView', tab: currentTab }, '', window.location.pathname);
+      
       if (typeof refreshNavVisibility === 'function') refreshNavVisibility();
       renderMenu(currentTab);
       updateNavActiveState(currentTab);
@@ -4316,11 +4346,36 @@
     renderMenu(currentTab);
     updateNavActiveState(currentTab);
   }
+  // Guard untuk mencegah double-render saat back/refresh.
+  // Fokus kasus: keluar dari kelolaUserView lalu kembali ke dashboard.
+  var __lastHandledViewKey = '';
+
+  function __guardBackRoute__(state) {
+    try {
+      const view = state && state.view ? String(state.view) : '';
+      const tab = state && state.tab ? String(state.tab) : '';
+      const key = view + '|' + tab;
+      if (key && key === __lastHandledViewKey) return false;
+      __lastHandledViewKey = key;
+      return true;
+    } catch (e) {
+      return true;
+    }
+  }
+
   window.addEventListener('popstate', function() {
     // Logika untuk menangani tombol back HP
+    if (!__guardBackRoute__(history.state || {})) return;
+
     sembunyikanSemuaLayar();
+
     if (history.state && history.state.view) {
       var state = history.state;
+      // Proteksi khusus: jangan render kelolaUser lagi jika kembali ke dashboard
+      if (state.view === 'dashboardView' && document.getElementById('kelolaUserView')) {
+        document.getElementById('kelolaUserView').style.display = 'none';
+      }
+
       document.getElementById(state.view).style.display = 'block';
       if (state.tab) {
         currentTab = state.tab;
@@ -4329,8 +4384,13 @@
         }
         updateNavActiveState(currentTab);
       }
+
       // Jalankan fungsi muat data jika ada
       if (state.onLoad && typeof window[state.onLoad] === 'function') {
+        // Proteksi: jika onLoad mengarah ke kelola user dan kita sedang dashboard, skip
+        if (state.view !== 'kelolaUserView' && String(state.onLoad).toLowerCase().includes('kelola')) {
+          return;
+        }
         window[state.onLoad]();
       }
     } else {
