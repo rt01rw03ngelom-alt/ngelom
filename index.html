@@ -1455,19 +1455,22 @@
     .iuran-left table, .iuran-right table {
       border-collapse: collapse;
       width: 100%;
+      table-layout: fixed; /* penting agar lebar kolom stabil */
     }
     .iuran-left th, .iuran-left td {
       width: auto;
       background: inherit;
       padding: 10px 8px;
       border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+      box-sizing: border-box;
     }
     .nama-cell {
       text-align: left !important;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 150px; /* Sesuai flex basis 160px dikurangi padding */
+      max-width: 130px;
       padding: 10px 8px;
     }
     .iuran-right th, .iuran-right td {
@@ -1475,6 +1478,13 @@
       text-align: center;
       padding: 10px 4px;
       border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+    /* Pastikan tinggi baris minimal sama */
+    .iuran-left tr,
+    .iuran-right tr {
+      height: 54px; /* tinggi minimal agar checkbox nyaman */
     }
     .iuran-left thead, .iuran-right thead {
       position: sticky;
@@ -1486,6 +1496,8 @@
       cursor: pointer;
       accent-color: var(--primary-color);
       transform: scale(1.1);
+      margin: 0;
+      display: inline-block;
     }
 
     .table-wrapper {
@@ -1694,10 +1706,22 @@
       .iuran-left { flex: 0 0 120px; } 
       .iuran-left th, .iuran-left td { 
         width: auto; 
-        font-size: 12px; 
-        padding: 8px 4px; 
+        font-size: 12px;
+        padding: 6px 4px;
       }
-      .iuran-right th, .iuran-right td { min-width: 40px; font-size: 11px; padding: 8px 2px; }
+      .iuran-right th, .iuran-right td {
+        min-width: 40px;
+        font-size: 12px;
+        padding: 6px 4px;
+      }
+      .iuran-left tr,
+      .iuran-right tr {
+        min-height: 40px;
+      }
+      /* Checkbox diperkecil agar muat */
+      .iuran-table input[type="checkbox"] {
+        transform: scale(0.9);
+      }
       .nama-cell { max-width: 110px; }
       .summary-info h2 { font-size: 1.1rem !important; }
 
@@ -1905,6 +1929,10 @@
     body.dark-mode .laporan-kas-table tbody td:nth-child(2) {
       background: var(--bg-surface) !important;
       border-right-color: var(--border-color);
+    }
+
+    .iuran-table td {
+      vertical-align: middle !important;
     }
   </style>
 </head>
@@ -4490,6 +4518,13 @@
     // Inisialisasi interaksi awan
     initCloudInteraction();
 
+    window.addEventListener('resize', function() {
+      syncIuranRowHeights();
+    });
+    window.addEventListener('orientationchange', function() {
+      setTimeout(syncIuranRowHeights, 300);
+    });
+
     // Jalankan Engine Web Push
     registrasiWebPush();
 
@@ -4990,7 +5025,7 @@
     setAplikasiActiveTab(tabName);
 
     document.getElementById('dashboardView').style.display = 'block';
-    history.pushState({view: 'dashboardView', tab: tabName}, '', '#' + tabName);
+    history.replaceState({view: 'dashboardView', tab: tabName}, '', '#' + tabName);
     renderMenu(tabName);
 
     var label;
@@ -5029,7 +5064,7 @@
     
     setAplikasiActiveTab('profil');
     
-    history.pushState({view: 'profilView', tab: 'profil'}, '', '#profil');
+    history.replaceState({view: 'profilView', tab: 'profil'}, '', '#profil');
 
     // Isi data user
     document.getElementById('profNama').innerText = currentUser.nama || '-';
@@ -7884,19 +7919,6 @@ function bukaJadwal() {
       }
       kasBackendTotalsGlobal = backendTotals;
 
-
-      var pemasukanList = [];
-      var pengeluaranList = [];
-      for (var i = 0; i < allKasData.length; i++) {
-        var jns = (allKasData[i].jenis || '').toLowerCase().trim();
-        if (jns === 'pemasukan') {
-          pemasukanList.push(allKasData[i]);
-        } else if (jns === 'pengeluaran') {
-          pengeluaranList.push(allKasData[i]);
-        }
-      }
-      originalPemasukanList = pemasukanList;
-      originalPengeluaranList = pengeluaranList;
       filterTabelTransaksi();
       muatRekapPeriode();
       updateRingkasanUI(backendTotals);
@@ -7914,143 +7936,70 @@ function bukaJadwal() {
   function filterTabelTransaksi() {
     var bulan = parseInt(document.getElementById('filterBulanTransaksi').value);
     var tahun = parseInt(document.getElementById('filterTahunTransaksi').value);
-    var filteredP = [];
-    var filteredG = [];
-    for (var i = 0; i < originalPemasukanList.length; i++) {
-      var item = originalPemasukanList[i];
+
+    var filtered = allKasData.filter(function(item) {
       var p = item.tanggal.split('-');
-      if (p.length === 3) {
-        var thn = parseInt(p[0]);
-        var bln = parseInt(p[1]);
-        if (bulan !== 0) {
-          if (thn === tahun && bln === bulan) {
-            filteredP.push(item);
-          }
-        } else {
-          if (thn === tahun) {
-            filteredP.push(item);
-          }
-        }
-      }
-    }
-    for (var j = 0; j < originalPengeluaranList.length; j++) {
-      var item2 = originalPengeluaranList[j];
-      var p2 = item2.tanggal.split('-');
-      if (p2.length === 3) {
-        var thn2 = parseInt(p2[0]);
-        var bln2 = parseInt(p2[1]);
-        if (bulan !== 0) {
-          if (thn2 === tahun && bln2 === bulan) {
-            filteredG.push(item2);
-          }
-        } else {
-          if (thn2 === tahun) {
-            filteredG.push(item2);
-          }
-        }
-      }
-    }
-    renderTabelTransaksi(filteredP, filteredG);
+      if (p.length !== 3) return false;
+      var itemThn = parseInt(p[0]);
+      var itemBln = parseInt(p[1]);
+      if (bulan === 0) return itemThn === tahun;
+      return itemThn === tahun && itemBln === bulan;
+    });
+
+    renderRekapKasWarga(filtered);
   }
 
-  function renderTabelTransaksi(pemasukanList, pengeluaranList) {
-    var tbodyP = document.getElementById('tbodyPemasukan');
-    var tbodyG = document.getElementById('tbodyPengeluaran');
-    tbodyP.innerHTML = '';
-    tbodyG.innerHTML = '';
-    var isAdmin = hasPermission('rt_iuran_manage');
-    for (var p = 0; p < pemasukanList.length; p++) {
-      var item = pemasukanList[p];
-      var row = tbodyP.insertRow();
-      row.insertCell(0).innerText = item.tanggal;
-      var cellKat = row.insertCell(1);
-      if (item.kategori) {
-        cellKat.innerHTML = '<span class="kategori-badge">' + item.kategori + '</span>';
-      } else {
-        cellKat.innerText = '-';
-      }
-      row.insertCell(2).innerText = item.deskripsi || '-';
-      var cellJumlah = row.insertCell(3);
-      cellJumlah.innerText = 'Rp ' + item.jumlah.toLocaleString('id-ID');
-      cellJumlah.style.color = '#10b981';
-      cellJumlah.style.fontWeight = '700';
-      var cellAksi = row.insertCell(4);
+  function renderRekapKasWarga(data) {
+    var container = document.getElementById('tbodyRekapKasWarga');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (!data || data.length === 0) {
+      container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
+      return;
+    }
+
+    var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    var runningSaldo = 0;
+    var isAdmin = hasPermission('rt_kas_crud');
+
+    sorted.forEach(function(item) {
+      var isPemasukan = (item.jenis === 'Pemasukan');
+      var nominal = item.jumlah || 0;
+
+      if (isPemasukan) runningSaldo += nominal;
+      else runningSaldo -= nominal;
+
+      var tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.tanggal || '-'}</td>
+        <td>${item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-'}</td>
+        <td>${item.deskripsi || '-'}</td>
+        <td style="color:#10b981; font-weight:700;">${isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-'}</td>
+        <td style="color:#ef4444; font-weight:700;">${!isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-'}</td>
+        <td style="font-weight:800; background:rgba(var(--primary-color-rgb), 0.05);">Rp ${runningSaldo.toLocaleString('id-ID')}</td>
+      `;
+
+      var tdAksi = document.createElement('td');
       if (isAdmin) {
         var eb = document.createElement('button');
         eb.className = 'btn-small';
         eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-        (function(it) {
-          eb.onclick = function() {
-            editKas(
-              it.id,
-              it.tanggal,
-              it.kategori,
-              it.deskripsi,
-              it.jenis,
-              it.jumlah
-            );
-          };
-        })(item);
+        eb.onclick = function() { editKas(item.id, item.tanggal, item.kategori, item.deskripsi, item.jenis, item.jumlah); };
+        
         var db = document.createElement('button');
         db.className = 'btn-small danger';
         db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
-        (function(id) {
-          db.onclick = function() {
-            hapusKas(id);
-          };
-        })(item.id);
-        cellAksi.appendChild(eb);
-        cellAksi.appendChild(db);
+        db.onclick = function() { hapusKas(item.id); };
+        
+        tdAksi.appendChild(eb);
+        tdAksi.appendChild(db);
       } else {
-        cellAksi.innerText = '-';
+        tdAksi.innerText = '-';
       }
-    }
-    for (var q = 0; q < pengeluaranList.length; q++) {
-      var item2 = pengeluaranList[q];
-      var row2 = tbodyG.insertRow();
-      row2.insertCell(0).innerText = item2.tanggal;
-      var cellKat2 = row2.insertCell(1);
-      if (item2.kategori) {
-        cellKat2.innerHTML = '<span class="kategori-badge">' + item2.kategori + '</span>';
-      } else {
-        cellKat2.innerText = '-';
-      }
-      row2.insertCell(2).innerText = item2.deskripsi || '-';
-      var cellJumlah2 = row2.insertCell(3);
-      cellJumlah2.innerText = 'Rp ' + item2.jumlah.toLocaleString('id-ID');
-      cellJumlah2.style.color = '#ef4444';
-      cellJumlah2.style.fontWeight = '700';
-      var cellAksi2 = row2.insertCell(4);
-      if (isAdmin) {
-        var eb2 = document.createElement('button');
-        eb2.className = 'btn-small';
-        eb2.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-        (function(it) {
-          eb2.onclick = function() {
-            editKas(
-              it.id,
-              it.tanggal,
-              it.kategori,
-              it.deskripsi,
-              it.jenis,
-              it.jumlah
-            );
-          };
-        })(item2);
-        var db2 = document.createElement('button');
-        db2.className = 'btn-small danger';
-        db2.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
-        (function(id) {
-          db2.onclick = function() {
-            hapusKas(id);
-          };
-        })(item2.id);
-        cellAksi2.appendChild(eb2);
-        cellAksi2.appendChild(db2);
-      } else {
-        cellAksi2.innerText = '-';
-      }
-    }
+      tr.appendChild(tdAksi);
+      container.appendChild(tr);
+    });
   }
 
   function muatGrafikKas() {
@@ -8429,12 +8378,12 @@ function bukaJadwal() {
       var totalPengeluaran = 0;
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
-          if (res.data[i].jenis === 'Pemasukan') {
-            totalPemasukan += res.data[i].jumlah;
-          } else {
-            totalPengeluaran += res.data[i].jumlah;
-          }
+          if (res.data[i].jenis === 'Pemasukan') totalPemasukan += res.data[i].jumlah;
+          else totalPengeluaran += res.data[i].jumlah;
         }
+        renderRekapKasWarga(res.data);
+      } else {
+        renderRekapKasWarga([]);
       }
       document.getElementById('rekapTotalPemasukan').innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       document.getElementById('rekapTotalPengeluaran').innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
@@ -8775,25 +8724,36 @@ function bukaJadwal() {
   }
 
   function syncIuranRowHeights() {
-    const leftRows = Array.from(document.querySelectorAll('.iuran-left tbody tr'));
-    const rightRows = Array.from(document.querySelectorAll('.iuran-right tbody tr'));
+    var leftRows = document.querySelectorAll('.iuran-left tbody tr');
+    var rightRows = document.querySelectorAll('.iuran-right tbody tr');
 
-    // Jalankan sinkronisasi hanya jika jumlah baris sama
-    if (leftRows.length === rightRows.length) {
-      leftRows.forEach((r, i) => {
-        // Reset tinggi ke auto untuk kalkulasi ulang jika layar berotasi
-        r.style.height = 'auto';
-        rightRows[i].style.height = 'auto';
-        
-        // Gunakan getBoundingClientRect untuk presisi sub-pixel pada mobile
-        const hL = r.getBoundingClientRect().height;
-        const hR = rightRows[i].getBoundingClientRect().height;
-        const maxH = Math.max(hL, hR);
-        
-        r.style.height = maxH + 'px';
-        rightRows[i].style.height = maxH + 'px';
-      });
+    // Pastikan jumlah baris sama
+    if (leftRows.length === 0 || leftRows.length !== rightRows.length) {
+      // Jika tidak sama, coba sinkronkan ulang setelah render selesai
+      setTimeout(syncIuranRowHeights, 100);
+      return;
     }
+
+    // Reset tinggi semua baris ke auto terlebih dahulu agar kalkulasi ulang akurat
+    leftRows.forEach(function(row) { row.style.height = 'auto'; });
+    rightRows.forEach(function(row) { row.style.height = 'auto'; });
+
+    // Gunakan requestAnimationFrame untuk memastikan layout sudah selesai
+    requestAnimationFrame(function() {
+      for (var i = 0; i < leftRows.length; i++) {
+        var leftRow = leftRows[i];
+        var rightRow = rightRows[i];
+        
+        // Ambil tinggi aktual (termasuk padding & border)
+        var hLeft = leftRow.getBoundingClientRect().height;
+        var hRight = rightRow.getBoundingClientRect().height;
+        var maxH = Math.max(hLeft, hRight, 44); // minimal 44px agar checkbox nyaman
+
+        // Set tinggi yang sama
+        leftRow.style.height = maxH + 'px';
+        rightRow.style.height = maxH + 'px';
+      }
+    });
   }
 
   function editNamaWargaIuran(namaLama) {
@@ -8815,6 +8775,64 @@ function bukaJadwal() {
         }).gantiNamaWargaIuran(namaLama, result.value);
       }
     });
+  }
+
+  function editWargaIuran(namaLama, kategoriLama, tahun) {
+    // Ambil daftar kategori terbaru
+    google.script.run.withSuccessHandler(function(kategoriList) {
+      // Buat opsi dropdown kategori
+      let options = '';
+      for (let k of kategoriList) {
+        const selected = (k.nama === kategoriLama) ? 'selected' : '';
+        options += `<option value="${k.nama}" ${selected}>${k.nama}</option>`;
+      }
+
+      Swal.fire({
+        title: 'Edit Data Warga',
+        html: `
+          <div style="text-align:left;">
+            <label class="muted">Nama Warga</label>
+            <input id="editNamaWarga" class="swal2-input" value="${escapeHtml(namaLama)}" style="margin:8px 0;">
+            <label class="muted">Kategori Iuran</label>
+            <select id="editKategoriWarga" class="swal2-input" style="margin:8px 0;">
+              ${options}
+            </select>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Perubahan',
+        confirmButtonColor: 'var(--primary-color)',
+        preConfirm: () => {
+          const namaBaru = document.getElementById('editNamaWarga').value.trim();
+          const kategoriBaru = document.getElementById('editKategoriWarga').value;
+          if (!namaBaru) {
+            Swal.showValidationMessage('Nama tidak boleh kosong');
+            return false;
+          }
+          return { namaBaru, kategoriBaru };
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const { namaBaru, kategoriBaru } = result.value;
+          showLoading('Menyimpan perubahan...');
+          google.script.run.withSuccessHandler(function(res) {
+            Swal.close();
+            if (res.status === 'success') {
+              showSuccess(res.pesan);
+              muatTabelIuran(); // refresh tabel
+            } else {
+              showError(res.pesan);
+            }
+          }).withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal menyimpan: ' + err.message);
+          }).updateNamaDanKategoriWarga(namaLama, namaBaru, kategoriBaru, tahun);
+        }
+      });
+    }).withFailureHandler(function(err) {
+      showError('Gagal memuat daftar kategori: ' + err.message);
+    }).getDaftarKategori();
   }
 
   function editWargaIuran(namaLama, kategoriLama, tahun) {
