@@ -8608,8 +8608,8 @@ function bukaJadwal() {
     const tbodyR = document.getElementById('tbodyIuranRight');
     const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-    // Render Headers
-    theadL.innerHTML = '<tr><th class="nama-cell">Nama</th><th class="kategori-cell">Kategori</th></tr>';
+    // HEADER KIRI: Hanya kolom Nama (tanpa Kategori)
+    theadL.innerHTML = '<tr><th class="nama-cell">Nama</th></tr>';
     let headerRHtml = '<tr>';
     for (let b = 0; b < 12; b++) headerRHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
     headerRHtml += '<th>Aksi</th></tr>';
@@ -8638,11 +8638,11 @@ function bukaJadwal() {
       // Urutkan anggota berdasarkan nama
       members.sort((a,b) => a.nama.localeCompare(b.nama));
 
-      // ----- Baris Header Grup (Split) -----
+      // BARIS GRUP (tanpa label kategori, hanya sebagai pemisah opsional)
       const groupRowL = document.createElement('tr');
       groupRowL.style.backgroundColor = `rgba(var(--primary-color-rgb), 0.08)`;
       const tdGroupL = document.createElement('td');
-      tdGroupL.colSpan = 2;
+      tdGroupL.colSpan = 1; // hanya 1 kolom
       tdGroupL.style.padding = '12px 10px';
       tdGroupL.style.fontWeight = '800';
       tdGroupL.style.color = `var(--primary-color)`; tdGroupL.style.fontSize = '16px';
@@ -8677,38 +8677,6 @@ function bukaJadwal() {
         tdNama.classList.add('nama-cell');
         tdNama.innerText = row.nama;
         trL.appendChild(tdNama);
-
-        // Kolom Kategori (dropdown untuk admin, teks biasa untuk warga)
-        const tdKategori = document.createElement('td');
-        tdKategori.classList.add('kategori-cell');
-        if (isAdmin) {
-          const select = document.createElement('select');
-          select.style.width = '100%';
-          select.style.padding = '4px 6px';
-          select.style.fontSize = '14px';
-          select.style.margin = '0';
-          const optEmpty = document.createElement('option');
-          optEmpty.value = '';
-          optEmpty.text = '-- Pilih --';
-          select.appendChild(optEmpty);
-          for (const k of daftarKategori) {
-            const opt = document.createElement('option');
-            opt.value = k.nama;
-            opt.text = `${k.nama}`;
-            if (row.kategori === k.nama) opt.selected = true;
-            select.appendChild(opt);
-          }
-          select.addEventListener('change', (function(r, thn) {
-            return function() {
-              r.kategori = this.value;
-              google.script.run.updateKategoriWarga(r.nama, thn, this.value);
-            };
-          })(row, tahun));
-          tdKategori.appendChild(select);
-        } else {
-          tdKategori.innerHTML = `<span class="kategori-chip">${row.kategori || '-'}</span>`;
-        }
-        trL.appendChild(tdKategori);
         tbodyL.appendChild(trL);
 
         // Kolom bulan (checkbox atau ikon)
@@ -8770,7 +8738,7 @@ function bukaJadwal() {
 
     // Jika tidak ada data sama sekali
     if (rows.length === 0) {
-      tbodyL.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px;">Belum ada data.</td></tr>';
+      tbodyL.innerHTML = '<tr><td colspan="1" style="text-align:center; padding:20px;">Belum ada data.</td></tr>';
       tbodyR.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:20px;">-</td></tr>';
     }
 
@@ -9050,8 +9018,8 @@ function bukaJadwal() {
         + '<button class="btn-small danger" onclick="bukaFormKas(\'Pengeluaran\')">+ Tambah Pengeluaran</button>';
     } else { actionDiv.innerHTML = ''; }
     if (hasPermission('rt_iuran_manage')) { // Kontrol visibilitas tombol Kelola Iuran
-      iuranAdminDiv.innerHTML = '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button>'
-        + '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
+      // Hanya tampilkan tombol "Kelola Nama Warga" – tombol kategori dihilangkan
+      iuranAdminDiv.innerHTML = '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
     } else {
       actionDiv.innerHTML = '';
       iuranAdminDiv.innerHTML = '';
