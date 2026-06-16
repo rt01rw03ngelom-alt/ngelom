@@ -8609,7 +8609,7 @@ function bukaJadwal() {
     const bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
     // Render Headers
-    theadL.innerHTML = '<tr><th>Nama</th><th>Kategori</th></tr>';
+    theadL.innerHTML = '<tr><th class="nama-cell">Nama</th><th class="kategori-cell">Kategori</th></tr>';
     let headerRHtml = '<tr>';
     for (let b = 0; b < 12; b++) headerRHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
     headerRHtml += '<th>Aksi</th></tr>';
@@ -8645,7 +8645,7 @@ function bukaJadwal() {
       tdGroupL.colSpan = 2;
       tdGroupL.style.padding = '12px 10px';
       tdGroupL.style.fontWeight = '800';
-      tdGroupL.style.color = `var(--primary-color)`;
+      tdGroupL.style.color = `var(--primary-color)`; tdGroupL.style.fontSize = '16px';
       tdGroupL.innerHTML = `<i class="material-icons" style="font-size:16px; vertical-align:middle;">label</i> ${category}`;
       groupRowL.appendChild(tdGroupL);
       tbodyL.appendChild(groupRowL);
@@ -8674,16 +8674,18 @@ function bukaJadwal() {
 
         // Kolom Nama
         const tdNama = document.createElement('td');
+        tdNama.classList.add('nama-cell');
         tdNama.innerText = row.nama;
         trL.appendChild(tdNama);
 
         // Kolom Kategori (dropdown untuk admin, teks biasa untuk warga)
         const tdKategori = document.createElement('td');
+        tdKategori.classList.add('kategori-cell');
         if (isAdmin) {
           const select = document.createElement('select');
           select.style.width = '100%';
           select.style.padding = '4px 6px';
-          select.style.fontSize = '12px';
+          select.style.fontSize = '14px';
           select.style.margin = '0';
           const optEmpty = document.createElement('option');
           optEmpty.value = '';
@@ -8692,7 +8694,7 @@ function bukaJadwal() {
           for (const k of daftarKategori) {
             const opt = document.createElement('option');
             opt.value = k.nama;
-            opt.text = `${k.nama} (Rp ${k.nominal.toLocaleString('id-ID')})`;
+            opt.text = `${k.nama}`;
             if (row.kategori === k.nama) opt.selected = true;
             select.appendChild(opt);
           }
@@ -8704,7 +8706,7 @@ function bukaJadwal() {
           })(row, tahun));
           tdKategori.appendChild(select);
         } else {
-          tdKategori.innerText = row.kategori || '-';
+          tdKategori.innerHTML = `<span class="kategori-chip">${row.kategori || '-'}</span>`;
         }
         trL.appendChild(tdKategori);
         tbodyL.appendChild(trL);
