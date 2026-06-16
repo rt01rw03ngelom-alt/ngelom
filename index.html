@@ -1867,7 +1867,7 @@
 
     .laporan-kas-table {
       width: 100%;
-      min-width: 820px; /* Ensure horizontal scroll */
+      min-width: 920px; /* Diperlebar agar 7 kolom muat dengan nyaman */
       border-collapse: separate;
       border-spacing: 0;
       table-layout: fixed; /* Important for fixed column widths */
@@ -7937,7 +7937,10 @@ function bukaJadwal() {
 
   function renderRekapKasWarga(data) {
     var container = document.getElementById('tbodyRekapKasWarga');
-    if (!container) return;
+    if (!container) {
+      console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
+      return;
+    }
 
     container.innerHTML = '';
     if (!data || data.length === 0) {
