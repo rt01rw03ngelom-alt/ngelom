@@ -248,7 +248,7 @@
       background: transparent;
       min-height: 100vh;
       padding: 0;
-      overflow-x: hidden;
+      overflow-x: visible;
     }
 
 
@@ -1618,17 +1618,6 @@
       border-right-color: var(--border-color) !important;
     }
 
-    .iuran-table td {
-      padding: 8px 6px !important;
-      white-space: nowrap;
-      vertical-align: middle;
-    }
-
-    .iuran-table td:nth-child(n+3):nth-child(-n+14) {
-      width: 48px;
-      text-align: center;
-    }
-
     .iuran-table input[type="checkbox"] {
       cursor: pointer;
       accent-color: var(--primary-color);
@@ -1761,13 +1750,8 @@
       flex-wrap: wrap;
     }
 
-    .table-container {
-      background: var(--bg-surface);
-      border-radius: var(--border-radius);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.5rem;
-    }
+    /* The .table-container now acts as a structural wrapper, visual styles moved to .laporan-kas-scroll */
+    .table-container { margin-bottom: 1.5rem; }
 
     .table-header {
       background: var(--bg-app);
@@ -1959,7 +1943,84 @@
       padding-left: 40px !important;
       margin: 0 !important;
     }
+    
+    /* ======================== Laporan Kas Warga Sticky Columns ======================== */
+    .laporan-kas-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      width: 100%;
+      background: var(--bg-surface); /* Moved from .table-container */
+      border-radius: var(--border-radius); /* Moved from .table-container */
+      box-shadow: var(--shadow-sm); /* Moved from .table-container */
+    }
 
+    .laporan-kas-table {
+      width: 100%;
+      min-width: 820px; /* Ensure horizontal scroll */
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed; /* Important for fixed column widths */
+    }
+
+    .laporan-kas-table th,
+    .laporan-kas-table td {
+      box-sizing: border-box; /* Ensure padding doesn't expand width */
+      vertical-align: middle;
+      overflow: hidden; /* Hide overflowing text */
+      white-space: nowrap; /* Prevent wrapping in sticky columns */
+      /* Default padding and border-bottom from general table rules */
+    }
+
+    /* Sticky Kolom 1: Tanggal */
+    .laporan-kas-table thead th:nth-child(1),
+    .laporan-kas-table tbody td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 30; /* User specified */
+      background: var(--bg-surface) !important; /* Ensure background for sticky */
+      min-width: 160px;
+      max-width: 160px;
+      width: 160px;
+      border-right: 1px solid var(--border-color);
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    /* Sticky Kolom 2: Kategori */
+    .laporan-kas-table thead th:nth-child(2),
+    .laporan-kas-table tbody td:nth-child(2) {
+      position: sticky;
+      left: 160px; /* After first column */
+      z-index: 29; /* User specified */
+      background: var(--bg-surface) !important; /* Ensure background for sticky */
+      min-width: 160px;
+      max-width: 160px;
+      width: 160px;
+      border-right: 2px solid var(--primary-color) !important; /* Stronger separator */
+      box-shadow: 2px 0 8px rgba(0,0,0,.06); /* Shadow for visual separation */
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    /* Sticky Header */
+    .laporan-kas-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 40; /* Highest z-index for header */
+      background: var(--bg-app) !important; /* Ensure header background is consistent */
+      color: var(--text-main);
+    }
+
+    /* Dark mode adjustments for sticky columns */
+    body.dark-mode .laporan-kas-table thead th:nth-child(1),
+    body.dark-mode .laporan-kas-table tbody td:nth-child(1),
+    body.dark-mode .laporan-kas-table thead th:nth-child(2),
+    body.dark-mode .laporan-kas-table tbody td:nth-child(2) {
+      background: var(--bg-surface) !important;
+      border-right-color: var(--border-color);
+    }
   </style>
 </head>
 <body>
@@ -3070,7 +3131,7 @@
       </select>
       <button class="btn-small" onclick="muatTabelIuran()">Tampilkan</button>
     </div>
-    <div class="table-wrapper">
+    <div class="iuran-scroll">
       <table class="iuran-table" id="tabelIuran">
         <thead id="theadIuran"></thead>
         <tbody id="tbodyIuran"></tbody>
