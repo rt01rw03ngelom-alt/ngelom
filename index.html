@@ -1436,32 +1436,36 @@
       overflow: hidden;
       background: var(--bg-surface);
     }
+    /* Refined Split Table Layout */
     .iuran-left {
-      flex: 0 0 280px;
+      flex: 0 0 240px; /* Lebar optimal untuk Nama + Kategori di mobile */
       z-index: 20;
       background: var(--bg-surface);
       border-right: 2px solid var(--primary-color);
+      box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
     .iuran-right {
       flex: 1;
       overflow-x: auto;
       overflow-y: hidden;
       background: var(--bg-surface);
+      /* Scrollbar halus untuk mobile */
+      -webkit-overflow-scrolling: touch;
     }
     .iuran-left table, .iuran-right table {
       border-collapse: collapse;
-      width: max-content;
+      width: 100%;
     }
     .iuran-left th, .iuran-left td {
-      width: 140px;
+      width: 120px; /* Bagi rata 240px menjadi 2 kolom @120px */
       background: inherit;
-      padding: 12px 10px;
+      padding: 10px 8px;
       border-bottom: 1px solid var(--border-color);
     }
     .iuran-right th, .iuran-right td {
-      min-width: 65px;
+      min-width: 55px; /* Sedikit lebih ramping agar lebih banyak bulan terlihat */
       text-align: center;
-      padding: 12px 5px;
+      padding: 10px 4px;
       border-bottom: 1px solid var(--border-color);
     }
     .iuran-left thead, .iuran-right thead {
@@ -1679,16 +1683,14 @@
 
       /* Tabel iuran: hindari elemen terlalu lebar, namun tetap terbaca */
       .iuran-table { font-size: 13px; }
-      .iuran-table th:nth-child(1), .iuran-table td:nth-child(1) { min-width: 140px; max-width: 140px; width: 140px; padding: 10px 10px !important; }
-      .iuran-table th:nth-child(2), .iuran-table td:nth-child(2) { min-width: 110px; max-width: 110px; width: 110px; left: 140px; padding: 10px 8px !important; }
-      .iuran-left { flex: 0 0 250px; }
-      .iuran-left th, .iuran-left td { width: 125px; font-size: 12px; }
-      .iuran-right th, .iuran-right td { min-width: 55px; }
-
-      .filter-bar {
-        flex-direction: column;
-        align-items: stretch;
+      .iuran-left { flex: 0 0 210px; } /* Lebih ramping di HP kecil */
+      .iuran-left th, .iuran-left td { 
+        width: 105px; 
+        font-size: 12px; 
+        padding: 10px 6px; 
       }
+      .iuran-right th, .iuran-right td { min-width: 50px; font-size: 11px; }
+      .summary-info h2 { font-size: 1.1rem !important; }
 
       .filter-group select,
       .filter-group input {
@@ -8775,22 +8777,25 @@ function bukaJadwal() {
   }
 
   function syncIuranRowHeights() {
-    const leftRows = document.querySelectorAll('.iuran-left tbody tr');
-    const rightRows = document.querySelectorAll('.iuran-right tbody tr');
+    const leftRows = Array.from(document.querySelectorAll('.iuran-left tbody tr'));
+    const rightRows = Array.from(document.querySelectorAll('.iuran-right tbody tr'));
 
-    leftRows.forEach((r, i) => {
-      if (rightRows[i]) {
-        // Reset dulu biar dapet tinggi natural
+    // Jalankan sinkronisasi hanya jika jumlah baris sama
+    if (leftRows.length === rightRows.length) {
+      leftRows.forEach((r, i) => {
+        // Reset tinggi ke auto untuk kalkulasi ulang jika layar berotasi
         r.style.height = 'auto';
         rightRows[i].style.height = 'auto';
         
-        const h = Math.max(r.offsetHeight, rightRows[i].offsetHeight);
-        if (h > 0) {
-          r.style.height = h + 'px';
-          rightRows[i].style.height = h + 'px';
-        }
-      }
-    });
+        // Gunakan getBoundingClientRect untuk presisi sub-pixel pada mobile
+        const hL = r.getBoundingClientRect().height;
+        const hR = rightRows[i].getBoundingClientRect().height;
+        const maxH = Math.max(hL, hR);
+        
+        r.style.height = maxH + 'px';
+        rightRows[i].style.height = maxH + 'px';
+      });
+    }
   }
 
   function editNamaWargaIuran(namaLama) {
