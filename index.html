@@ -248,7 +248,7 @@
       background: transparent;
       min-height: 100vh;
       padding: 0;
-      overflow-x: visible;
+      overflow-x: visible; /* Tetap visible agar sticky tidak rusak */
     }
 
 
@@ -258,7 +258,7 @@
         box-shadow: var(--shadow-lg);
         margin: 20px auto;
         border-radius: var(--border-radius);
-        overflow: hidden;
+        overflow: visible;
       }
 
       .menu-container {
@@ -1172,11 +1172,9 @@
     @keyframes slideInRight {
       from { 
         opacity: 0; 
-        transform: translateX(30px); 
       }
       to { 
         opacity: 1; 
-        transform: translateX(0); 
       }
     }
 
@@ -1428,247 +1426,66 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Compact & Modern Iuran Table Fixes */
-    .iuran-table {
-      width: 100%;
-      min-width: 980px; /* Pastikan lebar minimum agar scroll horizontal aktif */
-      border-collapse: separate;
-      border-spacing: 0;
-      table-layout: fixed;
-      font-size: 16px;
-      margin: 0 auto;
-    }
-
-    /* FIX STICKY COLUMNS Manajemen Iuran Warga: scroll harus terjadi pada wrapper yang benar */
+    /* ======================== Manajemen Iuran Warga Sticky Columns (Excel Freeze) ======================== */
     .iuran-scroll{
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      position: relative;
-      width: 100%;
-      border-radius: var(--border-radius);
-      background: transparent;
+      width:100%;
+      overflow-x:auto;
+      overflow-y:auto;
+      position:relative;
     }
 
-    /* ======================== Laporan Kas Warga Sticky Columns ======================== */
-    .laporan-kas-scroll {
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      position: relative;
-      width: 100%;
-      border-radius: var(--border-radius);
+    .iuran-table{
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:max-content;
     }
 
-    .laporan-kas-table {
-      width: 100%;
-      min-width: 820px;
-      border-collapse: separate;
-      border-spacing: 0;
-      table-layout: fixed;
+    /* Freeze kolom pertama (NAMA) */
+    .iuran-table th:nth-child(1),
+    .iuran-table td:nth-child(1){
+      position:sticky;
+      left:0;
+      z-index:30;
+      background:var(--bg-surface);
+      min-width:150px;
+      width:150px;
+      box-shadow: 2px 0 0 rgba(239,68,68,.35);
     }
 
-    /* Kolom Tanggal => Sticky Kolom 1 */
-    .laporan-kas-table th:nth-child(1),
-    .laporan-kas-table td:nth-child(1) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 0;
-      z-index: 20;
-      background: var(--bg-surface) !important;
-      border-right: 1px solid var(--border-color);
+    /* Freeze kolom kedua (KATEGORI) */
+    .iuran-table th:nth-child(2),
+    .iuran-table td:nth-child(2){
+      position:sticky;
+      left:150px;
+      z-index:29;
+      background:var(--bg-surface);
+      min-width:110px;
+      width:110px;
+      box-shadow: 3px 0 10px rgba(0,0,0,.08);
     }
 
-    /* Kolom Kategori => Sticky Kolom 2 */
-    .laporan-kas-table th:nth-child(2),
-    .laporan-kas-table td:nth-child(2) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 160px;
-      z-index: 19;
-      background: var(--bg-surface) !important;
-      border-right: 2px solid var(--primary-color) !important;
-    }
-
-    .laporan-kas-table th:nth-child(1),
-    .laporan-kas-table td:nth-child(1) {
-      min-width: 160px;
-      max-width: 160px;
-      width: 160px;
-      padding-left: 12px;
-      padding-right: 12px;
-    }
-
-    .laporan-kas-table th:nth-child(2),
-    .laporan-kas-table td:nth-child(2) {
-      min-width: 160px;
-      max-width: 160px;
-      width: 160px;
-      padding-left: 10px;
-      padding-right: 10px;
-    }
-
-    /* Pastikan semua sel memiliki box-sizing border-box */
-    .iuran-table th,
-    .iuran-table td {
-      box-sizing: border-box;
-      vertical-align: middle;
-      overflow: hidden; /* Penting untuk teks panjang */
-    }
-
-    /* Kolom Nama (kolom ke-1) */
-    .iuran-table th:nth-child(1) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 0;
-      z-index: 26; /* Lebih tinggi dari sticky td dan th umum */
-      background-color: var(--bg-app) !important; /* Warna latar header */
-      background-clip: padding-box;
-      min-width: 180px;
-      max-width: 180px;
-      width: 180px;
-      white-space: normal;
-      word-break: break-word;
-      border-right: 1px solid var(--border-color);
-      padding: 15px 12px !important;
-      box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
-    }
-    .iuran-table td:nth-child(1) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 0;
-      z-index: 21; /* Lebih tinggi dari sticky td kolom 2 */
-      background-color: var(--bg-surface) !important; /* Warna latar body */
-      background-clip: padding-box;
-      min-width: 180px;
-      max-width: 180px;
-      width: 180px;
-      white-space: normal;
-      word-break: break-word;
-      font-weight: 800;
-      color: var(--text-main);
-      border-right: 1px solid var(--border-color);
-      padding: 15px 12px !important;
-      box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
-    }
-
-    /* Kolom Kategori (kolom ke-2) */
-    .iuran-table th:nth-child(2) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 180px;
-      z-index: 25; /* Lebih tinggi dari sticky td kolom 2, tapi di bawah sticky th kolom 1 */
-      background-color: var(--bg-app) !important; /* Warna latar header */
-      background-clip: padding-box;
-      min-width: 130px;
-      max-width: 130px;
-      width: 130px;
-      border-right: 2px solid var(--primary-color) !important;
-      box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1);
-    }
-    .iuran-table td:nth-child(2) {
-      position: -webkit-sticky !important;
-      position: sticky !important;
-      left: 180px;
-      z-index: 20; /* Lebih rendah dari sticky td kolom 1 */
-      background-color: var(--bg-surface) !important; /* Warna latar body */
-      background-clip: padding-box;
-      min-width: 130px;
-      max-width: 130px;
-      width: 130px;
-      font-size: 14px;
-      color: var(--text-muted);
-      padding: 15px 10px !important;
-      border-right: 2px solid var(--primary-color); /* Border untuk pemisah visual */
-      box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1); /* Bayangan untuk efek kedalaman */
-    }
-
-    .iuran-table th {
-      background-color: var(--bg-app) !important;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-size: 11px;
-      padding: 10px 6px !important;
-      z-index: 15 !important; /* Z-index default untuk header non-sticky, lebih rendah dari sticky */
-    }
-
-    @media (max-width: 500px) {
-      .iuran-table {
-        min-width: 900px;
-        font-size: 15px;
-      }
-      .iuran-table th:nth-child(1),
-      .iuran-table td:nth-child(1) {
-        min-width: 150px;
-        max-width: 150px;
-        width: 150px;
-      }
-      .iuran-table th:nth-child(2),
-      .iuran-table td:nth-child(2) {
-        left: 150px;
-        min-width: 110px;
-        max-width: 110px;
-        width: 110px;
-      }
-      .iuran-table td:nth-child(n+3):nth-child(-n+14) {
-        width: 45px;
-        padding: 8px 2px !important;
-      }
-      .iuran-table input[type="checkbox"] {
-        width: 26px !important;
-        height: 26px !important;
-      }
-    }
-
-    /* Freeze columns (Excel-like) for Manajemen Iuran Warga */
-    .iuran-table thead th,
-    .iuran-table tbody td{
-      box-sizing:border-box;
-    }
-
-    /* Header sticky */
+    /* Header tetap di atas */
     .iuran-table thead th{
       position:sticky;
       top:0;
       z-index:50;
-      background:var(--bg-app);
     }
 
-    /* Prioritas z-index untuk header */
+    /* PRIORITAS HEADER STICKY */
     .iuran-table thead th:nth-child(1){
       z-index:60;
     }
+
     .iuran-table thead th:nth-child(2){
       z-index:59;
     }
 
-    /* Kolom NAMA sticky sudah didefinisikan di atas; tambah shadow pemisah */
-    .iuran-table th:nth-child(1),
-    .iuran-table td:nth-child(1){
-      box-shadow:2px 0 0 rgba(239,68,68,.35);
-    }
-
-    /* Kolom KATEGORI sticky */
-    .iuran-table th:nth-child(2),
-    .iuran-table td:nth-child(2){
-      box-shadow:3px 0 10px rgba(0,0,0,.08);
-    }
-
-    /* Dark mode aman */
-    body.dark-mode .iuran-table th:nth-child(1),
-    body.dark-mode .iuran-table td:nth-child(1),
-    body.dark-mode .iuran-table th:nth-child(2),
-    body.dark-mode .iuran-table td:nth-child(2){
-      background:var(--bg-surface) !important;
-    }
-
+    /* Dark mode tetap aman */
     body.dark-mode .iuran-table th:nth-child(1),
     body.dark-mode .iuran-table td:nth-child(1),
     body.dark-mode .iuran-table th:nth-child(2),
     body.dark-mode .iuran-table td:nth-child(2) {
       background-color: var(--bg-surface) !important;
-      border-right-color: var(--border-color) !important;
     }
 
     .iuran-table input[type="checkbox"] {
@@ -1882,7 +1699,7 @@
       .iuran-table { font-size: 13px; }
       .iuran-table th:nth-child(1), .iuran-table td:nth-child(1) { min-width: 140px; max-width: 140px; width: 140px; padding: 10px 10px !important; }
       .iuran-table th:nth-child(2), .iuran-table td:nth-child(2) { min-width: 110px; max-width: 110px; width: 110px; left: 140px; padding: 10px 8px !important; }
-      .iuran-scroll { overflow-x: hidden; }
+.iuran-scroll { overflow-x: auto; }
 
 
       .filter-bar {
