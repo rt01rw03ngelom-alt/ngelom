@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.8';
+    const APP_VERSION = '1.2.6';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -2998,28 +2998,14 @@
 
     <div class="table-container">
       <div class="table-header">
-        <span><i class="material-icons">arrow_upward</i> Pemasukan</span>
+        <span><i class="material-icons">receipt_long</i> Rekap Transaksi Kas Warga</span>
       </div>
       <div class="laporan-kas-scroll">
         <table class="laporan-kas-table">
           <thead>
-            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
+            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th><th>Aksi</th></tr>
           </thead>
-          <tbody id="tbodyPemasukan"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <div class="table-header">
-        <span><i class="material-icons">arrow_downward</i> Pengeluaran</span>
-      </div>
-      <div class="laporan-kas-scroll">
-        <table class="laporan-kas-table">
-          <thead>
-            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
-          </thead>
-          <tbody id="tbodyPengeluaran"></tbody>
+          <tbody id="tbodyRekapKasWarga"></tbody>
         </table>
       </div>
     </div>
