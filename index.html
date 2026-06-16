@@ -1439,6 +1439,64 @@
       margin: 0 auto;
     }
 
+    /* ======================== Laporan Kas Warga Sticky Columns ======================== */
+    .laporan-kas-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      width: 100%;
+      border-radius: var(--border-radius);
+    }
+
+    .laporan-kas-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+    }
+
+    /* Kolom Tanggal => Sticky Kolom 1 */
+    .laporan-kas-table th:nth-child(1),
+    .laporan-kas-table td:nth-child(1) {
+      position: -webkit-sticky !important;
+      position: sticky !important;
+      left: 0;
+      z-index: 20;
+      background: var(--bg-surface) !important;
+      border-right: 1px solid var(--border-color);
+    }
+
+    /* Kolom Kategori => Sticky Kolom 2 */
+    .laporan-kas-table th:nth-child(2),
+    .laporan-kas-table td:nth-child(2) {
+      position: -webkit-sticky !important;
+      position: sticky !important;
+      left: 160px;
+      z-index: 19;
+      background: var(--bg-surface) !important;
+      border-right: 2px solid var(--primary-color) !important;
+    }
+
+    .laporan-kas-table th:nth-child(1),
+    .laporan-kas-table td:nth-child(1) {
+      min-width: 160px;
+      max-width: 160px;
+      width: 160px;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .laporan-kas-table th:nth-child(2),
+    .laporan-kas-table td:nth-child(2) {
+      min-width: 160px;
+      max-width: 160px;
+      width: 160px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
     /* Pastikan semua sel memiliki box-sizing border-box */
     .iuran-table th,
     .iuran-table td {
@@ -2968,8 +3026,8 @@
       <div class="table-header">
         <span><i class="material-icons">arrow_upward</i> Pemasukan</span>
       </div>
-      <div class="table-wrapper">
-        <table>
+      <div class="laporan-kas-scroll">
+        <table class="laporan-kas-table">
           <thead>
             <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
           </thead>
@@ -2982,8 +3040,8 @@
       <div class="table-header">
         <span><i class="material-icons">arrow_downward</i> Pengeluaran</span>
       </div>
-      <div class="table-wrapper">
-        <table>
+      <div class="laporan-kas-scroll">
+        <table class="laporan-kas-table">
           <thead>
             <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr>
           </thead>
@@ -4302,13 +4360,21 @@
 
     // Kasus khusus: Kelola User harus selalu kembali ke dashboard dengan replaceState
     if (currentView === 'kelolaUserView') {
+      // Invalidate token agar callback async render Kelola User lama tidak menimpa DOM
+      try { window.__activeViewToken++; } catch (e) {}
+
       // Cleanup UI (hindari re-render/interval menimpa saat callback lama selesai)
       try {
         const wrapListUser = document.getElementById('wrapListUser');
-        if (wrapListUser) wrapListUser.style.display = 'none';
+        if (wrapListUser) {
+          wrapListUser.style.display = 'none';
+          wrapListUser.innerHTML = '';
+        }
 
         const formCrudUser = document.getElementById('formCrudUser');
-        if (formCrudUser) formCrudUser.style.display = 'none';
+        if (formCrudUser) {
+          formCrudUser.style.display = 'none';
+        }
 
         // stop polling lokal jika ada
         if (window.__kelolaUserIntervals) {
@@ -4317,6 +4383,15 @@
           });
           window.__kelolaUserIntervals = [];
         }
+
+        // stop polling/timeout lokal tambahan (jika ada)
+        if (window.__kelolaUserPollHandle) {
+          try { clearInterval(window.__kelolaUserPollHandle); } catch(e) {}
+          window.__kelolaUserPollHandle = null;
+        }
+
+        // Bersihkan kemungkinan state tersimpan
+        try { sessionStorage.removeItem('kelolaUserOpen'); } catch (e) {}
       } catch (e) {}
 
       sembunyikanSemuaLayar();
