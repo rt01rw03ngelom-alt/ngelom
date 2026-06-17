@@ -1435,6 +1435,7 @@
       border-radius: var(--border-radius);
       overflow: hidden;
       background: var(--bg-surface);
+      margin-top: 10px;
     }
     /* Refined Split Table Layout */
     .iuran-left {
@@ -1444,19 +1445,108 @@
       border-right: 2px solid var(--primary-color);
       box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
-    .iuran-right {
+    .iuran-right, .table-scroll {
       flex: 1;
       overflow-x: auto;
       overflow-y: hidden;
       background: var(--bg-surface);
       /* Scrollbar halus untuk mobile */
       -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     .iuran-left table, .iuran-right table {
       border-collapse: collapse;
       width: 100%;
-      table-layout: fixed; /* penting agar lebar kolom stabil */
+      table-layout: fixed; 
     }
+    
+    /* Perbaikan 1: AREA BULAN */
+    .month-col,
+    td[data-bulan] {
+      width: 58px;
+      min-width: 58px;
+      max-width: 58px;
+      padding: 10px 4px;
+      text-align: center;
+    }
+    
+    thead .month-col {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      white-space: nowrap;
+    }
+
+    /* Perbaikan 2: CHECKLIST */
+    .checkbox-cell {
+      width: 58px;
+      height: 56px;
+      padding: 0;
+    }
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    /* Perbaikan 3: STATUS */
+    th.status-col,
+    td.status-col {
+      width: 110px;
+      min-width: 110px;
+      text-align: center;
+      padding-right: 12px;
+    }
+
+    .status-badge {
+      min-width: 72px;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Perbaikan 4: AKSI */
+    th.action-col,
+    td.action-col {
+      width: 100px;
+      min-width: 100px;
+      padding: 0 10px;
+      padding-left: 12px;
+      text-align: center;
+    }
+    .action-group {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+    .action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 !important;
+    }
+
+    /* Perbaikan 5 & 6: HEADER & BARIS DATA */
+    .iuran-table thead th {
+      height: 64px;
+      vertical-align: middle;
+    }
+    .iuran-table tbody tr {
+      height: 72px;
+    }
+    .iuran-table tbody td {
+      vertical-align: middle;
+    }
+
     .iuran-left th, .iuran-left td {
       width: auto;
       background: inherit;
@@ -1465,27 +1555,7 @@
       vertical-align: middle;
       box-sizing: border-box;
     }
-    .nama-cell {
-      text-align: left !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 130px;
-      padding: 10px 8px;
-    }
-    .iuran-right th, .iuran-right td {
-      min-width: 55px; /* Sedikit lebih ramping agar lebih banyak bulan terlihat */
-      text-align: center;
-      padding: 10px 4px;
-      border-bottom: 1px solid var(--border-color);
-      vertical-align: middle;
-      box-sizing: border-box;
-    }
-    /* Pastikan tinggi baris minimal sama */
-    .iuran-left tr,
-    .iuran-right tr {
-      height: 54px; /* tinggi minimal agar checkbox nyaman */
-    }
+
     .iuran-left thead, .iuran-right thead {
       position: sticky;
       top: 0;
@@ -8598,8 +8668,8 @@ function renderRekapKasWarga(data) {
     // HEADER KIRI: Hanya kolom Nama (tanpa Kategori)
     theadL.innerHTML = '<tr><th class="nama-cell">Nama</th></tr>';
     let headerRHtml = '<tr>';
-    for (let b = 0; b < 12; b++) headerRHtml += `<th style="text-align:center;">${bulanSingkat[b]}</th>`;
-    headerRHtml += '<th>Status</th><th>Aksi</th></tr>';
+    for (let b = 0; b < 12; b++) headerRHtml += `<th class="month-col">${bulanSingkat[b]}</th>`;
+    headerRHtml += '<th class="status-col">Status</th><th class="action-col">Aksi</th></tr>';
     theadR.innerHTML = headerRHtml;
 
     // Kosongkan bodies
@@ -8669,14 +8739,15 @@ function renderRekapKasWarga(data) {
         // Kolom bulan (checkbox atau ikon)
         for (let bln = 0; bln < 12; bln++) {
           const td = document.createElement('td');
-          td.style.textAlign = 'center';
+          td.className = 'checkbox-cell';
+          td.setAttribute('data-bulan', bln);
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'checkbox-wrapper';
+          
           if (isAdmin) {
             const chk = document.createElement('input');
             chk.type = 'checkbox';
-            chk.style.width = '24px';
-            chk.style.height = '24px';
-            chk.style.cursor = 'pointer';
-            chk.style.margin = '4px';
             chk.checked = (row.iuranBulanan[bln] > 0);
             chk.onchange = (function(r, blnIdx, thn, rowL, rowR) {
               return function(e) {
@@ -8700,40 +8771,47 @@ function renderRekapKasWarga(data) {
                 google.script.run.updateIuranCell(r.nama, thn, blnIdx+1, r.iuranBulanan[blnIdx]);
               };
             })(row, bln, tahun, trL, trR);
-            td.appendChild(chk);
+            wrapper.appendChild(chk);
           } else {
             const icon = row.iuranBulanan[bln] > 0 ? 'check_circle' : 'cancel';
             const color = row.iuranBulanan[bln] > 0 ? '#10b981' : '#cbd5e1';
-            td.innerHTML = `<i class="material-icons" style="font-size:18px; color:${color};">${icon}</i>`;
+            wrapper.innerHTML = `<i class="material-icons" style="font-size:18px; color:${color};">${icon}</i>`;
           }
+          td.appendChild(wrapper);
           trR.appendChild(td);
         }
 
         // --- Kolom Status (Lunas / Belum) ---
         const tdStatus = document.createElement('td');
-        tdStatus.style.textAlign = 'center';
+        tdStatus.className = 'status-col';
         const isLunasRow = row.iuranBulanan.every(v => v > 0);
         tdStatus.innerHTML = isLunasRow 
-          ? '<span class="status-badge status-selesai" style="font-size:10px; padding:2px 8px;">Lunas</span>'
-          : '<span class="status-badge status-belum" style="font-size:10px; padding:2px 8px;">Belum</span>';
+          ? '<span class="status-badge status-selesai">Lunas</span>'
+          : '<span class="status-badge status-belum">Belum</span>';
         trR.appendChild(tdStatus);
 
         // Kolom Aksi (edit & hapus)
         const tdAksi = document.createElement('td');
+        tdAksi.className = 'action-col';
         if (isAdmin) {
+          const group = document.createElement('div');
+          group.className = 'action-group';
+
           const editBtn = document.createElement('button');
-          editBtn.className = 'btn-small warning';
+          editBtn.className = 'btn-small warning action-btn';
           editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
           editBtn.onclick = (function(n, k, t) { 
             return function() { editWargaIuran(n, k, t); }; 
           })(row.nama, row.kategori, tahun);
-          tdAksi.appendChild(editBtn);
+          group.appendChild(editBtn);
 
           const delBtn = document.createElement('button');
-          delBtn.className = 'btn-small danger';
+          delBtn.className = 'btn-small danger action-btn';
           delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
           delBtn.onclick = (function(n, t) { return function() { hapusBarisIuran(n, t); }; })(row.nama, tahun);
-          tdAksi.appendChild(delBtn);
+          group.appendChild(delBtn);
+          
+          tdAksi.appendChild(group);
         } else {
           tdAksi.innerText = '-';
         }
@@ -8770,7 +8848,7 @@ function renderRekapKasWarga(data) {
         var rightRow = rightRows[i];
         var hLeft = leftRow.getBoundingClientRect().height;
         var hRight = rightRow.getBoundingClientRect().height;
-        var maxH = Math.max(hLeft, hRight, 44);
+        var maxH = Math.max(hLeft, hRight, 72);
 
         leftRow.style.height = maxH + 'px';
         rightRow.style.height = maxH + 'px';
