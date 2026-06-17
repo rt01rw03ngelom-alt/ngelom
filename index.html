@@ -5127,9 +5127,6 @@
       const threshold = 70; 
       const modules = ['warga', 'pkk', 'karangtaruna', 'profil']; 
       let currentIdx = modules.indexOf(currentTab);
-      
-      if (document.getElementById('profilView').style.display === 'block') currentIdx = modules.indexOf('profil');
-      if (currentIdx === -1) return;
 
       let targetIdx = -1;
       if (deltaX > threshold && currentIdx > 0) {
@@ -5140,11 +5137,7 @@
 
       if (targetIdx !== -1) {
         const targetModule = modules[targetIdx];
-        if (targetModule === 'profil') {
-          tampilkanProfil();
-        } else {
-          pilihMenu(targetModule);
-        }
+        navigateToSection('nav-' + targetModule);
       }
     }
   }
@@ -5474,11 +5467,9 @@
   var absRondaRefreshInterval = null;
 
   function bukaAbsensiRonda() {
-    sembunyikanSemuaLayar();
-    document.getElementById('absensiRondaView').style.display = 'block';
+    navigateToSection('nav-absensi-ronda');
     document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0];
     history.pushState({view: 'absensiRondaView', tab: 'warga'}, '', '#absensiRonda');
-    muatHalamanAbsensi();
   }
 
   function muatHalamanAbsensi() {
