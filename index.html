@@ -1900,6 +1900,26 @@
       background-color: rgba(16, 185, 129, 0.35) !important;
     } 
 
+    /* CSS Absensi Ronda Malam */
+    .btn-status-abs {
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-weight: 800;
+      border: none;
+      color: white;
+      font-size: 13px;
+      flex: 1;
+      cursor: pointer;
+      transition: 0.2s;
+      min-height: 44px;
+    }
+    .abs-hadir { background-color: #10b981; }
+    .abs-izin { background-color: #3b82f6; }
+    .abs-sakit { background-color: #f59e0b; }
+    .abs-alfa { background-color: #ef4444; }
+    .abs-active { outline: 4px solid rgba(0,0,0,0.2); transform: scale(1.05); z-index: 5; }
+    .abs-card { border-radius: 14px; margin-bottom: 15px; padding: 18px; font-size: 16px; }
+
     /* Prefix Rp untuk Input Nominal */
     .input-group-prefix {
       display: flex;
@@ -2756,6 +2776,67 @@
     <div id="listLaporanSemua"></div>
   </div>
 
+  <!-- LAYAR ABSENSI RONDA -->
+  <div id="absensiRondaView" class="screen">
+    <div class="page-header">
+      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
+      <h3>Absensi Ronda Malam</h3>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Tanggal Ronda</label>
+        <input type="date" id="absRondaDate" onchange="muatHalamanAbsensi()">
+      </div>
+      <div class="filter-group" style="flex:1;">
+        <label>Cari Nama Warga</label>
+        <input type="text" id="absRondaSearch" placeholder="Ketik nama..." onkeyup="filterTabelAbsensi()">
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="absRondaStatusFilter" onchange="filterTabelAbsensi()">
+          <option value="">Semua</option>
+          <option value="hadir">Hadir</option>
+          <option value="izin">Izin</option>
+          <option value="sakit">Sakit</option>
+          <option value="alfa">Tidak Hadir</option>
+          <option value="none">Belum Absen</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Header Jadwal -->
+    <div id="absRondaHeader"></div>
+
+    <!-- Ringkasan Stats -->
+    <div id="absRondaSummary" class="kas-summary" style="margin:20px 0;"></div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; justify-content:center;">
+      <button class="btn-small success" style="height:48px; padding:0 25px; border-radius:14px;" onclick="muatHalamanAbsensi()"><i class="material-icons">sync</i> Sinkron</button>
+      <button class="btn-small danger" style="height:48px; padding:0 25px; border-radius:14px;" onclick="resetAbsensi()"><i class="material-icons">delete_sweep</i> Reset</button>
+      <button class="btn-small" style="height:48px; padding:0 25px; border-radius:14px; background:var(--kt-blue)" onclick="window.print()"><i class="material-icons">print</i> Rekap</button>
+    </div>
+
+    <!-- Daftar Kehadiran -->
+    <div id="absRondaDesktop" class="table-wrapper" style="display:none">
+       <table class="laporan-kas-table" style="min-width: 900px;">
+         <thead>
+           <tr>
+             <th style="width:40px">No</th>
+             <th>Warga</th>
+             <th style="width:380px; text-align:center;">Absensi Cepat</th>
+             <th style="width:100px">Waktu</th>
+             <th>Catatan</th>
+           </tr>
+         </thead>
+         <tbody id="tbodyAbsRonda"></tbody>
+       </table>
+    </div>
+    <div id="absRondaMobile"></div>
+  </div>
+
   <div id="rondaView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
@@ -2792,6 +2873,9 @@
     <div style="margin-bottom:1.2rem; text-align:center;">
       <button id="btnSalinRondaWa" class="btn-small" onclick="shareRondaWA()" style="width:auto; padding:12px 24px; border-radius:12px; box-shadow:var(--shadow-md); background:#25D366; display:flex; align-items:center; gap:8px; margin:0 auto;">
         <i class="material-icons">whatsapp</i> Salin Jadwal ke WhatsApp
+      </button>
+      <button class="btn-small" onclick="bukaAbsensiRonda()" style="width:auto; padding:12px 24px; border-radius:12px; box-shadow:var(--shadow-md); background:var(--primary-dark); display:inline-flex; align-items:center; gap:8px; margin-top:10px;">
+        <i class="material-icons">how_to_reg</i> Absensi Ronda Malam
       </button>
     </div>
     <div id="rondaFormCrud" class="crud-form">
@@ -5236,6 +5320,7 @@
     warga: [
       { title: "Jadwal Kegiatan", icon: "calendar_month", roles: ["admin", "pengurus rt", "warga"], action: "bukaJadwal", perm: "rt_jadwal" },
       { title: "Jadwal Ronda", icon: "security", roles: ["admin", "pengurus rt", "warga"], action: "bukaRonda", perm: "rt_ronda" },
+      { title: "Absensi Ronda", icon: "how_to_reg", roles: ["admin", "pengurus rt"], action: "bukaAbsensiRonda", perm: "rt_ronda_crud" },
       { title: "Kelola User", icon: "manage_accounts", roles: ["admin"], action: "bukaKelolaUser", perm: "rt_user" },
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
@@ -5351,6 +5436,150 @@
     }
   }
   
+  // ======================== FITUR ABSENSI RONDA MALAM ========================
+  var absRondaMaster = [];
+  var absRondaJadwalId = null;
+
+  function bukaAbsensiRonda() {
+    sembunyikanSemuaLayar();
+    document.getElementById('absensiRondaView').style.display = 'block';
+    document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0];
+    history.pushState({view: 'absensiRondaView', tab: 'warga'}, '', '#absensiRonda');
+    muatHalamanAbsensi();
+  }
+
+  function muatHalamanAbsensi() {
+    var tgl = document.getElementById('absRondaDate').value;
+    if (!tgl) return;
+    showLoading('Memuat data warga & jadwal...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        absRondaJadwalId = res.jadwalId;
+        renderAbsRondaHeader(res.schedule);
+        absRondaMaster = res.residents.map(w => {
+          var rec = res.attendance.find(a => a.wargaId == w.id);
+          return { ...w, status: rec?rec.status:'', jam: rec?rec.jamAbsen:'', catatan: rec?rec.catatan:'' };
+        });
+        filterTabelAbsensi();
+        updateSummaryAbsensi();
+      } else {
+        document.getElementById('absRondaHeader').innerHTML = `<div class="card-item" style="color:red; text-align:center;">${res.pesan}</div>`;
+        document.getElementById('tbodyAbsRonda').innerHTML = '';
+        document.getElementById('absRondaMobile').innerHTML = '';
+        document.getElementById('absRondaSummary').style.display = 'none';
+      }
+    }).getAbsensiInitialData(tgl);
+  }
+
+  function renderAbsRondaHeader(sch) {
+    var now = new Date().toISOString().split('T')[0];
+    var isSelesai = sch.tanggal < now;
+    var hariIndo = sch.hari.replace('Monday','Senin').replace('Tuesday','Selasa').replace('Wednesday','Rabu').replace('Thursday','Kamis').replace('Friday','Jumat').replace('Saturday','Sabtu').replace('Sunday','Minggu');
+    document.getElementById('absRondaHeader').innerHTML = `
+      <div class="card-item" style="border-left-color: var(--primary-color);">
+        <div style="display:flex; justify-content:space-between;">
+          <div><div style="font-size:20px; font-weight:800;">${sch.tanggal}</div><div class="muted">${hariIndo} • 22.00 - 05.00 WIB</div></div>
+          <span class="status-badge ${isSelesai?'status-selesai':'status-diproses'}">${isSelesai?'Selesai':'Aktif'}</span>
+        </div>
+        <div style="margin-top:12px; font-size:16px;">
+          <div><strong>Lokasi:</strong> Pos Ronda</div>
+          <div><strong>Regu:</strong> ${sch.kelompok}</div>
+          <div style="font-size:14px; color:var(--text-muted); margin-top:5px; background:var(--bg-app); padding:8px; border-radius:8px;">Petugas: ${sch.petugas}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderListAbsensi(data) {
+    var tbody = document.getElementById('tbodyAbsRonda');
+    var mobile = document.getElementById('absRondaMobile');
+    tbody.innerHTML = ''; mobile.innerHTML = '';
+
+    data.forEach((item, i) => {
+      var btnGroup = `<div style="display:flex; gap:5px;">
+        <button class="btn-status-abs abs-hadir ${item.status=='hadir'?'abs-active':'opacity:0.3'}" onclick="setAbsenStatus('${item.id}','hadir')">Hadir</button>
+        <button class="btn-status-abs abs-izin ${item.status=='izin'?'abs-active':'opacity:0.3'}" onclick="setAbsenStatus('${item.id}','izin')">Izin</button>
+        <button class="btn-status-abs abs-sakit ${item.status=='sakit'?'abs-active':'opacity:0.3'}" onclick="setAbsenStatus('${item.id}','sakit')">Sakit</button>
+        <button class="btn-status-abs abs-alfa ${item.status=='alfa'?'abs-active':'opacity:0.3'}" onclick="setAbsenStatus('${item.id}','alfa')">Alfa</button>
+      </div>`;
+
+      var tr = document.createElement('tr');
+      tr.style.height = '60px';
+      tr.innerHTML = `<td>${i+1}</td><td><strong>${item.nama}</strong><br><small class="muted">RT ${item.rt}</small></td>
+        <td>${btnGroup}</td><td style="font-weight:700;">${item.jam||'-'}</td>
+        <td><input type="text" value="${item.catatan}" placeholder="..." onblur="updateNoteAbsen('${item.id}', this.value)" style="height:36px; margin:0; font-size:14px;"></td>`;
+      tbody.appendChild(tr);
+
+      var card = document.createElement('div');
+      card.className = 'abs-card card-item';
+      card.style.borderLeftColor = item.status=='hadir'?'#10b981':(item.status=='alfa'?'#ef4444':(item.status?'#3b82f6':'var(--border-color)'));
+      card.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+          <div><div style="font-weight:800; font-size:18px;">${item.nama}</div><div class="muted">RT ${item.rt} • ${item.jam||'Belum Absen'}</div></div>
+        </div><div style="margin-bottom:12px;">${btnGroup}</div>
+        <input type="text" value="${item.catatan}" placeholder="Catatan khusus..." onblur="updateNoteAbsen('${item.id}', this.value)" style="margin:0; background:var(--bg-app);">`;
+      mobile.appendChild(card);
+    });
+  }
+
+  function setAbsenStatus(wId, status) {
+    var item = absRondaMaster.find(x => x.id == wId);
+    if (!item) return;
+    item.status = status;
+    item.jam = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    renderListAbsensi(absRondaMaster);
+    updateSummaryAbsensi();
+    google.script.run.simpanAbsensiRonda({
+      tanggal: document.getElementById('absRondaDate').value,
+      jadwalId: absRondaJadwalId, wargaId: wId, nama: item.nama,
+      status: status, jamAbsen: item.jam, catatan: item.catatan
+    });
+  }
+
+  function updateNoteAbsen(wId, val) {
+    var item = absRondaMaster.find(x => x.id == wId);
+    if (item && item.catatan !== val) {
+      item.catatan = val;
+      if (item.status) setAbsenStatus(wId, item.status);
+    }
+  }
+
+  function filterTabelAbsensi() {
+    var name = document.getElementById('absRondaSearch').value.toLowerCase();
+    var stat = document.getElementById('absRondaStatusFilter').value;
+    var filtered = absRondaMaster.filter(x => {
+      var mN = x.nama.toLowerCase().includes(name);
+      var mS = stat == 'none' ? x.status == '' : (stat ? x.status == stat : true);
+      return mN && mS;
+    });
+    renderListAbsensi(filtered);
+  }
+
+  function updateSummaryAbsensi() {
+    var total = absRondaMaster.length;
+    var h = absRondaMaster.filter(x => x.status == 'hadir').length;
+    var i = absRondaMaster.filter(x => x.status == 'izin').length;
+    var s = absRondaMaster.filter(x => x.status == 'sakit').length;
+    var a = absRondaMaster.filter(x => x.status == 'alfa').length;
+    var p = total > 0 ? Math.round((h/total)*100) : 0;
+    document.getElementById('absRondaSummary').innerHTML = `
+      <div class="summary-card" style="padding:10px;"><div class="summary-info"><h3>Total</h3><h2>${total}</h2></div></div>
+      <div class="summary-card" style="padding:10px; border-left-color:#10b981"><div class="summary-info"><h3 style="color:#10b981">Hadir</h3><h2>${h}</h2></div></div>
+      <div class="summary-card" style="padding:10px; border-left-color:#3b82f6"><div class="summary-info"><h3 style="color:#3b82f6">Izin</h3><h2>${i}</h2></div></div>
+      <div class="summary-card" style="padding:10px; border-left-color:#f59e0b"><div class="summary-info"><h3 style="color:#f59e0b">Sakit</h3><h2>${s}</h2></div></div>
+      <div class="summary-card" style="padding:10px; border-left-color:#ef4444"><div class="summary-info"><h3 style="color:#ef4444">Absen</h3><h2>${a}</h2></div></div>
+      <div class="summary-card" style="padding:10px; background:var(--primary-dark);"><div class="summary-info"><h3 style="color:white">Kehadiran</h3><h2 style="color:white">${h}/${total} (${p}%)</h2></div></div>`;
+  }
+
+  function resetAbsensi() {
+    var tgl = document.getElementById('absRondaDate').value;
+    showConfirm('Reset absensi tanggal ' + tgl + '?').then(res => {
+      if (res.isConfirmed) {
+        showLoading('Mereset...');
+        google.script.run.withSuccessHandler(r => { Swal.close(); showSuccess(r.pesan); muatHalamanAbsensi(); }).resetAbsensiRonda(tgl, absRondaJadwalId);
+      }
+    });
+  }
+
   // ======================== MODUL KARANG TARUNA (JS) ========================
   
   function bukaKtJadwal() {
