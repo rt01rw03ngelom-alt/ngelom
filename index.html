@@ -5543,13 +5543,14 @@
   }
 
   function startAbsensiSession() {
-    const date = document.getElementById('absRondaDate').value;
-    const jamSelesai = date + 'T05:00:00'; // Default jam 5 pagi
+    const tglJadwal = document.getElementById('absRondaDate').value;
+    if (!tglJadwal) return showWarning('Pilih tanggal jadwal terlebih dahulu');
+
     showLoading('Membuka sesi absensi...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       checkActiveSessionAdmin();
-    }).openRondaAbsensi(absRondaJadwalId, jamSelesai);
+    }).openRondaAbsensi(absRondaJadwalId, tglJadwal);
   }
 
   function stopAbsensiSession() {
@@ -5601,15 +5602,19 @@
     document.getElementById('absRondaUserSelect').style.display = 'none';
     document.getElementById('absRondaQrScannerContainer').style.display = 'block';
     
+    showLoading('Menginisialisasi Kamera...');
+    
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start(
       { facingMode: "environment" }, 
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
         html5QrCode.stop();
+        Swal.close();
         submitAbsensiModern('QR', decodedText);
       }
     ).catch(err => {
+      Swal.close();
       showError('Gagal mengakses kamera: ' + err);
       hideAbsenMetode();
     });
