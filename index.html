@@ -5890,7 +5890,14 @@
   function bukaAbsensiRonda() {
     sembunyikanSemuaLayar();
     document.getElementById('absensiRondaView').style.display = 'block';
-    document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0];
+
+    // 10XTHINK: Langsung tampilkan jadwal Minggu Ini (bukan sekedar hari ini)
+    let targetDate = new Date().toISOString().split('T')[0];
+    if (window.pickedRondaWeek1 && window.pickedRondaWeek1.tanggal) {
+      targetDate = window.pickedRondaWeek1.tanggal;
+    }
+    document.getElementById('absRondaDate').value = targetDate;
+
     history.pushState({view: 'absensiRondaView', tab: 'warga', onLoad: 'muatHalamanAbsensi'}, '', '#absensiRonda');
     muatHalamanAbsensi();
     
@@ -5924,39 +5931,28 @@
     const mobile = document.getElementById('absRondaMobile');
     if (!mobile) return;
     mobile.innerHTML = ''; // Reset tampilan
-    
-    const isPengurus = (currentUser.role === 'admin' || currentUser.role.includes('pengurus rt'));
 
-    data.forEach((item) => {
-      const isHadir = item.status === 'Hadir';
-      const card = document.createElement('div');
-      card.className = 'card-item petugas-row';
-      card.style.borderLeftColor = isHadir ? '#10b981' : '#cbd5e1';
-      
-      let actionContent = '';
-      if (!isHadir) {
-        actionContent = `<button class="btn-primary" style="width:auto; padding:8px 16px;" onclick="bukaModalAbsen('${item.nama}')">Absen</button>`;
-      } else {
-        actionContent = `<div class="muted" style="font-size:12px;">${item.metode} (${item.jam})</div>`;
-      }
+    data.forEach((item, index) => {
+      const row = document.createElement('div');
+      row.className = 'card-item petugas-row'; 
+      row.style.borderLeftColor = item.status === 'Hadir' ? '#10b981' : '#ef4444';
 
-      let qrButton = '';
-      if (isPengurus) {
-        qrButton = `<button class="btn-small success" onclick="showOfficerQR('${absRondaJadwalId}','${item.nama}')"><i class="material-icons">qr_code</i></button>`;
-      }
-
-      card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-          <div>
-            <div style="font-weight:800; font-size:16px;">${item.nama}</div>
-            <span class="status-badge ${isHadir ? 'status-selesai' : 'status-belum'}" style="font-size:10px;">${item.status}</span>
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:10px;">
+          <div style="flex:1;">
+            <div style="font-weight:800; font-size:16px; color:var(--text-main);">${item.nama}</div>
+            <span class="status-badge ${item.status === 'Hadir' ? 'status-selesai' : 'status-belum'}" style="font-size:10px; margin-top:4px;">
+              ${item.status}
+            </span>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            ${actionContent}
-            ${qrButton}
+          <div style="text-align:right;">
+            ${item.status === 'Belum Hadir' ? 
+              `<button onclick="bukaModalAbsen('${item.nama}')" class="btn-primary" style="width:auto; padding:8px 16px;">Absen</button>` : 
+              `<div class="muted" style="font-size:12px; font-weight:600;">${item.metode} • ${item.jam}</div>`
+            }
           </div>
         </div>`;
-      mobile.appendChild(card);
+      mobile.appendChild(row);
     });
   }
 
