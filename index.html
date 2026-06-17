@@ -5922,37 +5922,37 @@
 
   function renderListPetugasRonda(data) {
     const mobile = document.getElementById('absRondaMobile');
-    mobile.innerHTML = '';
+    if (!mobile) return;
+    mobile.innerHTML = ''; // Reset tampilan
     
     const isPengurus = (currentUser.role === 'admin' || currentUser.role.includes('pengurus rt'));
 
-    data.forEach((p) => {
-      const isHadir = p.status === 'Hadir';
+    data.forEach((item) => {
+      const isHadir = item.status === 'Hadir';
       const card = document.createElement('div');
-      card.className = 'card-item';
+      card.className = 'card-item petugas-row';
       card.style.borderLeftColor = isHadir ? '#10b981' : '#cbd5e1';
       
-      let actionHtml = '';
+      let actionContent = '';
       if (!isHadir) {
-        actionHtml = `<button class="btn-primary" style="width:auto; padding:8px 16px;" onclick="bukaModalAbsen('${p.nama}')">Absen Sekarang</button>`;
+        actionContent = `<button class="btn-primary" style="width:auto; padding:8px 16px;" onclick="bukaModalAbsen('${item.nama}')">Absen</button>`;
       } else {
-        actionHtml = `<div class="muted">Jam: ${p.jam} (${p.metode})</div>`;
+        actionContent = `<div class="muted" style="font-size:12px;">${item.metode} (${item.jam})</div>`;
       }
 
-      // Generate QR Feature for Pengurus
       let qrButton = '';
       if (isPengurus) {
-        qrButton = `<button class="btn-small success" onclick="showOfficerQR('${absRondaJadwalId}','${p.nama}')"><i class="material-icons">qr_code</i></button>`;
+        qrButton = `<button class="btn-small success" onclick="showOfficerQR('${absRondaJadwalId}','${item.nama}')"><i class="material-icons">qr_code</i></button>`;
       }
 
       card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
           <div>
-            <div style="font-weight:800; font-size:16px;">${p.nama}</div>
-            <span class="status-badge" style="background:${isHadir?'#10b981':'#64748b'}; font-size:10px;">${p.status}</span>
+            <div style="font-weight:800; font-size:16px;">${item.nama}</div>
+            <span class="status-badge ${isHadir ? 'status-selesai' : 'status-belum'}" style="font-size:10px;">${item.status}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            ${actionHtml}
+            ${actionContent}
             ${qrButton}
           </div>
         </div>`;
@@ -10818,4 +10818,4 @@ function renderRekapKasWarga(data) {
   }
 
   refreshNavVisibility();
-</script>\
+</script>
