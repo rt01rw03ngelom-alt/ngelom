@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.8';
+    const APP_VERSION = '1.2.9';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3298,7 +3298,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxr3_yi0L4XO0uXgs-MbvyJlDW1m9zKa_WjsByW8GvEbuDAV9tZUHZo4aERt7eGG2qJiA/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -5627,7 +5627,7 @@
       document.getElementById('absRondaTimer').innerText = `Berakhir dalam: ${h}j ${m}m ${s}d`;
       
       // Auto refresh realtime list every 10 seconds
-      if (s % 10 === 0) muatRealtimeAbsetime();
+      if (s % 10 === 0) muatRealtimeAbsensi();
     }, 1000);
   }
 
