@@ -38,6 +38,8 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
       --primary-color: #ef4444; /* Default RT */
@@ -3296,7 +3298,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxr3_yi0L4XO0uXgs-MbvyJlDW1m9zKa_WjsByW8GvEbuDAV9tZUHZo4aERt7eGG2qJiA/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -5439,6 +5441,9 @@
   // ======================== FITUR ABSENSI RONDA MALAM ========================
   var absRondaMaster = [];
   var absRondaJadwalId = null;
+  var html5QrCode = null;
+  var absRondaActiveToken = null;
+  var absRondaRefreshInterval = null;
 
   function bukaAbsensiRonda() {
     sembunyikanSemuaLayar();
@@ -5451,18 +5456,19 @@
   function muatHalamanAbsensi() {
     var tgl = document.getElementById('absRondaDate').value;
     if (!tgl) return;
-    showLoading('Memuat data warga & jadwal...');
+    
+    const isPengurus = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
+    
     google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
       if (res.status === 'success') {
         absRondaJadwalId = res.jadwalId;
         renderAbsRondaHeader(res.schedule);
-        absRondaMaster = res.residents.map(w => {
-          var rec = res.attendance.find(a => a.wargaId == w.id);
-          return { ...w, status: rec?rec.status:'', jam: rec?rec.jamAbsen:'', catatan: rec?rec.catatan:'' };
-        });
-        filterTabelAbsensi();
-        updateSummaryAbsensi();
+        
+        if (isPengurus) {
+          checkActiveSessionAdmin();
+        } else {
+          checkActiveSessionUser();
+        }
       } else {
         document.getElementById('absRondaHeader').innerHTML = `<div class="card-item" style="color:red; text-align:center;">${res.pesan}</div>`;
         document.getElementById('tbodyAbsRonda').innerHTML = '';
@@ -5470,6 +5476,159 @@
         document.getElementById('absRondaSummary').style.display = 'none';
       }
     }).getAbsensiInitialData(tgl);
+  }
+
+  // LOGIKA PENGURUS
+  function checkActiveSessionAdmin() {
+    document.getElementById('absRondaAdminPanel').style.display = 'block';
+    document.getElementById('absRondaUserPanel').style.display = 'none';
+    
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.active) {
+        document.getElementById('absRondaNoSession').style.display = 'none';
+        document.getElementById('absRondaActiveSession').style.display = 'block';
+        document.getElementById('absRondaPinDisplay').innerText = res.pin;
+        generateAbsenQr(res.token);
+        startAbsensiTimer(res.expired);
+      } else {
+        document.getElementById('absRondaNoSession').style.display = 'block';
+        document.getElementById('absRondaActiveSession').style.display = 'none';
+      }
+      muatRealtimeAbsensi();
+    }).getRondaAbsensiSession(absRondaJadwalId);
+  }
+
+  function generateAbsenQr(token) {
+    const cont = document.getElementById('absRondaQrDisplay');
+    cont.innerHTML = '';
+    new QRCode(cont, { text: token, width: 200, height: 200 });
+  }
+
+  function startAbsensiSession() {
+    const date = document.getElementById('absRondaDate').value;
+    const jamSelesai = date + 'T05:00:00'; // Default jam 5 pagi
+    showLoading('Membuka sesi absensi...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      checkActiveSessionAdmin();
+    }).openRondaAbsensi(absRondaJadwalId, jamSelesai);
+  }
+
+  function stopAbsensiSession() {
+    showConfirm('Tutup sesi absensi? QR dan PIN tidak akan bisa digunakan lagi.').then(res => {
+      if (res.isConfirmed) {
+        google.script.run.withSuccessHandler(() => checkActiveSessionAdmin()).closeRondaAbsensi(absRondaJadwalId);
+      }
+    });
+  }
+
+  function muatRealtimeAbsensi() {
+    google.script.run.withSuccessHandler(function(res) {
+      if (res.status === 'success') {
+        const tbody = document.getElementById('tbodyAbsRealtime');
+        tbody.innerHTML = '';
+        res.petugas.forEach(p => {
+           const col = p.status === 'Hadir' ? '#10b981' : '#64748b';
+           tbody.innerHTML += `<tr>
+             <td><strong>${p.nama}</strong></td>
+             <td><span class="status-badge" style="background:${col}">${p.status}</span></td>
+             <td>${p.metode}</td>
+             <td>${p.jam}</td>
+           </tr>`;
+        });
+        renderSummaryModern(res.stats);
+      }
+    }).getRealtimeAbsensiModern(absRondaJadwalId);
+  }
+
+  function renderSummaryModern(s) {
+    document.getElementById('absRondaSummary').innerHTML = `
+      <div class="summary-card"><div class="summary-info"><h3>Total Petugas</h3><h2>${s.total}</h2></div></div>
+      <div class="summary-card" style="border-left-color:#10b981"><div class="summary-info"><h3>Hadir</h3><h2>${s.hadir}</h2></div></div>
+      <div class="summary-card" style="background:var(--primary-dark);"><div class="summary-info"><h3 style="color:white">Progress</h3><h2 style="color:white">${s.persen}%</h2></div></div>`;
+  }
+
+  // LOGIKA WARGA
+  function checkActiveSessionUser() {
+    document.getElementById('absRondaAdminPanel').style.display = 'none';
+    document.getElementById('absRondaUserPanel').style.display = 'block';
+  }
+
+  function showQrScanner() {
+    document.getElementById('absRondaUserSelect').style.display = 'none';
+    document.getElementById('absRondaQrScannerContainer').style.display = 'block';
+    
+    html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        html5QrCode.stop();
+        submitAbsensiModern('QR', decodedText);
+      }
+    ).catch(err => {
+      showError('Gagal mengakses kamera: ' + err);
+      hideAbsenMetode();
+    });
+  }
+
+  function showPinInput() {
+    document.getElementById('absRondaUserSelect').style.display = 'none';
+    document.getElementById('absRondaPinInputContainer').style.display = 'block';
+    document.getElementById('inputAbsenPin').focus();
+  }
+
+  function hideAbsenMetode() {
+    if (html5QrCode) html5QrCode.stop();
+    document.getElementById('absRondaUserSelect').style.display = 'block';
+    document.getElementById('absRondaQrScannerContainer').style.display = 'none';
+    document.getElementById('absRondaPinInputContainer').style.display = 'none';
+  }
+
+  function submitPinAbsensi() {
+    const pin = document.getElementById('inputAbsenPin').value;
+    if (pin.length < 6) return showWarning('Masukkan 6 digit PIN');
+    submitAbsensiModern('PIN', pin);
+  }
+
+  function submitAbsensiModern(metode, val) {
+    showLoading('Memvalidasi kehadiran...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.pesan, confirmButtonColor: '#10b981' }).then(() => {
+          hideAbsenMetode();
+          kembaliKeDashboard();
+        });
+      } else {
+        showError(res.pesan);
+        if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
+        else showQrScanner();
+      }
+    }).submitAbsensiRondaModern(absRondaJadwalId, currentUser.id, currentUser.nama, metode, val);
+  }
+
+  function startAbsensiTimer(exp) {
+    const target = new Date(exp).getTime();
+    if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
+    
+    absRondaRefreshInterval = setInterval(() => {
+      const now = new Date().getTime();
+      const diff = target - now;
+      if (diff <= 0) {
+        clearInterval(absRondaRefreshInterval);
+        document.getElementById('absRondaTimer').innerText = 'SESI BERAKHIR';
+        checkActiveSessionAdmin();
+        return;
+      }
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      document.getElementById('absRondaTimer').innerText = `Berakhir dalam: ${h}j ${m}m ${s}d`;
+      
+      // Auto refresh realtime list every 10 seconds
+      if (s % 10 === 0) muatRealtimeAbsetime();
+    }, 1000);
   }
 
   function renderAbsRondaHeader(sch) {
