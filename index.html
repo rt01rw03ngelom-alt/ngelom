@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.7';
+    const APP_VERSION = '1.2.8';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3001,7 +3001,15 @@
       <div class="laporan-kas-scroll">
         <table class="laporan-kas-table">
           <thead>
-            <tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th><th>Aksi</th></tr>
+            <tr>
+              <th>Tanggal</th>
+              <th>Kategori</th>
+              <th>Deskripsi</th>
+              <th>Pemasukan</th>
+              <th>Pengeluaran</th>
+              <th>Saldo</th>
+              <th>Aksi</th> <!-- TAMBAHKAN KOLOM AKSI -->
+            </tr>
           </thead>
           <tbody id="tbodyRekapKasWarga"></tbody>
         </table>
@@ -7930,69 +7938,100 @@ function bukaJadwal() {
     renderRekapKasWarga(filtered);
   }
 
-  function renderRekapKasWarga(data) {
-    var container = document.getElementById('tbodyRekapKasWarga');
-    if (!container) {
-      console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
-      return;
-    }
-
-    container.innerHTML = '';
-    if (!data || data.length === 0) {
-      container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
-      return;
-    }
-
-    // Urutkan berdasarkan tanggal agar saldo berjalan benar
-    var sorted = [...data].sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
-    var runningSaldo = 0;
-    var isCRUD = hasPermission('rt_kas_crud');
-
-    sorted.forEach(function(item) {
-      var isPemasukan = (item.jenis === 'Pemasukan');
-      var nominal = parseFloat(item.jumlah) || 0;
-
-      if (isPemasukan) runningSaldo += nominal;
-      else runningSaldo -= nominal;
-
-      var tr = document.createElement('tr');
-
-      tr.innerHTML = `
-        <td>${item.tanggal || '-'}</td>
-        <td>${item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-'}</td>
-        <td>${item.deskripsi || '-'}</td>
-        <td style="color:#10b981; font-weight:700;">${isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-'}</td>
-        <td style="color:#ef4444; font-weight:700;">${!isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-'}</td>
-        <td style="font-weight:800; background:rgba(var(--primary-color-rgb), 0.05);">Rp ${runningSaldo.toLocaleString('id-ID')}</td>
-      `;
-
-      var tdAksi = document.createElement('td');
-      if (isCRUD) {
-        tdAksi.style.whiteSpace = 'nowrap';
-
-        var eb = document.createElement('button');
-        eb.className = 'btn-small';
-        eb.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i> '; // label kecil
-        eb.onclick = function() {
-          editKas(item.id, item.tanggal, item.kategori, item.deskripsi, item.jenis, item.jumlah);
-        };
-
-        var db = document.createElement('button');
-        db.className = 'btn-small danger';
-        db.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i> ';
-        db.onclick = function() { hapusKas(item.id); };
-
-        tdAksi.appendChild(eb);
-        tdAksi.appendChild(db);
-      } else {
-        tdAksi.innerText = '-';
-        tdAksi.style.color = 'var(--text-muted)';
-      }
-
-      tr.appendChild(tdAksi);
-      container.appendChild(tr);
-    });
+function renderRekapKasWarga(data) {
+  var container = document.getElementById('tbodyRekapKasWarga');
+  if (!container) {
+    console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
+    return;
   }
+
+  container.innerHTML = '';
+  if (!data || data.length === 0) {
+    container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
+    return;
+  }
+
+  // Urutkan berdasarkan tanggal ascending untuk saldo berjalan
+  var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
+  var runningSaldo = 0;
+  var isAdmin = hasPermission('rt_kas_crud');
+
+  sorted.forEach(function(item) {
+    var isPemasukan = (item.jenis === 'Pemasukan');
+    var nominal = item.jumlah || 0;
+
+    if (isPemasukan) runningSaldo += nominal;
+    else runningSaldo -= nominal;
+
+    var tr = document.createElement('tr');
+
+    // Tanggal
+    var tdTanggal = document.createElement('td');
+    tdTanggal.innerText = item.tanggal || '-';
+    tr.appendChild(tdTanggal);
+
+    // Kategori
+    var tdKategori = document.createElement('td');
+    tdKategori.innerHTML = item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-';
+    tr.appendChild(tdKategori);
+
+    // Deskripsi
+    var tdDeskripsi = document.createElement('td');
+    tdDeskripsi.innerText = item.deskripsi || '-';
+    tr.appendChild(tdDeskripsi);
+
+    // Pemasukan
+    var tdPemasukan = document.createElement('td');
+    tdPemasukan.style.color = '#10b981';
+    tdPemasukan.style.fontWeight = '700';
+    tdPemasukan.innerText = isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
+    tr.appendChild(tdPemasukan);
+
+    // Pengeluaran
+    var tdPengeluaran = document.createElement('td');
+    tdPengeluaran.style.color = '#ef4444';
+    tdPengeluaran.style.fontWeight = '700';
+    tdPengeluaran.innerText = !isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
+    tr.appendChild(tdPengeluaran);
+
+    // Saldo
+    var tdSaldo = document.createElement('td');
+    tdSaldo.style.fontWeight = '800';
+    tdSaldo.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
+    tdSaldo.innerText = 'Rp ' + runningSaldo.toLocaleString('id-ID');
+    tr.appendChild(tdSaldo);
+
+    // Aksi (hanya untuk admin/pengurus)
+    var tdAksi = document.createElement('td');
+    tdAksi.style.textAlign = 'center';
+    tdAksi.style.whiteSpace = 'nowrap';
+    if (isAdmin) {
+      var editBtn = document.createElement('button');
+      editBtn.className = 'btn-small';
+      editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+      editBtn.onclick = (function(it) {
+        return function() {
+          editKas(it.id, it.tanggal, it.kategori, it.deskripsi, it.jenis, it.jumlah);
+        };
+      })(item);
+      tdAksi.appendChild(editBtn);
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn-small danger';
+      delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+      delBtn.onclick = (function(id) {
+        return function() { hapusKas(id); };
+      })(item.id);
+      tdAksi.appendChild(delBtn);
+    } else {
+      tdAksi.innerText = '-';
+    }
+    tr.appendChild(tdAksi);
+
+    container.appendChild(tr);
+  });
+}
 
   function muatGrafikKas() {
     var tahun = parseInt(document.getElementById('tahunKasSelect').value);
@@ -8366,6 +8405,7 @@ function bukaJadwal() {
         showError(res.pesan);
         return;
       }
+      renderRekapKasWarga(res.data || []);
       var totalPemasukan = 0;
       var totalPengeluaran = 0;
       if (res.data && res.data.length) {
@@ -8373,9 +8413,6 @@ function bukaJadwal() {
           if (res.data[i].jenis === 'Pemasukan') totalPemasukan += res.data[i].jumlah;
           else totalPengeluaran += res.data[i].jumlah;
         }
-        renderRekapKasWarga(res.data);
-      } else {
-        renderRekapKasWarga([]);
       }
       document.getElementById('rekapTotalPemasukan').innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       document.getElementById('rekapTotalPengeluaran').innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
