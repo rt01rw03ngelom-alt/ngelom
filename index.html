@@ -1471,7 +1471,7 @@
     }
     
     thead .month-col {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 700;
       letter-spacing: .2px;
       white-space: nowrap;
@@ -1818,7 +1818,7 @@
         min-width: 28px;
       }
       .iuran-right thead th {
-        font-size: 8px;
+        font-size: 13px;
         padding: 4px 1px;
         min-width: 28px;
       }
@@ -1923,62 +1923,78 @@
     
     /* ======================== Laporan Kas Warga Sticky Columns ======================== */
     .laporan-kas-scroll {
-      overflow-x: auto;
+      overflow-x: auto; /* Scroll hanya jika sangat perlu */
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       position: relative;
       width: 100%;
-      background: var(--bg-surface); /* Moved from .table-container */
-      border-radius: var(--border-radius); /* Moved from .table-container */
-      box-shadow: var(--shadow-sm); /* Moved from .table-container */
+      background: var(--bg-surface);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-sm);
+      padding: 0 12px; /* Hapus ruang kosong kiri-kanan */
+    }
+
+    @media (min-width: 768px) {
+      .laporan-kas-scroll {
+        overflow-x: hidden; /* Desktop tidak perlu geser */
+      }
     }
 
     .laporan-kas-table {
       width: 100%;
-      min-width: 920px; /* Diperlebar agar 7 kolom muat dengan nyaman */
-      border-collapse: separate;
+      max-width: 100%;
+      border-collapse: collapse; /* Lebih padat daripada separate */
       border-spacing: 0;
-      table-layout: fixed; /* Important for fixed column widths */
+      table-layout: auto; /* Implementasi 1: Auto Layout */
     }
 
     .laporan-kas-table th,
     .laporan-kas-table td {
-      box-sizing: border-box; /* Ensure padding doesn't expand width */
+      box-sizing: border-box;
       vertical-align: middle;
-      overflow: hidden; /* Hide overflowing text */
-      white-space: nowrap; /* Prevent wrapping in sticky columns */
-      /* Default padding and border-bottom from general table rules */
+      padding: 10px 10px; /* Implementasi 6: Padding lebih rapat */
+      border-bottom: 1px solid var(--border-color);
     }
 
-    /* Sticky Kolom 1: Tanggal */
-    .laporan-kas-table thead th:nth-child(1),
-    .laporan-kas-table tbody td:nth-child(1) {
-      position: sticky;
-      left: 0;
-      z-index: 30; /* User specified */
-      background: var(--bg-surface) !important; /* Ensure background for sticky */
-      min-width: 160px;
-      max-width: 160px;
-      width: 160px;
-      border-right: 1px solid var(--border-color);
-      padding-left: 12px;
-      padding-right: 12px;
+    .laporan-kas-table thead th {
+      padding: 12px 10px; /* Implementasi 5: Header kompak */
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--bg-app);
+      text-align: left;
     }
 
-    /* Sticky Kolom 2: Kategori */
-    .laporan-kas-table thead th:nth-child(2),
-    .laporan-kas-table tbody td:nth-child(2) {
-      position: sticky;
-      left: 160px; /* After first column */
-      z-index: 29; /* User specified */
-      background: var(--bg-surface) !important; /* Ensure background for sticky */
-      min-width: 160px;
-      max-width: 160px;
-      width: 160px;
-      border-right: 2px solid var(--primary-color) !important; /* Stronger separator */
-      box-shadow: 2px 0 8px rgba(0,0,0,.06); /* Shadow for visual separation */
-      padding-left: 10px;
-      padding-right: 10px;
+    /* Implementasi 2: Ukuran Kolom Baru */
+    .laporan-kas-table th:nth-child(1), .laporan-kas-table td:nth-child(1) { width: 110px; } /* Tanggal */
+    .laporan-kas-table th:nth-child(2), .laporan-kas-table td:nth-child(2) { width: 90px; }  /* Kategori */
+    .laporan-kas-table th:nth-child(3), .laporan-kas-table td:nth-child(3) { 
+      width: auto; 
+      min-width: 140px;
+      white-space: normal; /* Implementasi 3: Deskripsi Fleksibel */
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .laporan-kas-table th:nth-child(4), .laporan-kas-table td:nth-child(4),
+    .laporan-kas-table th:nth-child(5), .laporan-kas-table td:nth-child(5) { width: 110px; text-align: right; } /* Pemasukan & Pengeluaran */
+    .laporan-kas-table th:nth-child(6), .laporan-kas-table td:nth-child(6) { width: 120px; text-align: right; } /* Saldo */
+
+    /* Implementasi 4: Angka Ringkas */
+    .laporan-kas-table td:nth-child(4),
+    .laporan-kas-table td:nth-child(5),
+    .laporan-kas-table td:nth-child(6) {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* Implementasi 9: Mobile Priorities */
+    @media (max-width: 600px) {
+      /* Sembunyikan Aksi dan Saldo jika layar sangat sempit untuk prioritaskan data utama */
+      .laporan-kas-table th:nth-child(7), .laporan-kas-table td:nth-child(7),
+      .laporan-kas-table th:nth-child(6), .laporan-kas-table td:nth-child(6) {
+        display: none;
+      }
+      .laporan-kas-table { min-width: 100%; }
     }
 
     /* Sticky Header */
