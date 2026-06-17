@@ -5460,39 +5460,77 @@
     const isPengurus = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
     
     google.script.run.withSuccessHandler(function(res) {
-      if (res.status === 'success') {
-        absRondaJadwalId = res.jadwalId;
-        renderAbsRondaHeader(res.schedule);
+      let data;
+      try {
+        data = typeof res === 'string' ? JSON.parse(res) : res;
+      } catch (err) {
+        console.error('JSON gagal', err);
+        return;
+      }
+
+      if (!data || !data.schedule) {
+        console.warn('Data jadwal tidak valid');
+        return;
+      }
+
+      if (data.status === 'success') {
+        absRondaJadwalId = data.jadwalId;
+        renderAbsRondaHeader(data.schedule);
         
-        if (isPengurus) {
-          checkActiveSessionAdmin();
-        } else {
-          checkActiveSessionUser();
-        }
+        // Gunakan requestAnimationFrame agar UI render selesai dulu
+        requestAnimationFrame(() => {
+          if (isPengurus) {
+            checkActiveSessionAdmin(data);
+          } else {
+            checkActiveSessionUser();
+          }
+        });
       } else {
-        document.getElementById('absRondaHeader').innerHTML = `<div class="card-item" style="color:red; text-align:center;">${res.pesan}</div>`;
-        document.getElementById('tbodyAbsRonda').innerHTML = '';
-        document.getElementById('absRondaMobile').innerHTML = '';
-        document.getElementById('absRondaSummary').style.display = 'none';
+        const header = document.getElementById('absRondaHeader');
+        if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan}</div>`;
+        
+        const tbody = document.getElementById('tbodyAbsRonda');
+        if (tbody) tbody.innerHTML = '';
+        
+        const summary = document.getElementById('absRondaSummary');
+        if (summary?.style) summary.style.display = 'none';
       }
     }).getAbsensiInitialData(tgl);
   }
 
   // LOGIKA PENGURUS
-  function checkActiveSessionAdmin() {
-    document.getElementById('absRondaAdminPanel').style.display = 'block';
-    document.getElementById('absRondaUserPanel').style.display = 'none';
+  function checkActiveSessionAdmin(response) {
+    console.log('DOM READY', document.readyState);
+    console.log('SESSION INIT', response);
+
+    const adminPanel = document.getElementById('absRondaAdminPanel');
+    const userPanel = document.getElementById('absRondaUserPanel');
+
+    if (!adminPanel || !userPanel) {
+      console.warn('Panel absensi belum dirender, mencoba ulang...');
+      setTimeout(() => checkActiveSessionAdmin(response), 100);
+      return;
+    }
+
+    adminPanel.style.display = 'block';
+    userPanel.style.display = 'none';
     
     google.script.run.withSuccessHandler(function(res) {
+      console.log('SESSION DATA', res);
+      const noSess = document.getElementById('absRondaNoSession');
+      const actSess = document.getElementById('absRondaActiveSession');
+      const pinDisp = document.getElementById('absRondaPinDisplay');
+
       if (res.active) {
-        document.getElementById('absRondaNoSession').style.display = 'none';
-        document.getElementById('absRondaActiveSession').style.display = 'block';
-        document.getElementById('absRondaPinDisplay').innerText = res.pin;
+        if (noSess?.style) noSess.style.display = 'none';
+        if (actSess?.style) actSess.style.display = 'block';
+        if (pinDisp) pinDisp.innerText = res.pin;
+        
         generateAbsenQr(res.token);
         startAbsensiTimer(res.expired);
       } else {
-        document.getElementById('absRondaNoSession').style.display = 'block';
-        document.getElementById('absRondaActiveSession').style.display = 'none';
+        if (noSess?.style) noSess.style.display = 'block';
+        if (actSess?.style) actSess.style.display = 'none';
       }
       muatRealtimeAbsensi();
     }).getRondaAbsensiSession(absRondaJadwalId);
@@ -5526,10 +5564,10 @@
     google.script.run.withSuccessHandler(function(res) {
       if (res.status === 'success') {
         const tbody = document.getElementById('tbodyAbsRealtime');
-        tbody.innerHTML = '';
+        if (tbody) tbody.innerHTML = '';
         res.petugas.forEach(p => {
            const col = p.status === 'Hadir' ? '#10b981' : '#64748b';
-           tbody.innerHTML += `<tr>
+           if (tbody) tbody.innerHTML += `<tr>
              <td><strong>${p.nama}</strong></td>
              <td><span class="status-badge" style="background:${col}">${p.status}</span></td>
              <td>${p.metode}</td>
@@ -5542,7 +5580,9 @@
   }
 
   function renderSummaryModern(s) {
-    document.getElementById('absRondaSummary').innerHTML = `
+    const summary = document.getElementById('absRondaSummary');
+    if (!summary) return;
+    summary.innerHTML = `
       <div class="summary-card"><div class="summary-info"><h3>Total Petugas</h3><h2>${s.total}</h2></div></div>
       <div class="summary-card" style="border-left-color:#10b981"><div class="summary-info"><h3>Hadir</h3><h2>${s.hadir}</h2></div></div>
       <div class="summary-card" style="background:var(--primary-dark);"><div class="summary-info"><h3 style="color:white">Progress</h3><h2 style="color:white">${s.persen}%</h2></div></div>`;
@@ -5550,8 +5590,11 @@
 
   // LOGIKA WARGA
   function checkActiveSessionUser() {
-    document.getElementById('absRondaAdminPanel').style.display = 'none';
-    document.getElementById('absRondaUserPanel').style.display = 'block';
+    const adminPanel = document.getElementById('absRondaAdminPanel');
+    const userPanel = document.getElementById('absRondaUserPanel');
+    
+    if (adminPanel?.style) adminPanel.style.display = 'none';
+    if (userPanel?.style) userPanel.style.display = 'block';
   }
 
   function showQrScanner() {
@@ -5632,10 +5675,13 @@
   }
 
   function renderAbsRondaHeader(sch) {
+    const header = document.getElementById('absRondaHeader');
+    if (!header) return;
+
     var now = new Date().toISOString().split('T')[0];
     var isSelesai = sch.tanggal < now;
     var hariIndo = sch.hari.replace('Monday','Senin').replace('Tuesday','Selasa').replace('Wednesday','Rabu').replace('Thursday','Kamis').replace('Friday','Jumat').replace('Saturday','Sabtu').replace('Sunday','Minggu');
-    document.getElementById('absRondaHeader').innerHTML = `
+    header.innerHTML = `
       <div class="card-item" style="border-left-color: var(--primary-color);">
         <div style="display:flex; justify-content:space-between;">
           <div><div style="font-size:20px; font-weight:800;">${sch.tanggal}</div><div class="muted">${hariIndo} • 22.00 - 05.00 WIB</div></div>
