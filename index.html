@@ -5467,9 +5467,11 @@
   var absRondaRefreshInterval = null;
 
   function bukaAbsensiRonda() {
-    navigateToSection('nav-absensi-ronda');
-    document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0];
+    sembunyikanSemuaLayar();                         // tutup semua halaman lain
+    document.getElementById('absensiRondaView').style.display = 'block'; // tampilkan absensi
+    document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0]; // set tanggal hari ini
     history.pushState({view: 'absensiRondaView', tab: 'warga'}, '', '#absensiRonda');
+    muatHalamanAbsensi();                            // muat data absensi
   }
 
   function muatHalamanAbsensi() {
