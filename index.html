@@ -5567,9 +5567,6 @@
 
   // LOGIKA PENGURUS
   function checkActiveSessionAdmin(response) {
-    console.log('DOM READY', document.readyState);
-    console.log('SESSION INIT', response);
-
     const adminPanel = document.getElementById('absRondaAdminPanel');
     const userPanel = document.getElementById('absRondaUserPanel');
 
@@ -5589,26 +5586,23 @@
 
     google.script.run
         .withSuccessHandler(function(res) {
-      console.log('SESSION DATA', res);
-      const noSess = document.getElementById('absRondaNoSession');
-      const actSess = document.getElementById('absRondaActiveSession');
-      // Sembunyikan elemen QR/PIN tunggal karena sekarang per petugas
-      const qrDisplay = document.getElementById('absRondaQrDisplay');
-      const pinDisplay = document.getElementById('absRondaPinDisplay');
-      if (qrDisplay) qrDisplay.style.display = 'none';
-      if (pinDisplay) pinDisplay.style.display = 'none';
+            const noSess = document.getElementById('absRondaNoSession');
+            const actSess = document.getElementById('absRondaActiveSession');
+            
+            // Sembunyikan elemen QR/PIN tunggal (warisan sistem lama)
+            if (document.getElementById('absRondaQrDisplay')) document.getElementById('absRondaQrDisplay').style.display = 'none';
+            if (document.getElementById('absRondaPinDisplay')) document.getElementById('absRondaPinDisplay').style.display = 'none';
 
-      if (res.active) {
-        if (noSess) noSess.style.display = 'none';
-        if (actSess) actSess.style.display = 'block';
-        // Tampilkan pesan bahwa sesi aktif
-        document.getElementById('absRondaTimer').innerText = 'Sesi aktif (token per petugas)';
-      } else {
-        if (noSess) noSess.style.display = 'block';
-        if (actSess) actSess.style.display = 'none';
-      }
-      muatRealtimeAbsensi(); // Tabel akan menampilkan QR/PIN per petugas
-    })
+            if (res.active) {
+                if (noSess) noSess.style.display = 'none';
+                if (actSess) actSess.style.display = 'block';
+                document.getElementById('absRondaTimer').innerText = 'Sesi Absensi Aktif';
+            } else {
+                if (noSess) noSess.style.display = 'block';
+                if (actSess) actSess.style.display = 'none';
+            }
+            muatRealtimeAbsensi(); 
+        })
     .withFailureHandler(console.error)
     .getRondaAbsensiSession(response.jadwalId);
   }
@@ -5619,43 +5613,29 @@
     new QRCode(cont, { text: token, width: 200, height: 200 });
   }
 
-  function startAbsensiSession() {
-    const tglJadwal = document.getElementById('absRondaDate').value;
-    if (!tglJadwal) return showWarning('Pilih tanggal jadwal terlebih dahulu');
-    if (!absRondaJadwalId) return showWarning('Jadwal tidak ditemukan untuk tanggal ini.');
-
-    showLoading('Membuat token untuk setiap petugas...');
-    google.script.run
-        .withSuccessHandler(function(res) {
-            Swal.close();
-            if (res.status === 'success') {
-                // Sembunyikan tombol "Buka Sesi", tampilkan panel aktif
-                document.getElementById('absRondaNoSession').style.display = 'none';
-                document.getElementById('absRondaActiveSession').style.display = 'block';
-                // Tampilkan timer jika ada data expired
-                if (res.data && res.data.length > 0) {
-                    startAbsensiTimer(res.data[0].expired);
-                }
-                showSuccess('Sesi absensi dibuka! Token per petugas telah dibuat.');
-                muatRealtimeAbsensi(); // Refresh tabel
-            } else {
-                showError(res.pesan);
-            }
-        })
-        .withFailureHandler(function(err) {
-            Swal.close();
-            showError('Gagal membuka sesi: ' + err.message);
-        })
-        .generateTokensForJadwal(absRondaJadwalId);
+  async function startAbsensiSession() {
+    if (!absRondaJadwalId) return showWarning('Jadwal tidak ditemukan.');
+    showLoading('Membuka sesi absensi...');
+    try {
+      google.script.run.withSuccessHandler(function(res) {
+        Swal.close();
+        if (res.status === 'success') {
+          showSuccess(res.pesan);
+          muatHalamanAbsensi();
+        } else showError(res.pesan);
+      }).openRondaAbsensi(absRondaJadwalId);
+    } catch (e) { showError(e.message); }
   }
 
   function stopAbsensiSession() {
     showConfirm('Tutup sesi absensi? QR dan PIN tidak akan bisa digunakan lagi.').then(res => {
       if (res.isConfirmed) {
-        google.script.run.withSuccessHandler(function() {
-          document.getElementById('absRondaNoSession').style.display = 'block';
-          document.getElementById('absRondaActiveSession').style.display = 'none';
-        }).resetAbsensiRonda(absRondaJadwalId);
+        showLoading('Menutup sesi...');
+        google.script.run.withSuccessHandler(function(res) {
+          Swal.close();
+          if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
+          muatHalamanAbsensi();
+        }).closeRondaAbsensi(absRondaJadwalId);
       }
     });
   }
@@ -5669,24 +5649,25 @@
                 if (!tbody) return;
                 tbody.innerHTML = '';
                 res.data.forEach(function(p) {
-                    const statusColor = p.status === 'Hadir' ? '#10b981' : '#64748b';
+                    const isHadir = (p.status === 'Hadir');
+                    const statusColor = isHadir ? '#10b981' : '#64748b';
                     
                     const qrPinHtml = `
                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                             <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px;">${p.pin || '-'}</span>
                             ${p.token && p.token !== '-' ? 
-                                `<button class="btn-small" onclick="tampilkanQR('${p.token}')" style="padding:2px 6px; margin:0;">QR</button>` 
+                                `<button class="btn-small" onclick='tampilkanQR(${JSON.stringify(p.token)})' style="padding:2px 6px; margin:0;">QR</button>` 
                                 : ''}
                         </div>
                     `;
 
-                    const aksiHtml = p.status === 'Hadir' 
-                        ? `<button class="btn-small danger" onclick="resetAbsensiPetugas('${p.nama}')" style="padding:2px 6px; margin:0;">Reset</button>`
+                    const aksiHtml = isHadir 
+                        ? `<button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama}')" style="padding:2px 6px; margin:0;">Reset</button>`
                         : `<span class="muted">-</span>`;
 
                     tbody.innerHTML += `<tr>
                         <td><strong>${p.nama}</strong></td>
-                        <td><span class="status-badge" style="background:${statusColor}">${p.status}</span></td>
+                        <td><span class="status-badge" style="background:${statusColor}; font-size:10px;">${p.status}</span></td>
                         <td>${p.metode || '-'}</td>
                         <td>${p.jam || '-'}</td>
                         <td>${qrPinHtml}</td>
@@ -5699,80 +5680,70 @@
         .getRealtimeAbsensiModern(absRondaJadwalId);
   }
 
+  function resetAbsensiPetugasManual(nama) {
+    showConfirm(`Reset kehadiran untuk ${nama}?`).then(res => {
+      if (res.isConfirmed) {
+        showLoading('Mereset...');
+        google.script.run.withSuccessHandler(res => {
+          if (res.status === 'success') { showSuccess(res.pesan); muatRealtimeAbsensi(); }
+          else showError(res.pesan);
+        }).resetAbsensiPetugas(absRondaJadwalId, nama);
+      }
+    });
+  }
+
   function tampilkanQR(token) {
-    Swal.fire({
-        title: 'QR Code Petugas',
-        html: `<div id="qrModalContainer" style="display:flex; justify-content:center;"></div>`,
-        showConfirmButton: true,
-        confirmButtonText: 'Tutup',
-        didOpen: function() {
-            new QRCode(document.getElementById('qrModalContainer'), {
-                text: token, width: 200, height: 200
-            });
-        }
-    });
+      // Token dikirim sebagai JSON string payload untuk Guard
+      const payload = typeof token === 'string' ? token : JSON.stringify(token);
+      
+      Swal.fire({
+          title: 'QR Absensi Petugas',
+          html: `<div id="qrModalContainer" style="display:flex; justify-content:center; padding:10px;"></div>
+                 <p class="muted" style="font-size:12px; margin-top:10px;">Tunjukkan kode ini ke kamera scanner.</p>`,
+          showConfirmButton: true,
+          confirmButtonText: 'Tutup',
+          didOpen: function() {
+              new QRCode(document.getElementById('qrModalContainer'), {
+                  text: payload,
+                  width: 200,
+                  height: 200
+              });
+          }
+      });
   }
 
-  function resetAbsensiPetugas(nama) {
-    if (!absRondaJadwalId) return showWarning('ID jadwal tidak valid.');
-    showConfirm(`Reset absensi untuk ${nama}?`).then(res => {
-        if (res.isConfirmed) {
-            showLoading('Mereset...');
-            google.script.run
-                .withSuccessHandler(function() {
-                    Swal.close();
-                    showSuccess(`Absensi ${nama} direset.`);
-                    muatRealtimeAbsensi();
-                })
-                .withFailureHandler(function(err) {
-                    Swal.close();
-                    showError('Gagal reset: ' + err.message);
-                })
-                .resetAbsensiPetugas(absRondaJadwalId, nama);
-        }
-    });
-  }
-
-  function showQrScanner() {
-    // 1. Hentikan instance lama
+  async function showQrScanner() {
     if (html5QrCode) {
-        try {
-            html5QrCode.stop().then(() => {
-                html5QrCode = null;
-            }).catch(() => {});
-        } catch(e) {}
+      try { await html5QrCode.stop(); } catch(e) {}
+      document.getElementById('qr-reader').innerHTML = '';
     }
+    startScannerSession();
+  }
 
-    // 2. Bersihkan container
-    const readerDiv = document.getElementById('qr-reader');
-    if (readerDiv) readerDiv.innerHTML = '';
-
-    document.getElementById('absRondaUserSelect').style.display = 'none';
-    document.getElementById('absRondaQrScannerContainer').style.display = 'block';
-    showLoading('Menginisialisasi Kamera...');
-
-    // 3. Nonaktifkan tombol scan sementara (hindari double click)
+  async function startScannerSession() {
     const btn = document.querySelector('#absRondaUserSelect .btn-primary');
     if (btn) btn.disabled = true;
 
+    document.getElementById('absRondaUserSelect').style.display = 'none';
+    document.getElementById('absRondaQrScannerContainer').style.display = 'block';
+
     html5QrCode = new Html5Qrcode("qr-reader");
-    html5QrCode.start(
+    try {
+      await html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-            html5QrCode.stop().then(() => {
-                html5QrCode = null;
-                if (btn) btn.disabled = false;
-            }).catch(() => {});
-            Swal.close();
-            submitAbsensiModern('QR', decodedText);
+        async (decodedText) => {
+          await html5QrCode.stop();
+          html5QrCode = null;
+          if (btn) btn.disabled = false;
+          submitAbsensiModern('QR', decodedText);
         }
-    ).catch(err => {
-        Swal.close();
+      );
+    } catch (err) {
         if (btn) btn.disabled = false;
         showError('Gagal mengakses kamera: ' + err);
         hideAbsenMetode();
-    });
+    }
   }
 
   function showPinInput() {
@@ -5782,12 +5753,8 @@
   }
 
   function hideAbsenMetode() {
-    if (html5QrCode) {
-        try {
-            html5QrCode.stop().then(() => {
-                html5QrCode = null;
-            }).catch(() => {});
-        } catch(e) {}
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(console.error);
     }
     document.getElementById('absRondaUserSelect').style.display = 'block';
     document.getElementById('absRondaQrScannerContainer').style.display = 'none';
@@ -9062,6 +9029,9 @@ function renderRekapKasWarga(data) {
       }
     }).simpanKasWarga(id, tanggal, deskripsi, jenis, kategori, '', jumlah);
   }
+
+
+
 
   function hapusKas(id) {
     showConfirm('Yakin hapus transaksi?').then(function(res) {
