@@ -6021,20 +6021,35 @@
 
   function submitAbsensiModern(metode, val) {
     if (!absRondaJadwalId || !currentUser.nama) return showError('Data absensi tidak lengkap.');
+
+    // Matikan tombol submit PIN untuk mencegah klik ganda
+    const btnPin = document.querySelector('#absRondaPinInputContainer .btn-primary'); // Get button reference
+    if (btnPin) btnPin.disabled = true;
+
     showLoading('Memvalidasi kehadiran...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close(); // Ensure loading is closed
-      if (res.status === 'success') {
-        Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.pesan, confirmButtonColor: '#10b981' }).then(() => {
-          hideAbsenMetode();
-          kembaliKeDashboard();
-        });
-      } else { // Handle error
-        showError(res.pesan);
-        if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
-        else showQrScanner(); // Re-open scanner on error
-      }
-    }).simpanAbsensi(absRondaJadwalId, currentUser.nama, metode, val);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (btnPin) btnPin.disabled = false;
+        // 2. Aktifkan kembali tombol setelah respons sukses
+        Swal.close(); // Close loading modal
+        if (res.status === 'success') {
+          Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.pesan, confirmButtonColor: '#10b981' }).then(() => {
+            hideAbsenMetode(); // Hide input method (PIN or QR scanner)
+            kembaliKeDashboard();
+          });
+        } else {
+          showError(res.pesan);
+          if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
+          else showQrScanner(); // Buka kembali scanner jika error
+        }
+      })
+      .withFailureHandler(function(err) {
+        // 3. Aktifkan kembali tombol jika terjadi error
+        if (btnPin) btnPin.disabled = false; // Re-enable on failure
+        Swal.close();
+        showError('Terjadi gangguan koneksi: ' + err.message);
+      })
+      .simpanAbsensi(absRondaJadwalId, currentUser.nama, metode, val);
   }
 
   function startAbsensiTimer(exp) {
