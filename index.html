@@ -1921,6 +1921,23 @@
     .abs-alfa { background-color: #ef4444; }
     .abs-active { outline: 4px solid rgba(0,0,0,0.2); transform: scale(1.05); z-index: 5; }
     .abs-card { border-radius: 14px; margin-bottom: 15px; padding: 18px; font-size: 16px; }
+    
+    /* Perbaikan Masalah 2: Kolom Aksi */
+    .aksi-cell {
+      display: flex !important;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: nowrap;
+      min-width: 150px;
+    }
+    .btn-edit-pro {
+      background: #3b82f6 !important;
+      color: white !important;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-weight: 700;
+    }
 
     /* Prefix Rp untuk Input Nominal */
     .input-group-prefix {
@@ -5346,7 +5363,7 @@
     warga: [
       { title: "Jadwal Kegiatan", icon: "calendar_month", roles: ["admin", "pengurus rt", "warga"], action: "bukaJadwal", perm: "rt_jadwal" },
       { title: "Jadwal Ronda", icon: "security", roles: ["admin", "pengurus rt", "warga"], action: "bukaRonda", perm: "rt_ronda" },
-      { title: "Absensi Ronda", icon: "how_to_reg", roles: ["admin", "pengurus rt"], action: "bukaAbsensiRonda", perm: "rt_ronda_crud" },
+      { title: "Absensi Ronda", icon: "how_to_reg", roles: ["admin", "pengurus rt", "warga"], action: "bukaAbsensiRonda", perm: "rt_ronda" },
       { title: "Kelola User", icon: "manage_accounts", roles: ["admin"], action: "bukaKelolaUser", perm: "rt_user" },
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
@@ -5479,7 +5496,7 @@
       var dateEl = document.getElementById('absRondaDate');
       if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
-      history.pushState({ view: 'absensiRondaView', tab: 'warga' }, '', '#absensiRonda');
+    history.pushState({ view: 'absensiRondaView', tab: 'warga', onLoad: 'muatHalamanAbsensi' }, '', '#absensiRonda');
 
       // tampilkan loading cepat biar tidak terlihat blank
       var header = document.getElementById('absRondaHeader');
@@ -5552,6 +5569,7 @@
           if (adminPanel) adminPanel.style.display = 'none';
           if (userPanel) userPanel.style.display = 'none';
         }
+        Swal.close(); // Close loading after initial data is fetched
  })
       .withFailureHandler(function(err) {
         console.error('Gagal memuat data absensi:', err);
@@ -5587,6 +5605,7 @@
 
     adminPanel.style.display = 'block';
     userPanel.style.display = 'none';
+    hideAbsenMetode(); // Ensure user input methods are hidden
     
     if (!response || !response.jadwalId || !response.schedule) {
         console.warn('Data jadwal tidak lengkap, tidak bisa cek sesi.');
@@ -5612,17 +5631,20 @@
                 const qrDisplay = document.getElementById('absRondaQrDisplay');
                 if (pinDisplay) pinDisplay.innerText = res.pin || '------';
                 if (qrDisplay) {
-                    qrDisplay.style.display = 'block';
+                    qrDisplay.style.display = 'block'; // Ensure QR display is visible
                     generateAbsenQr(res.qrToken); // Use the QR token from the backend
                 }
 
                 // Start timer if expiry is provided
                 if (res.expiryTime) {
                     startAbsensiTimer(res.expiryTime);
+                } else { 
+                    clearInterval(absRondaRefreshInterval); 
+                    document.getElementById('absRondaTimer').innerText = 'SESI AKTIF'; 
                 }
             } else {
-                if (noSess) noSess.style.display = 'block';
-                if (actSess) actSess.style.display = 'none';
+                if (noSession) noSession.style.display = 'block';
+                if (activeSession) activeSession.style.display = 'none';
             }
             muatRealtimeAbsensi(); 
         })
@@ -5647,6 +5669,7 @@
       </div>`;
 
       if (adminPanel) adminPanel.style.display = 'none';
+      hideAbsenMetode(); // Ensure admin input methods are hidden
       if (userPanel) {
           userPanel.style.display = 'block';
           document.getElementById('absRondaQrScannerContainer').style.display = 'none'; // Hide scanner
@@ -5691,6 +5714,25 @@
               .getRondaAbsensiSession(absRondaJadwalId);
       }
   }
+  
+  function tampilkanDetailPetugas(nama, status) {
+    Swal.fire({
+      title: 'Detail Petugas Ronda',
+      html: `
+        <div style="text-align:left; padding:10px;">
+          <p style="font-size:16px; font-weight:700; color:var(--text-main);">Nama: <strong>${nama}</strong></p>
+          <p style="font-size:16px; font-weight:700; color:var(--text-main);">Status: <span class="status-badge" style="background:${getStatusColor(status)};">${status}</span></p>
+          <p class="muted" style="margin-top:15px;">Informasi lebih lanjut dapat dilihat di tabel kehadiran.</p>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Tutup',
+      confirmButtonColor: 'var(--primary-color)',
+      background: 'var(--bg-surface)',
+      customClass: { popup: 'professional-modal-radius' }
+    });
+  }
+
 
   // Tentukan warna berdasarkan status
   function getStatusColor(status) {
@@ -5709,6 +5751,10 @@
     if (!hasPermission('rt_ronda_crud')) {
         showError('Anda tidak memiliki izin untuk mengubah status.');
         return;
+    }
+    if (!absRondaJadwalId) {
+      showError('ID Jadwal tidak ditemukan.');
+      return;
     }
 
     // If status is changed from Hadir to something else, reset the attendance record
@@ -5774,7 +5820,7 @@
     showConfirm('Tutup sesi absensi? QR dan PIN tidak akan bisa digunakan lagi.').then(res => {
       if (res.isConfirmed) {
         showLoading('Menutup sesi...');
-        google.script.run.withSuccessHandler(function(res) {
+        google.script.run.withSuccessHandler(function(res) { // Ensure res is handled
           Swal.close(); // Ensure loading is closed
           if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
           muatHalamanAbsensi();
@@ -5787,6 +5833,7 @@
     if (!absRondaJadwalId) {
         console.warn('absRondaJadwalId belum tersedia');
         return;
+    } else { // Clear any previous interval to prevent multiple calls
     }
 
     console.log('Mengambil data absensi untuk jadwal:', absRondaJadwalId);
@@ -5801,31 +5848,37 @@
 
                 res.data.forEach(function(p) {
                     const statusColor = getStatusColor(p.status || 'Belum Hadir');
+                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px; min-width:70px;">${p.status}</span>`;
 
-                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px; min-width:70px;">${p.status}</span>`;                    
-
-                    // Jika user adalah admin/pengurus, tampilkan dropdown edit status
-                    const isAdmin = hasPermission('rt_ronda_crud');
+                    // Pengecekan Admin/Pengurus untuk tombol Edit
+                    const isManagement = hasPermission('rt_ronda_crud');
                     let aksiHtml = '';
                     
-                    if (isAdmin) {
-                        const statusOptions = ['Hadir', 'Izin', 'Sakit', 'Alfa', 'Belum Hadir'];
+                    if (isManagement) {
+                        const statusOptions = ['Hadir', 'Izin', 'Sakit', 'Alfa', 'Belum Hadir']; // Options for status dropdown
                         let optionsHtml = statusOptions.map(s =>
                             `<option value="${s}" ${p.status === s ? 'selected' : ''}>${s}</option>`
                         ).join('');
                         
-                        aksiHtml = `
-                            <select class="status-select" data-nama="${p.nama.replace(/'/g, "\\'")}" 
+                        aksiHtml = `<div class="aksi-cell">
+                            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${p.nama.replace(/'/g, "\\'")}', '${p.status}')" title="Detail">
+                                <i class="material-icons" style="font-size:16px;">visibility</i>
+                            </button>
+                            <select class="status-select" data-nama="${p.nama.replace(/'/g, "\\'")}" data-current-status="${p.status}"
                                     onchange="updateStatusPetugas('${absRondaJadwalId}', '${p.nama.replace(/'/g, "\\'")}', this.value)" 
                                     style="padding:2px 4px; font-size:11px; border-radius:4px; background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-color);">
                                 ${optionsHtml}
                             </select>
-                            ${p.status === 'Hadir' ? 
-                                `<button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama.replace(/'/g, "\\'")}')" style="padding:2px 6px; margin-left:4px;">Reset</button>` 
-                                : ''}
-                        `;
+                            <button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama.replace(/'/g, "\\'")}')" title="Hapus/Reset">
+                                <i class="material-icons" style="font-size:16px;">delete_sweep</i>
+                            </button>
+                        </div>`;
                     } else {
-                        aksiHtml = `<span class="muted" style="font-size:12px;">-</span>`;
+                        aksiHtml = `<div class="aksi-cell">
+                            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${p.nama.replace(/'/g, "\\'")}', '${p.status}')">
+                                <i class="material-icons" style="font-size:16px;">info</i> Detail
+                            </button>
+                        </div>`;
                     }
 
                     // Tampilkan PIN dan tombol QR hanya jika token tersedia dan user adalah admin/pengurus
@@ -5861,7 +5914,7 @@
   function tampilkanQR(token) {
       // Token dikirim sebagai JSON string payload untuk Guard
       const payload = typeof token === 'string' ? token : JSON.stringify(token);
-      
+
       Swal.fire({
           title: 'QR Absensi Petugas',
           html: `<div id="qrModalContainer" style="display:flex; justify-content:center; padding:10px;"></div>
@@ -5879,15 +5932,14 @@
   }
 
   async function showQrScanner() {
+    // Stop any existing scanner instance
+    if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+      await html5QrCodeScanner.stop();
+    }
+    
     try {
       document.getElementById('absRondaUserSelect').style.display = 'none';
       document.getElementById('absRondaQrScannerContainer').style.display = 'block';
-
-      const qrboxFunction = (w, h) => {
-        let minDim = Math.min(w, h);
-        let size = minDim * 0.7; // 70% of the smaller dimension
-        return { width: size, height: size };
-      };
 
       // Ensure previous scanner instance is stopped
       if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
@@ -5895,28 +5947,24 @@
       }
 
       html5QrCodeScanner = new Html5QrcodeScanner(
-        "qr-reader", { fps: 10, qrbox: qrboxFunction, disableFlip: false }, false
+        "qr-reader", { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false, rememberLastUsedCamera: true }, false
       );
 
       html5QrCodeScanner.render(
         (decodedText, decodedResult) => {
-          html5QrCodeScanner.clear(); // Stop scanning
+          // Stop scanning and clear the UI
+          if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+            html5QrCodeScanner.stop().then(() => {
+              html5QrCodeScanner.clear();
+              html5QrCodeScanner = null;
+            });
+          }
           submitAbsensiModern('QR', decodedText);
         }, (errorMessage) => { /* Optional: handle scan errors */ }
       );
     } catch (e) {
       console.error('showQrScanner error:', e);
       showError('Gagal memuat kamera: ' + e.message);
-    }
-  }
-
-  async function startScannerSession() {
-    const readerDiv = document.getElementById('qr-reader');
-    
-    // Pastikan instance lama dimatikan sepenuhnya
-    if (html5QrCodeScanner) {
-      html5QrCodeScanner.clear(); // This stops the camera and clears the UI
-      html5QrCodeScanner = null;
     }
   }
 
@@ -5929,7 +5977,11 @@
   // Fungsi untuk mereset absensi petugas secara manual oleh admin/pengurus
   function resetAbsensiPetugasManual(nama) {
     if (!hasPermission('rt_ronda_crud')) {
-      showError('Anda tidak memiliki izin untuk mereset absensi.');
+      showError('Anda tidak memiliki izin untuk mereset absensi.'); // Error message
+      return;
+    }
+    if (!absRondaJadwalId) {
+      showError('ID Jadwal tidak ditemukan.');
       return;
     }
     showConfirm(`Reset kehadiran untuk ${nama}?`).then(res => {
@@ -5951,7 +6003,10 @@
   }
 
   function hideAbsenMetode() {
-    if (html5QrCodeScanner) html5QrCodeScanner.clear(); // Stop scanner if active
+    if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+      html5QrCodeScanner.stop().then(() => html5QrCodeScanner.clear());
+      html5QrCodeScanner = null;
+    }
 
     document.getElementById('absRondaUserSelect').style.display = 'block';
     document.getElementById('absRondaQrScannerContainer').style.display = 'none';
@@ -5965,6 +6020,7 @@
   }
 
   function submitAbsensiModern(metode, val) {
+    if (!absRondaJadwalId || !currentUser.nama) return showError('Data absensi tidak lengkap.');
     showLoading('Memvalidasi kehadiran...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Ensure loading is closed
@@ -5973,7 +6029,7 @@
           hideAbsenMetode();
           kembaliKeDashboard();
         });
-      } else {
+      } else { // Handle error
         showError(res.pesan);
         if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
         else showQrScanner(); // Re-open scanner on error
@@ -5983,7 +6039,7 @@
 
   function startAbsensiTimer(exp) {
     const target = new Date(exp).getTime();
-    if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
+    if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval); // Clear previous interval
     
     absRondaRefreshInterval = setInterval(() => {
       const now = new Date().getTime();
@@ -5991,7 +6047,7 @@
       if (diff <= 0) {
         clearInterval(absRondaRefreshInterval);
         document.getElementById('absRondaTimer').innerText = 'SESI BERAKHIR';
-        checkActiveSessionAdmin();
+        muatHalamanAbsensi(); // Refresh the page to show session closed state
         return;
       }
       const h = Math.floor(diff / (1000 * 60 * 60));
@@ -5999,7 +6055,7 @@
       const s = Math.floor((diff % (1000 * 60)) / 1000);
       document.getElementById('absRondaTimer').innerText = `Berakhir dalam: ${h}j ${m}m ${s}d`;
       
-      // Auto refresh realtime list every 10 seconds
+      // Auto refresh realtime list every 10 seconds (only if admin panel is visible)
       if (s % 10 === 0 && document.getElementById('absensiRondaView').style.display === 'block') muatRealtimeAbsensi();
     }, 1000);
   }
@@ -6028,6 +6084,7 @@
   // ======================== MODUL KARANG TARUNA (JS) ========================
   
   function bukaKtJadwal() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('ktJadwalView').style.display = 'block';
     history.pushState({view: 'ktJadwalView', tab: 'karangtaruna', onLoad: 'ktMuatDataJadwal'}, '', '#ktJadwal');
@@ -6037,10 +6094,12 @@
 
   function ktMuatDataJadwal() {
     var list = document.getElementById('ktListJadwal');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('ktListJadwal', 3);
     console.log('[KT JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[KT JADWAL] response:', res);
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       console.log('[KT JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = ''; // Clear skeleton
       if (res.status === 'error') return renderErrorState('ktListJadwal', 'ktMuatDataJadwal()');
@@ -6121,6 +6180,7 @@
   }
 
   function bukaKtKader() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('ktKaderView').style.display = 'block';
     history.pushState({view: 'ktKaderView', tab: 'karangtaruna', onLoad: 'ktMuatDataKader'}, '', '#ktKader');
@@ -6130,9 +6190,11 @@
 
   function ktMuatDataKader() {
     var list = document.getElementById('ktListKader');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('ktListKader', 3);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       if (res.data && res.data.length) {
         res.data.forEach(function(item) {
           var aksi = hasPermission('kt_kader_crud') ? '<div class="hr-light"></div><button class="btn-small" onclick="ktEditKader(\''+item.id+'\',\''+item.nama.replace(/'/g,"\\'")+'\',\''+item.usia+'\',\''+item.alamat.replace(/'/g,"\\'")+'\',\''+item.nohp+'\',\''+item.status+'\',\''+item.jabatan.replace(/'/g,"\\'")+'\')">Edit</button><button class="btn-small danger" onclick="ktHapusKader(\''+item.id+'\')">Hapus</button>' : '';
@@ -6216,6 +6278,7 @@
   var ktAllKasData = [];
 
   function bukaKtKas() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('ktKasView').style.display = 'block';
     history.pushState({view: 'ktKasView', tab: 'karangtaruna', onLoad: 'ktMuatDataKas'}, '', '#ktkas');
@@ -6239,8 +6302,10 @@
   function ktMuatDataKas() {
     var totalEl = document.getElementById('ktTotalKas');
     if (totalEl) {
-      totalEl.classList.add('skeleton-text');
-      totalEl.innerText = 'Rp 0.000.000';
+      if (document.getElementById('ktKasView').style.display === 'block') { // Only show skeleton if on this view
+        totalEl.classList.add('skeleton-text');
+        totalEl.innerText = 'Rp 0.000.000';
+      }
     }
     google.script.run.withSuccessHandler(function(res) {
       if (totalEl) totalEl.classList.remove('skeleton-text');
@@ -6702,6 +6767,7 @@
   }
 
   function ktHapusGaleri(id) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     showConfirm('Hapus foto ini?').then(function(r){ 
       if(r.isConfirmed) {
         showLoading('Menghapus...');
@@ -6709,6 +6775,7 @@
           Swal.close();
           if(res.status==='success') { showSuccess(res.pesan); ktMuatDataGaleri(); }
           else showError(res.pesan);
+          if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         }).ktHapusGaleri(id); 
       }
     });
@@ -6716,6 +6783,7 @@
 
   function bukaKtGaleri() {
     sembunyikanSemuaLayar();
+    window.__activeViewToken++; // Invalidate old callbacks
     document.getElementById('ktGaleriView').style.display = 'block';
     history.pushState({view: 'ktGaleriView', tab: 'karangtaruna', onLoad: 'ktMuatDataGaleri'}, '', '#ktGaleri');
     document.getElementById('ktBtnTambahGaleri').style.display = hasPermission('kt_galeri_crud') ? 'flex' : 'none';
@@ -6786,9 +6854,11 @@
 
   function ktMuatDataGaleri() {
     var list = document.getElementById('ktListGaleri');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('ktListGaleri', 6);
     google.script.run.withSuccessHandler(function(res) {
       list.innerHTML = ''; // Clear skeleton
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       if (res.status === 'error') {
         showError('Gagal memuat database: ' + res.pesan);
         list.innerHTML = '<p class="muted">Gagal mengambil data dari database.</p>';
@@ -6817,6 +6887,7 @@
         var allMedia = data.map(function(it){ return it.url; });
         data.forEach(function(item, idx) {
           var safeJudul = escapeHtml(item.judul || '-');
+          // Ensure item.tanggal is formatted correctly for display
           var safeTanggal = escapeHtml(item.tanggal || '-');
           var safeTanggalRaw = escapeJsString(item.tanggalRaw || '');
           var safeDescription = escapeJsString(item.deskripsi || '');
@@ -6848,6 +6919,7 @@
 
   // ======================== JADWAL ========================
   function bukaRonda() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('rondaView').style.display = 'block';
     muatTahunRondaList();
@@ -6858,6 +6930,7 @@
     document.getElementById('btnSalinRondaWa').style.display = 'flex';
   }
 function bukaJadwal() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('jadwalView').style.display = 'block';
     history.pushState({view: 'jadwalView', tab: 'warga', onLoad: 'muatDataJadwal'}, '', '#jadwal');
@@ -6874,10 +6947,12 @@ function bukaJadwal() {
 
   function muatDataJadwal() {
     var list = document.getElementById('listJadwal');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('listJadwal', 3);
     console.log('[JADWAL RT] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
       console.log('[JADWAL RT] response:', res);
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       console.log('[JADWAL RT] jumlah data:', res.data?.length);
       list.innerHTML = '';
       if (res.status === 'error') return renderErrorState('listJadwal', 'muatDataJadwal()');
@@ -7003,6 +7078,7 @@ function bukaJadwal() {
   }
 
   function muatDataRonda() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var bulan = document.getElementById('rondaFilterBulan').value;
     var tahun = document.getElementById('rondaFilterTahun').value;
     var list = document.getElementById('listRonda');
@@ -7035,6 +7111,7 @@ function bukaJadwal() {
     const info = document.getElementById('rondaTodayInfo');
     if (!info) return;
 
+    const currentViewToken = window.__activeViewToken; // Capture current token
     info.innerHTML = `<div style="display:flex; justify-content:center; padding:15px;"><div class="bbx-spinner" style="width:20px; height:20px;"></div></div>`;
 
     const now = new Date();
@@ -7254,6 +7331,7 @@ function bukaJadwal() {
   }
 
   function filterRonda() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     try { // Filter ronda data
     var keyword = document.getElementById('rondaSearchInput').value.toLowerCase();
     var list = document.getElementById('listRonda');
@@ -7292,6 +7370,7 @@ function bukaJadwal() {
     });
 
     list.innerHTML = '';
+    if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
     if (filtered.length > 0) {
       var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>'; // Table header
       var lastMonthLabel = '';
@@ -7331,14 +7410,18 @@ function bukaJadwal() {
             <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${p}
           </span>`).join('') + '</div>' : '-'; // Petugas list
         var aksi = hasPermission('rt_ronda_crud') ? 
-          `<div style="display: flex; gap: 4px; flex-wrap: nowrap;">
-            <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
-              <i class="material-icons" style="font-size:14px;">edit</i>
+          `<div class="aksi-cell">
+            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${item.petugas.replace(/'/g, "\\'")}', 'Belum Hadir')" title="Detail">
+                <i class="material-icons" style="font-size:16px;">visibility</i>
             </button>
-            <button class="btn-small danger" onclick="hapusRonda(${item.row})">
-              <i class="material-icons" style="font-size:14px;">delete</i>
+            <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
+              <i class="material-icons" style="font-size:16px;">edit</i>
             </button>
-          </div>` : '-'; // Action buttons
+            <button class="btn-small danger action-btn" onclick="hapusRonda(${item.row})">
+              <i class="material-icons" style="font-size:16px;">delete</i> Hapus
+            </button>
+          </div>` : '-';
+
         
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
@@ -7396,6 +7479,7 @@ function bukaJadwal() {
     }
 
     showLoading('Menginisialisasi filter...');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     google.script.run.withSuccessHandler(function(res) { // Handle success
       Swal.close();
       let years = (res && res.status === 'success') ? res.data : [];
@@ -7406,6 +7490,7 @@ function bukaJadwal() {
         years.push(tahunSkrg);
       }
       
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       // Render Year Dropdown with Explicit Casting
       rondaFilterTahunSelect.innerHTML = '';
       [...new Set(years)].sort((a, b) => b - a).forEach(function(y) {
@@ -7607,6 +7692,7 @@ function bukaJadwal() {
 
   // ======================== KONTAK ========================
   function bukaKontak() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('kontakView').style.display = 'block';
     history.pushState({view: 'kontakView', tab: 'warga', onLoad: 'muatDataKontak'}, '', '#kontak');
@@ -7623,9 +7709,11 @@ function bukaJadwal() {
 
   function muatDataKontak() {
     var list = document.getElementById('listKontak');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('listKontak', 3);
     
     google.script.run.withSuccessHandler(function(res) {
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       Swal.close(); // Close loading modal
       list.innerHTML = '';
       
@@ -7656,8 +7744,14 @@ function bukaJadwal() {
           var aksi = hasPermission('rt_kontak_crud') ? `
             <div class="card-actions" style="margin-top:8px; padding-top:5px;" onclick="event.stopPropagation()">
               <button class="btn-action-subtle" onclick="editKontak('${node.id}','${node.nama.replace(/'/g,"\\'")}','${(node.jabatan||'').replace(/'/g,"\\'")}','${node.nohp}','${node.fotoUrl}')"><i class="material-icons" style="font-size:18px;">edit</i></button>
-              <button class="btn-action-subtle danger-hover" onclick="hapusDataKontak('${node.id}')"><i class="material-icons" style="font-size:18px;">delete</i></button>
+              <button class="btn-action-subtle danger-hover" onclick="hapusDataKontak('${node.id}')"><i class="material-icons" style="font-size:18px;">delete</i></button> 
             </div>` : '';
+          // Add a detail button for all roles
+          const detailButton = `<button class="btn-action-subtle" onclick="tampilkanDetailKader('${node.nama.replace(/'/g,"\\'")}','${(node.jabatan||'').replace(/'/g,"\\'")}','${node.nohp}','${node.fotoUrl}')"><i class="material-icons" style="font-size:18px;">visibility</i></button>`;
+          // Combine action buttons
+          const combinedAksi = hasPermission('rt_kontak_crud') ? 
+            `<div class="card-actions" style="margin-top:8px; padding-top:5px;" onclick="event.stopPropagation()">${detailButton} ${aksi}</div>` :
+            `<div class="card-actions" style="margin-top:8px; padding-top:5px;" onclick="event.stopPropagation()">${detailButton}</div>`;
 
           list.innerHTML += `
             <div class="card-item fade-up-in ${isKetua ? 'ketua-highlight' : ''}" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="tampilkanDetailKader('${node.nama.replace(/'/g,"\\'")}','${(node.jabatan||'').replace(/'/g,"\\'")}','${node.nohp}','${node.fotoUrl}')">
@@ -7671,7 +7765,7 @@ function bukaJadwal() {
                   <div style="margin-top:4px;">${linkwa}</div>
                 </div>
               </div>
-              ${aksi}
+              ${combinedAksi}
             </div>`;
         });
       } else {
@@ -7999,6 +8093,7 @@ function bukaJadwal() {
   }
 
   function renderUserList(data) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var list = document.getElementById('listUsers');
     list.innerHTML = '';
     if (!data || data.length === 0) {
@@ -8013,6 +8108,7 @@ function bukaJadwal() {
       if (roleA === roleB) return (a.nama || '').localeCompare(b.nama || '');
       return roleA - roleB;
     });
+    if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
 
     let currentRoleGroup = '';
     data.forEach(function(item) {
@@ -8325,6 +8421,7 @@ function bukaJadwal() {
 
   // ======================== PENGADUAN ========================
   function bukaFormPengaduan() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('formPengaduanView').style.display = 'block';
     history.pushState({view: 'formPengaduanView', tab: 'warga'}, '', '#kirimPengaduan');
@@ -8389,6 +8486,7 @@ function bukaJadwal() {
   }
 
   function bukaHistori() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('historiPengaduanView').style.display = 'block';
     history.pushState({view: 'historiPengaduanView', tab: 'warga', onLoad: 'muatHistoriPengaduan'}, '', '#historiPengaduan');
@@ -8399,6 +8497,7 @@ function bukaJadwal() {
    * Refactored: Render dari State Lokal
    */
   function renderListHistoriUI(data) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     const list = document.getElementById('listHistori');
     list.innerHTML = '';
     if (!data || !data.length) {
@@ -8406,6 +8505,7 @@ function bukaJadwal() {
       return;
     }
 
+    if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
     const allImgs = data.filter(it => it.fotoUrl).map(it => getDirectUrl(it.fotoUrl));
     
     data.forEach((item, j) => {
@@ -8454,9 +8554,11 @@ function bukaJadwal() {
     else list.innerHTML = SPINNER_HTML;
 
     google.script.run.withSuccessHandler(function(res) {
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       if (res.status === 'error') return showError(res.pesan);
       window.pengaduanDataGlobal = res.data || [];
       filterHistoriPengaduan(); // Terapkan filter/search yang mungkin sedang aktif
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
     }).getHistoriPengaduan(currentUser.nama);
   }
 
@@ -8464,10 +8566,12 @@ function bukaJadwal() {
     sembunyikanSemuaLayar();
     document.getElementById('laporanPengaduanAdminView').style.display = 'block';
     history.pushState({view: 'laporanPengaduanAdminView', tab: 'warga', onLoad: 'muatLaporanPengaduanAdmin'}, '', '#adminPengaduan');
+    window.__activeViewToken++; // Invalidate old callbacks
     muatLaporanPengaduanAdmin();
   }
 
   function muatLaporanPengaduanAdmin() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var list = document.getElementById('listLaporanSemua');
     renderSkeleton('listLaporanSemua', 3);
     google.script.run.withSuccessHandler(function(res) {
@@ -8476,6 +8580,7 @@ function bukaJadwal() {
         var allImgs = [];
         for (var i = 0; i < res.data.length; i++) {
           allImgs.push(getDirectUrl(res.data[i].fotoUrl));
+          if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         }
         for (var j = 0; j < res.data.length; j++) {
           var item = res.data[j];
@@ -8638,6 +8743,7 @@ function bukaJadwal() {
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
@@ -8650,6 +8756,7 @@ function bukaJadwal() {
 
     google.script.run.withSuccessHandler(function(res) {
       targets.forEach(id => {
+        if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         const el = document.getElementById(id);
         if (el) el.classList.remove('skeleton-text');
       });
@@ -8671,6 +8778,7 @@ function bukaJadwal() {
       filterTabelTransaksi();
       muatRekapPeriode();
       updateRingkasanUI(backendTotals);
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       var selectedYear = parseInt(document.getElementById('tahunKasSelect').value);
       renderGrafikKas(selectedYear);
       if (callback) {
@@ -8699,6 +8807,7 @@ function bukaJadwal() {
   }
 
 function renderRekapKasWarga(data) {
+  const currentViewToken = window.__activeViewToken; // Capture current token
   var container = document.getElementById('tbodyRekapKasWarga');
   if (!container) {
     console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
@@ -8706,6 +8815,7 @@ function renderRekapKasWarga(data) {
   }
 
   container.innerHTML = '';
+  if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
   if (!data || data.length === 0) {
     container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
     return;
@@ -8800,6 +8910,7 @@ function renderRekapKasWarga(data) {
   }
 
   function cetakLaporanKas() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var tahun = document.getElementById('tahunKasSelect').value;
     var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -8807,6 +8918,7 @@ function renderRekapKasWarga(data) {
     showLoading('Menyiapkan laporan...');
     google.script.run.withSuccessHandler(function(resSettings) {
       Swal.close();
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       const cfg = (resSettings.status === 'success' && resSettings.data.rt) 
                  ? resSettings.data.rt 
                  : { nama_ttd: 'M. Irsyad', url_logo_kop: '' };
@@ -9283,6 +9395,7 @@ function renderRekapKasWarga(data) {
   }
 
   function muatTabelIuran() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var tahun = parseInt(document.getElementById('tahunIuranSelect').value);
     // Reset pencarian saat ganti tahun
     var searchInput = document.getElementById('iuranSearchInput');
@@ -9301,6 +9414,7 @@ function renderRekapKasWarga(data) {
 
     Promise.all([p1, p2, p3]).then(function(results) {
       Swal.close();
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       daftarKategori = results[0] || [];
       var wargaList = results[1] || [];
       var iuranList = results[2] || [];
@@ -9334,6 +9448,7 @@ function renderRekapKasWarga(data) {
         }
       }
       iuranData = rows;
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       renderTabelIuran(rows, tahun);
     }).catch(function(err) {
       Swal.close(); // Ensure loading is closed if this fails
@@ -9348,6 +9463,7 @@ function renderRekapKasWarga(data) {
     var filtered = iuranData.filter(function(row) {
       return (row.nama || '').toLowerCase().includes(keyword);
     });
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderTabelIuran(filtered, tahun);
   }
 
@@ -9550,6 +9666,7 @@ function renderRekapKasWarga(data) {
   }
 
   function editNamaWargaIuran(namaLama) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     Swal.fire({
       title: 'Ubah Nama Warga (Global)',
       text: 'Nama akan berubah di semua tahun iuran.',
@@ -9562,6 +9679,7 @@ function renderRekapKasWarga(data) {
       if (result.isConfirmed && result.value && result.value !== namaLama) {
         showLoading('Sinkronisasi nama di seluruh tahun...');
         google.script.run.withSuccessHandler(function(res) {
+          if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
           Swal.close();
           if (res.status === 'success') { showSuccess(res.pesan); muatTabelIuran(); }
           else { showError(res.pesan); }
@@ -9629,6 +9747,7 @@ function renderRekapKasWarga(data) {
   }
 
   function editWargaIuran(namaLama, kategoriLama, tahun) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     // Ambil daftar kategori terbaru
     google.script.run.withSuccessHandler(function(kategoriList) {
       // Buat opsi dropdown kategori
@@ -9667,6 +9786,7 @@ function renderRekapKasWarga(data) {
         if (result.isConfirmed) {
           const { namaBaru, kategoriBaru } = result.value;
           showLoading('Menyimpan perubahan...');
+          if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
           google.script.run.withSuccessHandler(function(res) {
             Swal.close();
             if (res.status === 'success') {
@@ -9687,6 +9807,7 @@ function renderRekapKasWarga(data) {
   }
 
   function hapusBarisIuran(nama, tahun) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     showConfirm('Yakin hapus data iuran ' + nama + ' tahun ' + tahun + '?').then(function(res) {
       if (res.isConfirmed) {
         showLoading('Menghapus...');
@@ -9694,6 +9815,7 @@ function renderRekapKasWarga(data) {
           Swal.close();
           if (r.status === 'success') {
             showSuccess(r.pesan);
+            if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
             muatTabelIuran();
           } else {
             showError(r.pesan);
@@ -9719,6 +9841,7 @@ function renderRekapKasWarga(data) {
   }
 
   function muatDaftarKategoriIuran() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     google.script.run.withSuccessHandler(function(list) {
       var container = document.getElementById('listKategoriIuran');
       container.innerHTML = '';
@@ -9754,6 +9877,7 @@ function renderRekapKasWarga(data) {
           container.appendChild(div);
         }
       } else {
+        if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         container.innerHTML = '<p>Belum ada kategori. Tambah baru.</p>';
       }
     }).withFailureHandler(function(err) {
@@ -9772,6 +9896,7 @@ function renderRekapKasWarga(data) {
       return showWarning('Nominal iuran harus lebih dari 0!');
     }
     google.script.run.withSuccessHandler(function(res) {
+      const currentViewToken = window.__activeViewToken; // Capture current token
       if (res.status === 'success') {
         showSuccess(res.pesan);
         document.getElementById('newKategoriName').value = '';
@@ -9779,6 +9904,7 @@ function renderRekapKasWarga(data) {
         muatDaftarKategoriIuran();
         muatTabelIuran();
       } else {
+        if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         Swal.close(); // Ensure loading is closed if this fails
         showError(res.pesan);
       }
@@ -9807,6 +9933,7 @@ function renderRekapKasWarga(data) {
     }).then(function(result) {
       if (result.isConfirmed) {
         var v = result.value;
+        const currentViewToken = window.__activeViewToken; // Capture current token
         google.script.run.withSuccessHandler(function(res) {
           if (res.status === 'success') {
             showSuccess(res.pesan);
@@ -9814,6 +9941,7 @@ function renderRekapKasWarga(data) {
             muatTabelIuran();
           } else {
             Swal.close(); // Ensure loading is closed if this fails
+            if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
             showError(res.pesan);
           }
         }).withFailureHandler(function(err) {
@@ -9824,6 +9952,7 @@ function renderRekapKasWarga(data) {
   }
 
   function hapusKategoriIuran(id) {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     showConfirm('Yakin hapus kategori ini?').then(function(res) {
       if (res.isConfirmed) {
         google.script.run.withSuccessHandler(function(r) {
@@ -9831,6 +9960,7 @@ function renderRekapKasWarga(data) {
             showSuccess(r.pesan);
             muatDaftarKategoriIuran();
             muatTabelIuran();
+            if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
           } else {
             Swal.close(); // Ensure loading is closed if this fails
             showError(r.pesan);
@@ -9850,6 +9980,7 @@ function renderRekapKasWarga(data) {
   }
 
   function muatDaftarWargaIuran() {
+    const currentViewToken = window.__activeViewToken; // Capture current token
     var container = document.getElementById('listWarga');
     container.innerHTML = '<div style="padding:20px; text-align:center;"><div class="bbx-spinner" style="margin:0 auto;"></div></div>';
     google.script.run.withSuccessHandler(function(list) {
@@ -9872,6 +10003,7 @@ function renderRekapKasWarga(data) {
           container.appendChild(item);
         });
       } else { container.innerHTML = '<p style="padding:15px; text-align:center;" class="muted">Belum ada data warga.</p>'; }
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
     }).withFailureHandler(function(err) {
       Swal.close(); // Ensure loading is closed if this fails
       showError('Gagal memuat daftar warga: ' + err.message);
@@ -9884,6 +10016,7 @@ function renderRekapKasWarga(data) {
       return showWarning('Nama warga tidak boleh kosong');
     }
     google.script.run.withSuccessHandler(function(res) {
+      const currentViewToken = window.__activeViewToken; // Capture current token
       if (res.status === 'success') {
         showSuccess(res.pesan);
         document.getElementById('newWarga').value = '';
@@ -9891,6 +10024,7 @@ function renderRekapKasWarga(data) {
         muatTabelIuran();
       } else {
         Swal.close(); // Ensure loading is closed if this fails
+        if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
         showError(res.pesan);
       }
     }).withFailureHandler(function(err) {
@@ -9905,6 +10039,7 @@ function renderRekapKasWarga(data) {
 
   // ======================== BUKA HALAMAN KAS ========================
   function bukaKas() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
@@ -9929,6 +10064,7 @@ function renderRekapKasWarga(data) {
 
   // ======================== GALERI ========================
   function bukaGaleri() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('galeriView').style.display = 'block';
     history.pushState({view: 'galeriView', tab: 'warga', onLoad: 'muatDataGaleri'}, '', '#galeri');
@@ -9942,9 +10078,11 @@ function renderRekapKasWarga(data) {
 
   function muatDataGaleri() {
     var container = document.getElementById('listGaleri');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('listGaleri', 6);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = ''; // Clear previous content
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       rtGaleriDataGlobal = res.data || [];
       filterDataGaleri();
     }).withFailureHandler(function(err) {
@@ -10159,6 +10297,7 @@ function renderRekapKasWarga(data) {
 
   // ======================== MODUL PKK ========================
   function bukaPkkJadwal() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('pkkJadwalView').style.display = 'block';
     history.pushState({view: 'pkkJadwalView', tab: 'pkk', onLoad: 'pkkMuatDataJadwal'}, '', '#pkkJadwal');
@@ -10242,9 +10381,11 @@ function renderRekapKasWarga(data) {
 
   function pkkMuatDataJadwal() {
     var list = document.getElementById('pkkListJadwal');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('pkkListJadwal', 3);
     console.log('[PKK JADWAL] halaman dibuka, memuat data...');
     google.script.run.withSuccessHandler(function(res) {
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       console.log('[PKK JADWAL] response:', res);
       console.log('[PKK JADWAL] jumlah data:', res.data?.length);
       list.innerHTML = '';
@@ -10290,6 +10431,7 @@ function renderRekapKasWarga(data) {
   }
 
   function bukaPkkKader() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('pkkKaderView').style.display = 'block';
     history.pushState({view: 'pkkKaderView', tab: 'pkk', onLoad: 'pkkMuatDataKader'}, '', '#pkkKader');
@@ -10389,9 +10531,11 @@ function renderRekapKasWarga(data) {
 
   function pkkMuatDataKader() {
     var list = document.getElementById('pkkListKader');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('pkkListKader', 3);
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       list.innerHTML = '';
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       if (res.data && res.data.length) {
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -10424,6 +10568,7 @@ function renderRekapKasWarga(data) {
   }
 
   function bukaPkkKirimLaporan() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('pkkKirimLaporanView').style.display = 'block';
     history.pushState({view: 'pkkKirimLaporanView', tab: 'pkk'}, '', '#pkkKirimLaporan');
@@ -10485,6 +10630,7 @@ function renderRekapKasWarga(data) {
   }
 
   function bukaPkkHistori() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('pkkHistoriView').style.display = 'block';
     history.pushState({view: 'pkkHistoriView', tab: 'pkk', onLoad: 'pkkMuatDataHistori'}, '', '#pkkHistori');
@@ -10493,9 +10639,11 @@ function renderRekapKasWarga(data) {
 
   function pkkMuatDataHistori() {
     var list = document.getElementById('pkkListHistori');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     renderSkeleton('pkkListHistori', 3);
 
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       list.innerHTML = '';
       if (res.data && res.data.length) {
         var allImgs = [];
@@ -10532,6 +10680,7 @@ function renderRekapKasWarga(data) {
   }
 
   function bukaPkkGaleri() {
+    window.__activeViewToken++; // Invalidate old callbacks
     sembunyikanSemuaLayar();
     document.getElementById('pkkGaleriView').style.display = 'block';
     history.pushState({view: 'pkkGaleriView', tab: 'pkk', onLoad: 'pkkMuatDataGaleri'}, '', '#pkkGaleri');
@@ -10642,9 +10791,11 @@ function renderRekapKasWarga(data) {
 
   function pkkMuatDataGaleri() {
     var container = document.getElementById('pkkListGaleri');
+    const currentViewToken = window.__activeViewToken; // Capture current token
     container.innerHTML = SPINNER_HTML; // Gunakan SPINNER_HTML
     google.script.run.withSuccessHandler(function(res) { // Clear skeleton
       container.innerHTML = '';
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       if(res.status==='error'){ 
         showError(res.pesan); 
         container.innerHTML = '<p class="muted">Gagal memuat database PKK.</p>';
@@ -10686,6 +10837,7 @@ function renderRekapKasWarga(data) {
   }
   function bukaPkkLaporanAdmin() {
     sembunyikanSemuaLayar();
+    window.__activeViewToken++; // Invalidate old callbacks
     document.getElementById('pkkLaporanAdminView').style.display = 'block'; // Use the new dedicated view
     history.pushState({view: 'pkkLaporanAdminView', tab: 'pkk', onLoad: 'pkkMuatDataLaporanAdmin'}, '', '#pkkLaporanAdmin');
     pkkMuatDataLaporanAdmin();
@@ -10693,9 +10845,11 @@ function renderRekapKasWarga(data) {
 
   function pkkMuatDataLaporanAdmin() {
     var list = document.getElementById('pkkListLaporanAdmin'); 
+    const currentViewToken = window.__activeViewToken; // Capture current token
     list.innerHTML = SPINNER_HTML; // Gunakan SPINNER_HTML
     showLoading('Memuat laporan admin PKK...');
     google.script.run.withSuccessHandler(function(res) {
+      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
       Swal.close();
       if (res.data && res.data.length) {
         const allImgs = res.data.map(it => getDirectUrl(it.fotoUrl));
