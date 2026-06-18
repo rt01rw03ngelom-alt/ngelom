@@ -5467,12 +5467,30 @@
   var absRondaRefreshInterval = null;
 
   function bukaAbsensiRonda() {
-    sembunyikanSemuaLayar();                         // tutup semua halaman lain
-    document.getElementById('absensiRondaView').style.display = 'block'; // tampilkan absensi
-    document.getElementById('absRondaDate').value = new Date().toISOString().split('T')[0]; // set tanggal hari ini
-    history.pushState({view: 'absensiRondaView', tab: 'warga'}, '', '#absensiRonda');
-    muatHalamanAbsensi();                            // muat data absensi
+    try {
+      sembunyikanSemuaLayar();
+      var view = document.getElementById('absensiRondaView');
+      if (!view) return showError('Layar absensi tidak ditemukan');
+
+      view.style.display = 'block';
+      var dateEl = document.getElementById('absRondaDate');
+      if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      history.pushState({ view: 'absensiRondaView', tab: 'warga' }, '', '#absensiRonda');
+
+      // tampilkan loading cepat biar tidak terlihat blank
+      var header = document.getElementById('absRondaHeader');
+      if (header) header.innerHTML = '<div class="card-item" style="text-align:center;">Memuat absensi...</div>';
+      var tbody = document.getElementById('tbodyAbsRealtime');
+      if (tbody) tbody.innerHTML = '';
+
+      muatHalamanAbsensi();
+    } catch (e) {
+      console.error('bukaAbsensiRonda error:', e);
+      showError('Gagal membuka absensi: ' + (e && e.message ? e.message : e));
+    }
   }
+
 
   function muatHalamanAbsensi() {
     var tgl = document.getElementById('absRondaDate').value;
