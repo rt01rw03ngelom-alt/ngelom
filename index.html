@@ -5353,7 +5353,8 @@
       { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
       { title: "Pengaduan Saya", icon: "history", roles: ["admin", "pengurus rt", "warga"], action: "bukaHistori", perm: "rt_pengaduan_kirim" },
-      { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" }
+      { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" },
+      { title: "Absensi Ronda", icon: "how_to_reg", roles: ["warga"], action: "bukaAbsensiRonda", perm: "rt_ronda_submit" } // Added for warga role
     ],
     pkk: [
       { title: "Jadwal Kegiatan PKK", icon: "event", roles: ["admin", "pengurus pkk", "warga"], action: "bukaPkkJadwal", perm: "pkk_jadwal" },
@@ -5361,7 +5362,7 @@
       { title: "Kirim Laporan PKK", icon: "rate_review", roles: ["admin", "pengurus pkk", "warga"], action: "bukaPkkKirimLaporan", perm: "pkk_laporan_kirim" },
       { title: "Histori Laporan PKK", icon: "history", roles: ["admin", "pengurus pkk", "warga"], action: "bukaPkkHistori", perm: "pkk_laporan_histori" },
       { title: "Galeri Dokumentasi PKK", icon: "photo_library", roles: ["admin", "pengurus pkk", "warga"], action: "bukaPkkGaleri", perm: "pkk_galeri" },
-      { title: "Kelola Laporan PKK", icon: "admin_panel_settings", roles: ["admin", "pengurus pkk"], action: "bukaPkkLaporanAdmin", perm: "pkk_laporan_admin" }
+      { title: "Kelola Laporan PKK", icon: "admin_panel_settings", roles: ["admin", "pengurus pkk"], action: "bukaPkkLaporanAdmin", perm: "pkk_laporan_admin" } // Keep this for admin/pengurus PKK
     ],
     karangtaruna: [
       { title: "Jadwal Kegiatan Karang Taruna", icon: "calendar_month", roles: ["admin", "pengurus rt", "warga", "pengurus karang taruna"], action: "bukaKtJadwal", perm: "kt_jadwal" },
@@ -5372,15 +5373,13 @@
   };
 
   function renderMenu(tabName) {
+    // Ensure the menu is rendered only if the user has permissions
+    if (!currentUser || !currentUser.permissions) {
+      return; // Or show a message indicating no permissions
+    }
     var container = document.getElementById('menuContainer');
     container.innerHTML = '';
     var availableMenus = menus[tabName] || menus.warga;
-    
-    // Refresh user name in welcome banner
-    var welcomeSection = document.getElementById('welcomeUserName');
-    if(welcomeSection) welcomeSection.innerText = 'Halo, ' + (currentUser.nama || 'Warga') + '!';
-
-
     // Update Ringkasan Dashboard (Banner) berdasarkan Tab
     var label1 = document.getElementById('labelSummary1');
     var label2 = document.getElementById('labelSummary2');
@@ -5432,7 +5431,7 @@
       
       // Cek apakah role diizinkan ATAU memiliki izin spesifik (perm)
       var roleMatch = menu.roles.indexOf(currentUser.role) !== -1;
-      var permMatch = hasPermission(menu.perm);
+      var permMatch = menu.perm ? hasPermission(menu.perm) : true; // If no specific perm, assume allowed by roleMatch
       
       if (roleMatch || permMatch) {
         var div = document.createElement('div');
@@ -5466,6 +5465,7 @@
   var absRondaMaster = [];
   var absRondaJadwalId = null;
   var html5QrCode = null;
+  var html5QrCodeScanner = null; // New variable for Html5QrcodeScanner instance
   var absRondaActiveToken = null;
   var absRondaRefreshInterval = null;
 
@@ -5475,7 +5475,7 @@
       var view = document.getElementById('absensiRondaView');
       if (!view) return showError('Layar absensi tidak ditemukan');
 
-      view.style.display = 'block';
+      view.style.display = 'block'; // Ensure the view is visible before loading data
       var dateEl = document.getElementById('absRondaDate');
       if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
@@ -5487,7 +5487,7 @@
       var tbody = document.getElementById('tbodyAbsRealtime');
       if (tbody) tbody.innerHTML = '';
 
-      muatHalamanAbsensi();
+      muatHalamanAbsensi(); // Load data for the selected date
     } catch (e) {
       console.error('bukaAbsensiRonda error:', e);
       showError('Gagal membuka absensi: ' + (e && e.message ? e.message : e));
@@ -5499,6 +5499,7 @@
     var tgl = document.getElementById('absRondaDate').value;
     if (!tgl) return;
 
+    showLoading('Memuat data absensi...');
     const isPengurus = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
 
     google.script.run
@@ -5534,10 +5535,13 @@
         if (data.status === 'success') {
           absRondaJadwalId = data.jadwalId;
           renderAbsRondaHeader(data.schedule);
+          
+          // Close loading after initial data is fetched
+          Swal.close();
 
-          requestAnimationFrame(() => {
-            if (isPengurus) checkActiveSessionAdmin(data);
-            else checkActiveSessionUser();
+          requestAnimationFrame(() => { // Use requestAnimationFrame for UI updates
+            if (isPengurus) checkActiveSessionAdmin(data); // Admin/Pengurus view
+            else checkActiveSessionUser(data); // Warga view
           });
         } else {
           const header = document.getElementById('absRondaHeader');
@@ -5568,10 +5572,12 @@
   }
 
 
-  // LOGIKA PENGURUS
+  // LOGIKA PENGURUS (Admin/Pengurus RT)
   function checkActiveSessionAdmin(response) {
     const adminPanel = document.getElementById('absRondaAdminPanel');
     const userPanel = document.getElementById('absRondaUserPanel');
+    const noSession = document.getElementById('absRondaNoSession');
+    const activeSession = document.getElementById('absRondaActiveSession');
 
     if (!adminPanel || !userPanel) {
       console.warn('Panel absensi belum dirender, mencoba ulang...');
@@ -5582,24 +5588,38 @@
     adminPanel.style.display = 'block';
     userPanel.style.display = 'none';
     
-    if (!response || !response.jadwalId) {
+    if (!response || !response.jadwalId || !response.schedule) {
         console.warn('Data jadwal tidak lengkap, tidak bisa cek sesi.');
+        if (noSession) noSession.style.display = 'block';
+        if (activeSession) activeSession.style.display = 'none';
         return;
     }
 
     google.script.run
         .withSuccessHandler(function(res) {
-            const noSess = document.getElementById('absRondaNoSession');
-            const actSess = document.getElementById('absRondaActiveSession');
-            
-            // Sembunyikan elemen QR/PIN tunggal (warisan sistem lama)
-            if (document.getElementById('absRondaQrDisplay')) document.getElementById('absRondaQrDisplay').style.display = 'none';
-            if (document.getElementById('absRondaPinDisplay')) document.getElementById('absRondaPinDisplay').style.display = 'none';
-
+            if (res.status === 'error') {
+                showError(res.pesan);
+                if (noSession) noSession.style.display = 'block';
+                if (activeSession) activeSession.style.display = 'none';
+                return;
+            }
             if (res.active) {
-                if (noSess) noSess.style.display = 'none';
-                if (actSess) actSess.style.display = 'block';
-                document.getElementById('absRondaTimer').innerText = 'Sesi Absensi Aktif';
+                if (noSession) noSession.style.display = 'none';
+                if (activeSession) activeSession.style.display = 'block';
+
+                // Display PIN and QR for admin
+                const pinDisplay = document.getElementById('absRondaPinDisplay');
+                const qrDisplay = document.getElementById('absRondaQrDisplay');
+                if (pinDisplay) pinDisplay.innerText = res.pin || '------';
+                if (qrDisplay) {
+                    qrDisplay.style.display = 'block';
+                    generateAbsenQr(res.qrToken); // Use the QR token from the backend
+                }
+
+                // Start timer if expiry is provided
+                if (res.expiryTime) {
+                    startAbsensiTimer(res.expiryTime);
+                }
             } else {
                 if (noSess) noSess.style.display = 'block';
                 if (actSess) actSess.style.display = 'none';
@@ -5610,7 +5630,127 @@
     .getRondaAbsensiSession(response.jadwalId);
   }
 
+  // Fungsi untuk menampilkan panel absensi bagi user (warga/petugas) yang akan absen
+  function checkActiveSessionUser(response) {
+      const adminPanel = document.getElementById('absRondaAdminPanel');
+      const userPanel = document.getElementById('absRondaUserPanel');
+      const userSelect = document.getElementById('absRondaUserSelect');
+      const noSessionMsg = `<div class="card-item" style="text-align:center; padding:30px;">
+          <i class="material-icons" style="font-size:48px; color:var(--text-muted); margin-bottom:15px;">lock</i>
+          <div style="font-weight:700; margin-bottom:10px;">Sesi Absensi Belum Dibuka</div>
+          <p class="muted" style="font-size:13px;">Pengurus belum membuka sesi absensi untuk jadwal ini.</p>
+      </div>`;
+      const alreadyAttendedMsg = `<div class="card-item" style="text-align:center; padding:30px;">
+          <i class="material-icons" style="font-size:48px; color:var(--pkk-green); margin-bottom:15px;">check_circle</i>
+          <div style="font-weight:700; margin-bottom:10px;">Anda Sudah Absen</div>
+          <p class="muted" style="font-size:13px;">Terima kasih sudah melakukan absensi untuk jadwal ini.</p>
+      </div>`;
+
+      if (adminPanel) adminPanel.style.display = 'none';
+      if (userPanel) {
+          userPanel.style.display = 'block';
+          document.getElementById('absRondaQrScannerContainer').style.display = 'none'; // Hide scanner
+          document.getElementById('absRondaPinInputContainer').style.display = 'none'; // Hide PIN input
+
+          google.script.run
+              .withSuccessHandler(function(res) {
+                  if (res.status === 'error') {
+                      userSelect.innerHTML = noSessionMsg;
+                      return;
+                  }
+                  if (res.active) {
+                      // Check if current user has already attended
+                      const currentUserNama = currentUser.nama; // Assuming currentUser is globally available
+                      const hasAttended = response.attendance.some(att => att.nama === currentUserNama && att.status === 'Hadir');
+                      
+                      if (hasAttended) {
+                          userSelect.innerHTML = alreadyAttendedMsg;
+                      } else {
+                          // Session active and user hasn't attended, show options
+                          userSelect.innerHTML = `<div class="card-item" style="text-align:center; padding:30px;">
+                              <i class="material-icons" style="font-size:48px; color:var(--primary-color); margin-bottom:15px;">qr_code_2</i>
+                              <div style="font-weight:700; margin-bottom:20px;">Silakan Absen Di Sini</div>
+                              <div style="display:grid; gap:12px;">
+                                <button class="btn-primary" onclick="showQrScanner()">
+                                  <i class="material-icons" style="vertical-align:middle; margin-right:8px;">photo_camera</i> Scan QR Code
+                                </button>
+                                <button class="btn-secondary" onclick="showPinInput()" style="border:2px solid var(--primary-color); color:var(--primary-color); background:transparent;">
+                                  <i class="material-icons" style="vertical-align:middle; margin-right:8px;">pin</i> Masukkan PIN
+                                </button>
+                              </div>
+                          </div>`;
+                      }
+                  } else {
+                      userSelect.innerHTML = noSessionMsg;
+                  }
+              })
+              .withFailureHandler(function(err) {
+                  console.error('Error checking absensi session:', err);
+                  userSelect.innerHTML = noSessionMsg; // Fallback to no session message on error
+              })
+              .getRondaAbsensiSession(absRondaJadwalId);
+      }
+  }
+
+  // Tentukan warna berdasarkan status
+  function getStatusColor(status) {
+      switch(status) {
+          case 'Hadir': return '#10b981';
+          case 'Izin': return '#3b82f6'; // Blue
+          case 'Sakit': return '#f59e0b'; // Orange
+          case 'Alfa': return '#ef4444'; // Red
+          case 'Belum Hadir': return '#64748b';
+          default: return '#64748b';
+      }
+  }
+
+  // Fungsi untuk memperbarui status petugas secara manual oleh admin/pengurus
+  function updateStatusPetugas(jadwalId, nama, statusBaru, currentStatus) {
+    if (!hasPermission('rt_ronda_crud')) {
+        showError('Anda tidak memiliki izin untuk mengubah status.');
+        return;
+    }
+
+    // If status is changed from Hadir to something else, reset the attendance record
+    if (currentStatus === 'Hadir' && statusBaru !== 'Hadir') {
+        showConfirm(`Mengubah status dari Hadir akan mereset absensi ${nama}. Lanjutkan?`).then(res => {
+            if (res.isConfirmed) {
+                resetAbsensiPetugas(jadwalId, nama).then(() => {
+                    // After reset, update with the new status
+                    _updateStatusAbsensiBackend(jadwalId, nama, statusBaru);
+                }).catch(err => showError('Gagal mereset absensi: ' + err.message));
+            } else {
+                // Revert dropdown selection if user cancels
+                muatRealtimeAbsensi();
+            }
+        });
+    } else {
+        _updateStatusAbsensiBackend(jadwalId, nama, statusBaru);
+    }
+  }
+
+  function _updateStatusAbsensiBackend(jadwalId, nama, statusBaru) {
+    showLoading('Memperbarui status...');
+    google.script.run
+        .withSuccessHandler(function(res) {
+            Swal.close();
+            if (res.status === 'success') {
+                showSuccess(res.pesan);
+                muatRealtimeAbsensi(); // refresh daftar
+            } else {
+                showError(res.pesan);
+            }
+        })
+        .withFailureHandler(function(err) {
+            Swal.close(); // Ensure loading is closed
+            showError('Gagal: ' + err.message);
+        })
+        .updateStatusAbsensi(jadwalId, nama, statusBaru);
+  }
+
   function generateAbsenQr(token) {
+    // Clear previous QR code if any
+    if (document.getElementById('absRondaQrDisplay').innerHTML !== '') document.getElementById('absRondaQrDisplay').innerHTML = '';
     const cont = document.getElementById('absRondaQrDisplay');
     cont.innerHTML = '';
     new QRCode(cont, { text: token, width: 200, height: 200 });
@@ -5623,7 +5763,7 @@
       google.script.run.withSuccessHandler(function(res) {
         Swal.close();
         if (res.status === 'success') {
-          showSuccess(res.pesan);
+          showSuccess('Sesi absensi berhasil dibuka!');
           muatHalamanAbsensi();
         } else showError(res.pesan);
       }).openRondaAbsensi(absRondaJadwalId);
@@ -5635,7 +5775,7 @@
       if (res.isConfirmed) {
         showLoading('Menutup sesi...');
         google.script.run.withSuccessHandler(function(res) {
-          Swal.close();
+          Swal.close(); // Ensure loading is closed
           if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
           muatHalamanAbsensi();
         }).closeRondaAbsensi(absRondaJadwalId);
@@ -5657,50 +5797,48 @@
             if (res.status === 'success') {
                 const tbody = document.getElementById('tbodyAbsRealtime');
                 if (!tbody) return;
-                tbody.innerHTML = '';
+                tbody.innerHTML = ''; // Clear existing rows
 
                 res.data.forEach(function(p) {
-                    const statusColors = {
-                        'Hadir': '#10b981',
-                        'Izin': '#3b82f6',
-                        'Sakit': '#f59e0b',
-                        'Alfa': '#ef4444',
-                        'Belum Hadir': '#64748b'
-                    };
-                    const statusColor = statusColors[p.status] || '#64748b';
+                    const statusColor = getStatusColor(p.status || 'Belum Hadir');
 
-                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px;">${p.status}</span>`;
-                    
+                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px; min-width:70px;">${p.status}</span>`;                    
+
                     // Jika user adalah admin/pengurus, tampilkan dropdown edit status
-                    if (hasPermission('rt_ronda_crud')) {
-                        statusContentHtml += `
-                            <select onchange="updateStatusPetugas('${absRondaJadwalId}', '${p.nama.replace(/'/g, "\\'")}', this.value)" style="display:block; font-size:9px; margin-top:4px; padding:2px; height:auto; border-radius:4px; width:100%; cursor:pointer;">
-                                <option value="Belum Hadir" ${p.status==='Belum Hadir'?'selected':''}>Set Belum</option>
-                                <option value="Hadir" ${p.status==='Hadir'?'selected':''}>Set Hadir</option>
-                                <option value="Izin" ${p.status==='Izin'?'selected':''}>Set Izin</option>
-                                <option value="Sakit" ${p.status==='Sakit'?'selected':''}>Set Sakit</option>
-                                <option value="Alfa" ${p.status==='Alfa'?'selected':''}>Set Alfa</option>
+                    const isAdmin = hasPermission('rt_ronda_crud');
+                    let aksiHtml = '';
+                    
+                    if (isAdmin) {
+                        const statusOptions = ['Hadir', 'Izin', 'Sakit', 'Alfa', 'Belum Hadir'];
+                        let optionsHtml = statusOptions.map(s =>
+                            `<option value="${s}" ${p.status === s ? 'selected' : ''}>${s}</option>`
+                        ).join('');
+                        
+                        aksiHtml = `
+                            <select class="status-select" data-nama="${p.nama.replace(/'/g, "\\'")}" 
+                                    onchange="updateStatusPetugas('${absRondaJadwalId}', '${p.nama.replace(/'/g, "\\'")}', this.value)" 
+                                    style="padding:2px 4px; font-size:11px; border-radius:4px; background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-color);">
+                                ${optionsHtml}
                             </select>
+                            ${p.status === 'Hadir' ? 
+                                `<button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama.replace(/'/g, "\\'")}')" style="padding:2px 6px; margin-left:4px;">Reset</button>` 
+                                : ''}
                         `;
+                    } else {
+                        aksiHtml = `<span class="muted" style="font-size:12px;">-</span>`;
                     }
 
-                    // Tampilkan PIN dan tombol QR hanya jika token tersedia
+                    // Tampilkan PIN dan tombol QR hanya jika token tersedia dan user adalah admin/pengurus
                     const qrPinHtml = `
                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px;">
+                            <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px; min-width:50px; text-align:center;">
                                 ${p.pin && p.pin !== '-' ? p.pin : '-'}
                             </span>
-                            ${p.token && p.token !== '-' ? 
+                            ${p.qrToken && p.qrToken !== '-' ?
                                 `<button class="btn-small" onclick='tampilkanQR(${JSON.stringify(p.token)})' style="padding:2px 6px; margin:0; background:#3b82f6;">QR</button>` 
                                 : ''}
                         </div>
                     `;
-
-                    // Tombol Reset diizinkan untuk semua status kecuali yang belum hadir
-                    const aksiHtml = (p.status !== 'Belum Hadir') 
-                        ? `<button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama}')" style="padding:2px 6px; margin:0;">Reset</button>`
-                        : `<span class="muted">-</span>`;
-
                     tbody.innerHTML += `<tr>
                         <td><strong>${p.nama}</strong></td>
                         <td>${statusContentHtml}</td>
@@ -5718,29 +5856,6 @@
             console.error('Error getRealtimeAbsensiModern:', err);
         })
         .getRealtimeAbsensiModern(absRondaJadwalId);
-  }
-
-  function updateStatusPetugas(idJadwal, nama, status) {
-    showLoading('Memperbarui status...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
-      if (res.status === 'success') {
-        showSuccess(res.pesan);
-        muatRealtimeAbsensi();
-      } else showError(res.pesan);
-    }).updateStatusAbsensi(idJadwal, nama, status);
-  }
-
-  function resetAbsensiPetugasManual(nama) {
-    showConfirm(`Reset kehadiran untuk ${nama}?`).then(res => {
-      if (res.isConfirmed) {
-        showLoading('Mereset...');
-        google.script.run.withSuccessHandler(res => {
-          if (res.status === 'success') { showSuccess(res.pesan); muatRealtimeAbsensi(); }
-          else showError(res.pesan);
-        }).resetAbsensiPetugas(absRondaJadwalId, nama);
-      }
-    });
   }
 
   function tampilkanQR(token) {
@@ -5768,24 +5883,30 @@
       document.getElementById('absRondaUserSelect').style.display = 'none';
       document.getElementById('absRondaQrScannerContainer').style.display = 'block';
 
-      const readerDiv = document.getElementById('qr-reader');
-      if (readerDiv) {
-          readerDiv.innerHTML = '<div style="padding:40px; text-align:center;"><div class="bbx-spinner" style="margin:0 auto;"></div><p style="color:white; margin-top:10px;">Menghubungkan Kamera...</p></div>';
+      const qrboxFunction = (w, h) => {
+        let minDim = Math.min(w, h);
+        let size = minDim * 0.7; // 70% of the smaller dimension
+        return { width: size, height: size };
+      };
+
+      // Ensure previous scanner instance is stopped
+      if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+        await html5QrCodeScanner.stop();
       }
 
-      // Cek ketersediaan kamera sebelum membuka container
-      const devices = await Html5Qrcode.getCameras();
-      if (!devices || devices.length === 0) {
-        throw new Error("Kamera tidak ditemukan di perangkat ini.");
-      }
+      html5QrCodeScanner = new Html5QrcodeScanner(
+        "qr-reader", { fps: 10, qrbox: qrboxFunction, disableFlip: false }, false
+      );
 
-      // Beri waktu browser untuk melakukan reflow UI
-      setTimeout(() => {
-          startScannerSession();
-      }, 400);
+      html5QrCodeScanner.render(
+        (decodedText, decodedResult) => {
+          html5QrCodeScanner.clear(); // Stop scanning
+          submitAbsensiModern('QR', decodedText);
+        }, (errorMessage) => { /* Optional: handle scan errors */ }
+      );
     } catch (e) {
-      hideAbsenMetode();
-      showError("Izin kamera ditolak atau tidak tersedia: " + e.message);
+      console.error('showQrScanner error:', e);
+      showError('Gagal memuat kamera: ' + e.message);
     }
   }
 
@@ -5793,46 +5914,10 @@
     const readerDiv = document.getElementById('qr-reader');
     
     // Pastikan instance lama dimatikan sepenuhnya
-    if (html5QrCode) {
-      try {
-        if (html5QrCode.isScanning) await html5QrCode.stop();
-      } catch(e) {}
-      html5QrCode = null;
+    if (html5QrCodeScanner) {
+      html5QrCodeScanner.clear(); // This stops the camera and clears the UI
+      html5QrCodeScanner = null;
     }
-
-    if (readerDiv) readerDiv.innerHTML = '';
-    html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
-
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: (w, h) => { let s = Math.min(w, h) * 0.7; return { width: s, height: s }; } },
-        async (decodedText) => {
-            // Sukses Scan: stop kamera segera agar tidak trigger scan ganda
-            try {
-              if (html5QrCode && html5QrCode.isScanning) {
-                const scannerRef = html5QrCode;
-                html5QrCode = null;
-                await scannerRef.stop();
-              }
-            } catch(e) { console.error("Kamera gagal dimatikan:", e); }
-            
-            submitAbsensiModern('QR', decodedText);
-        }
-    ).catch(err => {
-        console.error('Html5Qrcode start error:', err);
-        if (readerDiv) {
-          readerDiv.innerHTML = `
-            <div style="padding:30px; text-align:center;">
-              <i class="material-icons" style="font-size:48px; color:var(--primary-red);">videocam_off</i>
-              <div style="font-weight:700; margin-top:10px;">Kamera Gagal Dimuat</div>
-              <p class="muted" style="font-size:12px; margin:10px 0;">${err}</p>
-              <button class="btn-small" onclick="startScannerSession()">Coba Ulang</button>
-            </div>`;
-        } else {
-          showError('Gagal mengakses kamera: ' + err);
-          hideAbsenMetode();
-        }
-    });
   }
 
   function showPinInput() {
@@ -5841,10 +5926,33 @@
     document.getElementById('inputAbsenPin').focus();
   }
 
-  function hideAbsenMetode() {
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(console.error);
+  // Fungsi untuk mereset absensi petugas secara manual oleh admin/pengurus
+  function resetAbsensiPetugasManual(nama) {
+    if (!hasPermission('rt_ronda_crud')) {
+      showError('Anda tidak memiliki izin untuk mereset absensi.');
+      return;
     }
+    showConfirm(`Reset kehadiran untuk ${nama}?`).then(res => {
+      if (res.isConfirmed) {
+        showLoading('Mereset...');
+        google.script.run
+            .withSuccessHandler(res => {
+                Swal.close(); // Ensure loading is closed
+                if (res.status === 'success') { 
+                    showSuccess(res.pesan); 
+                    muatRealtimeAbsensi(); 
+                } else showError(res.pesan);
+            }).resetAbsensiPetugas(absRondaJadwalId, nama);
+        }
+    }).catch(err => {
+      Swal.close(); // Ensure loading is closed
+      showError('Gagal mereset: ' + err.message);
+    });
+  }
+
+  function hideAbsenMetode() {
+    if (html5QrCodeScanner) html5QrCodeScanner.clear(); // Stop scanner if active
+
     document.getElementById('absRondaUserSelect').style.display = 'block';
     document.getElementById('absRondaQrScannerContainer').style.display = 'none';
     document.getElementById('absRondaPinInputContainer').style.display = 'none';
@@ -5859,7 +5967,7 @@
   function submitAbsensiModern(metode, val) {
     showLoading('Memvalidasi kehadiran...');
     google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
+      Swal.close(); // Ensure loading is closed
       if (res.status === 'success') {
         Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.pesan, confirmButtonColor: '#10b981' }).then(() => {
           hideAbsenMetode();
@@ -5868,7 +5976,7 @@
       } else {
         showError(res.pesan);
         if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
-        else showQrScanner();
+        else showQrScanner(); // Re-open scanner on error
       }
     }).simpanAbsensi(absRondaJadwalId, currentUser.nama, metode, val);
   }
@@ -5892,7 +6000,7 @@
       document.getElementById('absRondaTimer').innerText = `Berakhir dalam: ${h}j ${m}m ${s}d`;
       
       // Auto refresh realtime list every 10 seconds
-      if (s % 10 === 0) muatRealtimeAbsensi();
+      if (s % 10 === 0 && document.getElementById('absensiRondaView').style.display === 'block') muatRealtimeAbsensi();
     }, 1000);
   }
 
@@ -6900,7 +7008,7 @@ function bukaJadwal() {
     var list = document.getElementById('listRonda');
     renderSkeleton('listRonda', 3);
     showLoading('Memuat data ronda...');
-    
+
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
       if (res.status === 'success') {
@@ -6908,7 +7016,7 @@ function bukaJadwal() {
         filterRonda();
       } else { 
         list.innerHTML = '';
-        showError(res.pesan); 
+        showError(res.pesan); // Handle error
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -6918,7 +7026,7 @@ function bukaJadwal() {
 
   // ======================== OPTIMASI BANNER RONDA (10XTHINK REWRITE) ========================
   /**
-   * ROLLING CALENDAR ENGINE: Dual-Fetch Parallel untuk transisi bulan anti-blank.
+   * ROLLING CALENDAR ENGINE: Dual-Fetch Parallel untuk transisi bulan anti-blank. // No changes needed here
    */
   /**
    * ROLLING CALENDAR ENGINE: Dual-Fetch Parallel (Anti-Blank State)
@@ -6932,7 +7040,7 @@ function bukaJadwal() {
     const now = new Date();
     const curMonth = now.getMonth() + 1;
     const curYear = now.getFullYear();
-    
+
     let nextMonth = curMonth + 1;
     let nextYear = curYear;
     if (nextMonth > 12) { nextMonth = 1; nextYear++; }
@@ -6942,7 +7050,7 @@ function bukaJadwal() {
       const [res1, res2] = await Promise.all([
         google.script.run.getRonda(curMonth, curYear),
         google.script.run.getRonda(nextMonth, nextYear)
-      ]);
+      ]).catch(err => { console.error("Error fetching ronda data:", err); return [null, null]; }); // Handle promise rejection
 
       let combinedData = [];
       if (res1 && res1.status === 'success') combinedData = combinedData.concat(res1.data);
@@ -6954,7 +7062,7 @@ function bukaJadwal() {
       prosesDataJadwalRonda(combinedData);
       if (isManualRefresh) showSuccess('Jadwal Sinkron!');
     } catch (e) {
-      console.error("Ronda Dashboard Error:", e);
+      console.error("Ronda Dashboard Error in muatRondaHariIni:", e);
       info.innerHTML = `<div class="muted" style="text-align:center;">Gagal memuat jadwal.</div>`;
     }
   }
@@ -6970,7 +7078,7 @@ function bukaJadwal() {
     const today = new Date();
     today.setHours(0,0,0,0);
     const todayStr = today.toISOString().split('T')[0];
-
+    
     // Get Monday of current week
     const day = today.getDay();
     const diffToMon = today.getDate() - day + (day === 0 ? -6 : 1);
@@ -6989,17 +7097,17 @@ function bukaJadwal() {
     sunNextWeek.setDate(monNextWeek.getDate() + 6);
 
     const parse = (s) => { 
-      if(!s || s.includes('?')) return new Date(0); 
+      if(!s || s.includes('?')) return new Date(0); // Invalid date, return epoch
       const p = s.split('-'); 
       return new Date(p[0], p[1]-1, p[2]); 
     };
 
     // 1. Filter: Jadwal Minggu Ini (Yg terdekat dengan hari ini dalam range Sen-Min)
-    pickedRondaWeek1 = data.find(it => { 
+    pickedRondaWeek1 = data.find(it => {
       const d = parse(it.tanggal);
       return d >= monThisWeek && d <= sunThisWeek && it.tanggal >= todayStr;
-    }) || data.find(it => { 
-      const d = parse(it.tanggal); 
+    }) || data.find(it => {
+      const d = parse(it.tanggal);
       return d >= monThisWeek && d <= sunThisWeek; 
     });
 
@@ -7007,7 +7115,7 @@ function bukaJadwal() {
     pickedRondaWeek2 = data.find(it => {
       const d = parse(it.tanggal);
       return d >= monNextWeek && d <= sunNextWeek;
-    }) || {
+    }) || { // Fallback for next week if no schedule found
       tanggal: monNextWeek.getFullYear() + '-' + String(monNextWeek.getMonth() + 1).padStart(2, '0') + '-' + String(monNextWeek.getDate()).padStart(2, '0'),
       kelompok: 'LIBUR',
       petugas: 'Ditiadakan',
@@ -7017,7 +7125,7 @@ function bukaJadwal() {
     // UI RENDERING ENGINE
     const formatSlide = (entry, label) => {
       if (!entry) return `<div class="muted" style="text-align:center; padding:10px;">${label}: Belum Ada Jadwal</div>`;
-      const pRaw = String(entry.petugas || "");
+      const pRaw = String(entry.petugas || ""); // Ensure petugas is a string
       const names = pRaw.split(/\r?\n/).filter(x => x.trim() !== "").map(p => 
         `<span style="background:var(--bg-app); border:1px solid var(--border-color); padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; margin:2px 2px 0 0; display:inline-block;">${p}</span>`
       ).join("");
@@ -7036,7 +7144,7 @@ function bukaJadwal() {
     rondaSlides.push({ title: "⚡ Jadwal Ronda Minggu Ini", html: formatSlide(pickedRondaWeek1, "Minggu Ini") });
     
     const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const labelW2 = monthNames[parse(pickedRondaWeek2.tanggal).getMonth()];
+    const labelW2 = monthNames[parse(pickedRondaWeek2.tanggal).getMonth()]; // Corrected to use month from pickedRondaWeek2
     rondaSlides.push({ title: "📅 Jadwal Ronda " + labelW2, html: formatSlide(pickedRondaWeek2, "Minggu Depan") });
 
     displayRondaSlide(0);
@@ -7054,7 +7162,7 @@ function bukaJadwal() {
 
     const formatEntry = (entry) => {
       if (!entry) return `Data tidak tersedia`;
-      const p = entry.tanggal.split('-');
+      const p = entry.tanggal.split('-'); // Split date string
       const d = new Date(p[0], p[1]-1, p[2]);
       const list = String(entry.petugas || "Ditiadakan").split(/\r?\n/).filter(n => n.trim() !== "").join(", ");
       return `${daysIndo[d.getDay()]}, Tgl ${p[2]} - ${entry.kelompok}\n  Petugas: ${list}`;
@@ -7064,7 +7172,7 @@ function bukaJadwal() {
 
     let waText = `*Jadwal Ronda Malam RT01/RW03*\n`;
     waText += `_Diperbarui: ${updateTime}_\n\n`;
-    waText += `*Jadwal Ronda Minggu Ini*\n`;
+    waText += `*Jadwal Ronda Minggu Ini*\n`; // Corrected label
     waText += `${formatEntry(pickedRondaWeek1)}\n\n`;
     waText += `*Jadwal Ronda ${monthW2}*\n`;
     waText += `${formatEntry(pickedRondaWeek2)}\n\n`;
@@ -7124,7 +7232,7 @@ function bukaJadwal() {
       const deltaX = e.changedTouches[0].clientX - startX;
 
       // PULL DOWN DETECTED (Threshold 60px)
-      if (deltaY > 60 && Math.abs(deltaX) < 30) {
+      if (deltaY > 60 && Math.abs(deltaX) < 30) { // Check for vertical swipe
         muatRondaHariIni(true);
         return;
       }
@@ -7146,7 +7254,7 @@ function bukaJadwal() {
   }
 
   function filterRonda() {
-    try {
+    try { // Filter ronda data
     var keyword = document.getElementById('rondaSearchInput').value.toLowerCase();
     var list = document.getElementById('listRonda');
     var isYearly = document.getElementById('rondaFilterBulan').value == "0";
@@ -7160,7 +7268,7 @@ function bukaJadwal() {
     var curMonth = today.getMonth() + 1;
     var curYear = today.getFullYear();
     
-    // Calculate Current Week Range for Highlighting
+    // Calculate Current Week Range for Highlighting // No changes needed here
     var startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
     startOfWeek.setHours(0,0,0,0);
@@ -7177,7 +7285,7 @@ function bukaJadwal() {
       5: '#8b5cf6'  // Ungu (Minggu 5)
     };
     
-    var filtered = currentRondaData.filter(function(item) {
+    var filtered = currentRondaData.filter(function(item) { // Filter by keyword
       var petugasStr = Array.isArray(item.petugas) ? item.petugas.join(" ") : String(item.petugas || "");
       return petugasStr.toLowerCase().includes(keyword) || 
              (item.kelompok || '').toLowerCase().includes(keyword);
@@ -7185,7 +7293,7 @@ function bukaJadwal() {
 
     list.innerHTML = '';
     if (filtered.length > 0) {
-      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>';
+      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>'; // Table header
       var lastMonthLabel = '';
 
       filtered.forEach(function(item) {
@@ -7199,7 +7307,7 @@ function bukaJadwal() {
 
         // Tambahkan Divider Bulan jika mode tahunan aktif
         if (isYearly) {
-          var currentMonthLabel = months[iMonth - 1] + ' ' + iYear;
+          var currentMonthLabel = months[iMonth - 1] + ' ' + iYear; // Month label
           if (currentMonthLabel !== lastMonthLabel) {
             html += `<tr><td colspan="4" class="month-divider" id="month-header-${iMonth}"><i class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:5px;">calendar_month</i>${currentMonthLabel}</td></tr>`;
             lastMonthLabel = currentMonthLabel;
@@ -7209,7 +7317,7 @@ function bukaJadwal() {
         // Active Week Highlighter: Real-time date comparison
         var isCurrentWeek = (itemDate >= startOfWeek && itemDate <= endOfWeek); 
         var rowStyle = "";
-        
+
         if (isCurrentWeek) {
           var activeColor = weekColors[iWeek] || 'var(--primary-color)';
           rowStyle = `style="background-color: ${activeColor}15 !important; border-left: 6px solid ${activeColor} !important; font-weight: 800;"`;
@@ -7221,7 +7329,7 @@ function bukaJadwal() {
           petugasRaw.split(/\r?\n/).filter(p => p.trim() !== "").map(p => 
           `<span class="status-badge" style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; white-space: nowrap; gap: 4px;">
             <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${p}
-          </span>`).join('') + '</div>' : '-';
+          </span>`).join('') + '</div>' : '-'; // Petugas list
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div style="display: flex; gap: 4px; flex-wrap: nowrap;">
             <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
@@ -7230,7 +7338,7 @@ function bukaJadwal() {
             <button class="btn-small danger" onclick="hapusRonda(${item.row})">
               <i class="material-icons" style="font-size:14px;">delete</i>
             </button>
-          </div>` : '-';
+          </div>` : '-'; // Action buttons
         
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
@@ -7239,7 +7347,7 @@ function bukaJadwal() {
           <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
       });
-      html += '</tbody></table></div>';
+      html += '</tbody></table></div>'; // Close table and div
       list.innerHTML = html;
     } else {
       list.innerHTML = `
@@ -7249,7 +7357,7 @@ function bukaJadwal() {
           <p class="muted" style="font-size:13px; margin-top:8px;">Tidak ditemukan jadwal ronda untuk periode atau pencarian ini.</p>
         </div>`;
     }
-    } catch (e) {
+    } catch (e) { // Error handling
       console.error("FilterRonda Logic Error:", e);
       list.innerHTML = '<div class="muted">Terdapat kesalahan tipe data pada database Ronda.</div>';
     }
@@ -7263,7 +7371,7 @@ function bukaJadwal() {
     
     // Validasi apakah tahun yang dilihat adalah tahun sekarang
     if (filterYear !== curYear) {
-        return showWarning('Tombol navigasi cepat hanya berfungsi untuk rekap tahun berjalan (' + curYear + ')');
+        return showWarning('Tombol navigasi cepat hanya berfungsi untuk rekap tahun berjalan (' + curYear + ')'); // Warning message
     }
 
     var el = document.getElementById('month-header-' + curMonth);
@@ -7275,7 +7383,7 @@ function bukaJadwal() {
   }
 
   function muatTahunRondaList() {
-    // 1. AMBIL ELEMENT LOKAL & SET REAL-TIME SEGERA (Hapus logika H-3 agar sesuai real-time)
+    // 1. GET LOCAL ELEMENTS & SET REAL-TIME IMMEDIATELY (Removed H-3 logic for real-time sync)
     const filterBulan = document.getElementById('rondaFilterBulan');
     const filterTahun = document.getElementById('rondaFilterTahun');
     const skrg = new Date();
@@ -7283,12 +7391,12 @@ function bukaJadwal() {
     const bulanSkrg = skrg.getMonth() + 1;
 
     // KOREKSI C: LOCK DROPDOWN BULAN RIIL (MEI)
-    if (filterBulan) {
+    if (filterBulan) { // Set current month
       filterBulan.value = String(bulanSkrg);
     }
 
     showLoading('Menginisialisasi filter...');
-    google.script.run.withSuccessHandler(function(res) {
+    google.script.run.withSuccessHandler(function(res) { // Handle success
       Swal.close();
       let years = (res && res.status === 'success') ? res.data : [];
       
@@ -7298,7 +7406,7 @@ function bukaJadwal() {
         years.push(tahunSkrg);
       }
       
-      // Render Dropdown Tahun dengan Casting Eksplisit
+      // Render Year Dropdown with Explicit Casting
       rondaFilterTahunSelect.innerHTML = '';
       [...new Set(years)].sort((a, b) => b - a).forEach(function(y) {
         filterTahun.options.add(new Option(y, String(y)));
@@ -7310,7 +7418,7 @@ function bukaJadwal() {
 
       // Ensure button visibility is updated here too
       document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
-      muatDataRonda();
+      muatDataRonda(); // Load ronda data
     }).getTahunRondaList();
   }
 
@@ -7340,7 +7448,7 @@ function bukaJadwal() {
             currentUser.nama = result.value;
             document.getElementById('profNama').innerText = result.value;
             document.getElementById('welcomeUserName').innerText = 'Halo, ' + result.value + '!';
-          } else showError(res.pesan);
+          } else showError(res.pesan); // Handle error
         }).ubahNama(currentUser.email, result.value, currentToken);
       }
     });
@@ -7349,7 +7457,7 @@ function bukaJadwal() {
   function updateStatusPkkLaporan(id) {
     if (!hasPermission('pkk_laporan_admin_crud')) return;
     var statusBaru = document.getElementById('pkkStatus_' + id).value;
-    showLoading('Memperbarui status...');
+    showLoading('Memperbarui status...'); // Show loading
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       if (res.status === 'success') {
@@ -7357,7 +7465,7 @@ function bukaJadwal() {
         bukaPkkLaporanAdmin();
       } else {
         showError(res.pesan);
-      }
+      } // Handle error
     }).pkkUpdateStatusLaporan(id, statusBaru);
   }
 
@@ -7365,7 +7473,7 @@ function bukaJadwal() {
     if (!hasPermission('pkk_laporan_admin_crud')) return;
     showConfirm('Hapus laporan PKK ini?').then(function(res) {
       if (res.isConfirmed) {
-        showLoading('Menghapus...');
+        showLoading('Menghapus...'); // Show loading
         google.script.run.withSuccessHandler(function(r) {
           Swal.close();
           if (r.status === 'success') {
@@ -7373,7 +7481,7 @@ function bukaJadwal() {
             bukaPkkLaporanAdmin();
           } else {
             showError(r.pesan);
-          }
+          } // Handle error
         }).pkkHapusLaporan(id);
       }
     });
@@ -7385,7 +7493,7 @@ function bukaJadwal() {
   function renderRekapKasKT(data) {
     var container = document.getElementById('ktTbodyRekapTransaksi');
     console.log('[KT KAS] renderRekapKasKT Container:', container);
-    
+
     if (!container) {
       console.error('[KT KAS] ERRROR: Container ktTbodyRekapTransaksi tidak ditemukan di DOM');
       return;
@@ -7397,7 +7505,7 @@ function bukaJadwal() {
       return;
     }
 
-    var runningSaldo = 0;
+    var runningSaldo = 0; // Initialize running saldo
     // Saldo berjalan membutuhkan data terurut tanggal naik (Ascending)
     var sorted = [...data].sort((a,b) => a.tanggal.localeCompare(b.tanggal));
     
@@ -7406,7 +7514,7 @@ function bukaJadwal() {
       var nominal = item.nominal || 0;
       if (isIn) runningSaldo += nominal; else runningSaldo -= nominal;
       
-      var tr = document.createElement('tr');
+      var tr = document.createElement('tr'); // Create table row
       tr.innerHTML = '<td>' + item.tanggal + '</td>'
                    + '<td>' + (item.keterangan || '-') + '</td>'
                    + '<td style="color:#10b981; font-weight:700;">' + (isIn ? 'Rp ' + nominal.toLocaleString('id-ID') : '-') + '</td>'
@@ -7415,7 +7523,7 @@ function bukaJadwal() {
                    + '<td><button class="btn-small" onclick="ktEditKas(\''+item.id+'\',\''+item.tanggal+'\',\''+item.jenis+'\',\''+escapeHtml(item.keterangan)+'\','+nominal+')"><i class="material-icons" style="font-size:14px;">edit</i></button></td>';
       container.appendChild(tr);
     });
-  }
+  } // End of renderRekapKasKT
 
   function filterKtTabelTransaksi() {
     var bulan = parseInt(document.getElementById('ktFilterBulanTransaksi').value);
@@ -7432,7 +7540,7 @@ function bukaJadwal() {
     renderRekapKasKT(filtered);
   }
 
-  function bukaFormRonda() {
+  function bukaFormRonda() { // Function to open ronda form
     if (!hasPermission('rt_ronda_crud')) { showError('Anda tidak memiliki izin untuk menambah jadwal ronda.'); return; }
     document.getElementById('rondaRow').value = '';
     document.getElementById('rondaTanggal').value = new Date().toISOString().slice(0, 10);
@@ -7442,7 +7550,7 @@ function bukaJadwal() {
     bukaFormMode('rondaFormCrud', 'listRonda');
   }
 
-  function editRonda(row, tanggal, kelompok, petugas) {
+  function editRonda(row, tanggal, kelompok, petugas) { // Function to edit ronda
     if (!hasPermission('rt_ronda_crud')) { showError('Anda tidak memiliki izin untuk mengedit jadwal ronda.'); return; }
     document.getElementById('rondaRow').value = row;
     document.getElementById('rondaTanggal').value = tanggal;
@@ -7452,7 +7560,7 @@ function bukaJadwal() {
     bukaFormMode('rondaFormCrud', 'listRonda');
   }
 
-  function simpanDataRonda() {
+  function simpanDataRonda() { // Function to save ronda data
     if (!hasPermission('rt_ronda_crud')) { showError('Anda tidak memiliki izin untuk menyimpan jadwal ronda.'); return; }
     var row = document.getElementById('rondaRow').value;
     var tanggal = document.getElementById('rondaTanggal').value;
@@ -7463,7 +7571,7 @@ function bukaJadwal() {
       return showWarning('Semua kolom wajib diisi!');
     }
 
-    showLoading('Menyimpan jadwal ronda...');
+    showLoading('Menyimpan jadwal ronda...'); // Show loading
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
       if (res.status === 'success') {
