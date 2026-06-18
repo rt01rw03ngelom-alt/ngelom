@@ -2824,7 +2824,7 @@
         <div class="table-header"><span><i class="material-icons">list_alt</i> Daftar Kehadiran</span></div>
         <div class="table-wrapper">
           <table>
-            <thead><tr><th>Nama</th><th>Status</th><th>Metode</th><th>Jam</th></tr></thead>
+            <thead><tr><th>Nama</th><th>Status</th><th>Metode</th><th>Jam</th><th>QR/PIN</th><th>Aksi</th></tr></thead>
             <tbody id="tbodyAbsRealtime"></tbody>
           </table>
         </div>
@@ -5699,6 +5699,17 @@
   function showQrScanner() {
     document.getElementById('absRondaUserSelect').style.display = 'none';
     document.getElementById('absRondaQrScannerContainer').style.display = 'block';
+
+    // 1. Hentikan scanner sebelumnya jika ada
+    if (html5QrCode) {
+        try {
+            html5QrCode.stop().then(() => {
+                html5QrCode = null;
+            }).catch(() => {});
+        } catch(e) {}
+    }
+    const readerDiv = document.getElementById('qr-reader');
+    if (readerDiv) readerDiv.innerHTML = ''; // 2. Bersihkan container sebelum membuat ulang
     
     showLoading('Menginisialisasi Kamera...');
     
@@ -5706,12 +5717,21 @@
     html5QrCode.start(
       { facingMode: "environment" }, 
       { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        html5QrCode.stop();
+      (decodedText) => { // Berhasil scan
+        html5QrCode.stop().then(() => {
+            html5QrCode = null;
+            if (btn) btn.disabled = false;
+        }).catch(() => {});
         Swal.close();
-        submitAbsensiModern('QR', decodedText);
+        submitAbsensiModern('QR', decodedText); // Aktifkan kembali di callback atau catch
       }
-    ).catch(err => {
+    ).catch(err => { // Gagal akses kamera
+        // 3. Nonaktifkan tombol sementara
+        const btn = document.querySelector('#absRondaUserSelect .btn-primary');
+        if (btn) btn.disabled = true;
+
+        // Aktifkan kembali di callback atau catch
+        if (btn) btn.disabled = false;
       Swal.close();
       showError('Gagal mengakses kamera: ' + err);
       hideAbsenMetode();
