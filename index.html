@@ -3326,7 +3326,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxr3_yi0L4XO0uXgs-MbvyJlDW1m9zKa_WjsByW8GvEbuDAV9tZUHZo4aERt7eGG2qJiA/exec";
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbydS8ALTDI4VLknGBIt6RrJON0x2zfutMk2LRL_Dapw9Tyv6lfel8BfH_itxMtdUt78cg/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -5545,7 +5545,7 @@
           if (adminPanel) adminPanel.style.display = 'none';
           if (userPanel) userPanel.style.display = 'none';
         }
-      })
+ })
       .withFailureHandler(function(err) {
         console.error('Gagal memuat data absensi:', err);
         const header = document.getElementById('absRondaHeader');
@@ -5560,7 +5560,7 @@
         const userPanel = document.getElementById('absRondaUserPanel');
         if (adminPanel) adminPanel.style.display = 'none';
         if (userPanel) userPanel.style.display = 'none';
-      })
+ })
       .getAbsensiInitialData(tgl);
   }
 
@@ -5696,17 +5696,89 @@
     if (userPanel?.style) userPanel.style.display = 'block';
   }
 
+function muatRealtimeAbsensi() {
+    if (!absRondaJadwalId) return;
+
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if (res.status === 'success') {
+                const tbody = document.getElementById('tbodyAbsRealtime');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                res.data.forEach(function(p) {
+                    const statusColor = p.status === 'Hadir' ? '#10b981' : '#64748b';
+                    const qrContainerId = 'qr-' + p.nama.replace(/\s/g, '') + '-' + Date.now();
+
+                    // Tampilkan PIN atau QR Code kecil
+                    let qrHtml = '';
+                    if (p.token && p.token !== '-') {
+                        qrHtml = `<div id="${qrContainerId}" style="width:50px; height:50px; margin:0 auto;"></div>`;
+                    } else {
+                        qrHtml = `<span class="muted" style="font-size:11px;">${p.pin}</span>`;
+                    }
+
+                    // Tombol reset hanya untuk yang sudah hadir
+                    const aksiHtml = (p.status === 'Hadir')
+                        ? `<button class="btn-small danger" onclick="resetAbsensiPetugas('${p.nama}')">Reset</button>`
+                        : `<span class="muted">-</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${p.nama}</strong></td>
+                        <td><span class="status-badge" style="background:${statusColor}">${p.status}</span></td>
+                        <td>${p.metode || '-'}</td>
+                        <td>${p.jam || '-'}</td>
+                        <td>${qrHtml}</td>
+                        <td>${aksiHtml}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // Render QR Code jika token tersedia
+                    if (p.token && p.token !== '-') {
+                        setTimeout(function() {
+                            const el = document.getElementById(qrContainerId);
+                            if (el) {
+                                new QRCode(el, { text: p.token, width: 50, height: 50 });
+                            }
+                        }, 100);
+                    }
+                });
+            } else {
+                showError(res.pesan);
+            }
+        })
+        .withFailureHandler(function(err) {
+            console.error('Gagal memuat absensi:', err);
+            showError('Gagal memuat data kehadiran.');
+        })
+        .getRealtimeAbsensiModern(absRondaJadwalId);
+}
+
+function resetAbsensiPetugas(nama) {
+    if (!absRondaJadwalId) return showWarning('ID jadwal tidak valid.');
+    showConfirm('Reset absensi untuk ' + nama + '?').then(function(res) {
+        if (res.isConfirmed) {
+            showLoading('Mereset...');
+            google.script.run
+                .withSuccessHandler(function() { Swal.close(); showSuccess('Absensi ' + nama + ' direset.'); muatRealtimeAbsensi(); })
+                .withFailureHandler(function(err) { Swal.close(); showError('Gagal reset: ' + err.message); })
+                .resetAbsensiPetugas(absRondaJadwalId, nama);
+        }
+    });
+}
+
   function showQrScanner() {
     document.getElementById('absRondaUserSelect').style.display = 'none';
     document.getElementById('absRondaQrScannerContainer').style.display = 'block';
 
     // 1. Hentikan scanner sebelumnya jika ada
     if (html5QrCode) {
-        try {
-            html5QrCode.stop().then(() => {
-                html5QrCode = null;
-            }).catch(() => {});
-        } catch(e) {}
+ try {
+ html5QrCode.stop().then(() => {
+ html5QrCode = null;
+ }).catch(() => {});
+ } catch(e) {}
     }
     const readerDiv = document.getElementById('qr-reader');
     if (readerDiv) readerDiv.innerHTML = ''; // 2. Bersihkan container sebelum membuat ulang
@@ -5716,19 +5788,19 @@
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start(
       { facingMode: "environment" }, 
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => { // Berhasil scan
-        html5QrCode.stop().then(() => {
-            html5QrCode = null;
-            if (btn) btn.disabled = false;
-        }).catch(() => {});
-        Swal.close();
-        submitAbsensiModern('QR', decodedText); // Aktifkan kembali di callback atau catch
-      }
-    ).catch(err => { // Gagal akses kamera
-        // 3. Nonaktifkan tombol sementara
-        const btn = document.querySelector('#absRondaUserSelect .btn-primary');
-        if (btn) btn.disabled = true;
+ { fps: 10, qrbox: { width: 250, height: 250 } },
+ function(decodedText) {
+            // Berhasil scan
+ html5QrCode.stop().then(() => {
+ html5QrCode = null;
+ if (btn) btn.disabled = false;
+ }).catch(() => {});
+ Swal.close();
+ submitAbsensiModern('QR', decodedText);
+ }
+ ).catch(function(err) {
+        // Gagal akses kamera
+ Swal.close();
 
         // Aktifkan kembali di callback atau catch
         if (btn) btn.disabled = false;
@@ -5745,7 +5817,13 @@
   }
 
   function hideAbsenMetode() {
-    if (html5QrCode) html5QrCode.stop();
+    if (html5QrCode) {
+ try {
+ html5QrCode.stop().then(() => {
+ html5QrCode = null;
+ }).catch(() => {});
+ } catch(e) {}
+    }
     document.getElementById('absRondaUserSelect').style.display = 'block';
     document.getElementById('absRondaQrScannerContainer').style.display = 'none';
     document.getElementById('absRondaPinInputContainer').style.display = 'none';
@@ -5816,16 +5894,6 @@
           <div style="font-size:14px; color:var(--text-muted); margin-top:5px; background:var(--bg-app); padding:8px; border-radius:8px;">Petugas: ${sch.petugas}</div>
         </div>
       </div>`;
-  }
-
-  function resetAbsensi() {
-    var tgl = document.getElementById('absRondaDate').value;
-    showConfirm('Reset absensi tanggal ' + tgl + '?').then(res => {
-      if (res.isConfirmed) {
-        showLoading('Mereset...');
-        google.script.run.withSuccessHandler(r => { Swal.close(); showSuccess(r.pesan); muatHalamanAbsensi(); }).resetAbsensiRonda(tgl, absRondaJadwalId);
-      }
-    });
   }
 
   // ======================== MODUL KARANG TARUNA (JS) ========================
