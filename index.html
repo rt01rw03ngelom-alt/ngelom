@@ -5495,47 +5495,75 @@
   function muatHalamanAbsensi() {
     var tgl = document.getElementById('absRondaDate').value;
     if (!tgl) return;
-    
+
     const isPengurus = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
-    
-    google.script.run.withSuccessHandler(function(res) {
-      let data;
-      try {
-        data = typeof res === 'string' ? JSON.parse(res) : res;
-      } catch (err) {
-        console.error('JSON gagal', err);
-        return;
-      }
 
-      if (!data || !data.schedule) {
-        console.warn('Data jadwal tidak valid');
-        return;
-      }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        let data;
+        try {
+          data = typeof res === 'string' ? JSON.parse(res) : res;
+        } catch (err) {
+          console.error('JSON gagal', err);
+          const header = document.getElementById('absRondaHeader');
+          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">Gagal memproses data dari server.</div>`;
+          return;
+        }
 
-      if (data.status === 'success') {
-        absRondaJadwalId = data.jadwalId;
-        renderAbsRondaHeader(data.schedule);
-        
-        // Gunakan requestAnimationFrame agar UI render selesai dulu
-        requestAnimationFrame(() => {
-          if (isPengurus) {
-            checkActiveSessionAdmin(data);
-          } else {
-            checkActiveSessionUser();
-          }
-        });
-      } else {
+        // Tangani error dari server
+        if (data && data.status === 'error') {
+          const header = document.getElementById('absRondaHeader');
+          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan || 'Terjadi kesalahan.'}</div>`;
+
+          const adminPanel = document.getElementById('absRondaAdminPanel');
+          const userPanel = document.getElementById('absRondaUserPanel');
+          if (adminPanel) adminPanel.style.display = 'none';
+          if (userPanel) userPanel.style.display = 'none';
+          return;
+        }
+
+        if (!data || !data.schedule) {
+          const header = document.getElementById('absRondaHeader');
+          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">Data jadwal tidak valid.</div>`;
+          return;
+        }
+
+        if (data.status === 'success') {
+          absRondaJadwalId = data.jadwalId;
+          renderAbsRondaHeader(data.schedule);
+
+          requestAnimationFrame(() => {
+            if (isPengurus) checkActiveSessionAdmin(data);
+            else checkActiveSessionUser();
+          });
+        } else {
+          const header = document.getElementById('absRondaHeader');
+          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan || 'Gagal memuat data.'}</div>`;
+
+          const adminPanel = document.getElementById('absRondaAdminPanel');
+          const userPanel = document.getElementById('absRondaUserPanel');
+          if (adminPanel) adminPanel.style.display = 'none';
+          if (userPanel) userPanel.style.display = 'none';
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Gagal memuat data absensi:', err);
         const header = document.getElementById('absRondaHeader');
-        if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan}</div>`;
-        
-        const tbody = document.getElementById('tbodyAbsRonda');
-        if (tbody) tbody.innerHTML = '';
-        
-        const summary = document.getElementById('absRondaSummary');
-        if (summary?.style) summary.style.display = 'none';
-      }
-    }).getAbsensiInitialData(tgl);
+        if (header) {
+          header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">
+            Gagal terhubung ke server. Periksa koneksi.
+            <button class="btn-small" onclick="muatHalamanAbsensi()">Coba Lagi</button>
+          </div>`;
+        }
+
+        const adminPanel = document.getElementById('absRondaAdminPanel');
+        const userPanel = document.getElementById('absRondaUserPanel');
+        if (adminPanel) adminPanel.style.display = 'none';
+        if (userPanel) userPanel.style.display = 'none';
+      })
+      .getAbsensiInitialData(tgl);
   }
+
 
   // LOGIKA PENGURUS
   function checkActiveSessionAdmin(response) {
