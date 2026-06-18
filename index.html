@@ -5629,9 +5629,9 @@
                 const pinDisplay = document.getElementById('absRondaPinDisplay');
                 const qrDisplay = document.getElementById('absRondaQrDisplay');
                 if (pinDisplay) pinDisplay.innerText = res.pin || '------';
-                if (qrDisplay) {
-                    qrDisplay.style.display = 'block'; // Ensure QR display is visible
-                    generateAbsenQr(res.qrToken); // Use the QR token from the backend
+            if (qrDisplay) { // QR code besar disembunyikan – hanya PIN yang ditampilkan
+                qrDisplay.style.display = 'none'; // sembunyikan QR
+                qrDisplay.innerHTML = '';          // kosongkan isi
                 }
 
                 // Start timer if expiry is provided
