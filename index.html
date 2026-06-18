@@ -2797,6 +2797,9 @@
 
     <!-- ADMIN PANEL: Muncul jika User adalah Admin/Pengurus -->
     <div id="absRondaAdminPanel" style="display:none;">
+      <button class="btn-small" onclick="muatRealtimeAbsensi()" style="margin-bottom:10px;">
+        <i class="material-icons" style="font-size:16px; vertical-align:middle;">refresh</i> Refresh Daftar
+      </button>
       <div id="absRondaNoSession" class="card-item" style="text-align:center; padding:30px;">
         <i class="material-icons" style="font-size:48px; color:var(--text-muted); margin-bottom:15px;">lock</i>
         <div style="font-weight:700; margin-bottom:10px;">Sesi Absensi Belum Dibuka</div>
@@ -2851,7 +2854,7 @@
       <!-- TEMPAT CAMERA SCANNER MUNCUL -->
       <div id="absRondaQrScannerContainer" style="display:none;">
         <div class="card-item">
-          <div id="qr-reader" style="width:100%; border-radius:12px; overflow:hidden;"></div>
+          <div id="qr-reader" style="width:100%; min-height: 250px; border-radius:12px; overflow:hidden; background: #000;"></div>
           <button class="btn-secondary" style="margin-top:15px;" onclick="hideAbsenMetode()">Batal</button>
         </div>
       </div>
@@ -5641,43 +5644,91 @@
   }
 
   function muatRealtimeAbsensi() {
-    if (!absRondaJadwalId) return;
+    if (!absRondaJadwalId) {
+        console.warn('absRondaJadwalId belum tersedia');
+        return;
+    }
+
+    console.log('Mengambil data absensi untuk jadwal:', absRondaJadwalId);
+
     google.script.run
         .withSuccessHandler(function(res) {
+            console.log('Data absensi diterima:', res);
             if (res.status === 'success') {
                 const tbody = document.getElementById('tbodyAbsRealtime');
                 if (!tbody) return;
                 tbody.innerHTML = '';
+
                 res.data.forEach(function(p) {
-                    const isHadir = (p.status === 'Hadir');
-                    const statusColor = isHadir ? '#10b981' : '#64748b';
+                    const statusColors = {
+                        'Hadir': '#10b981',
+                        'Izin': '#3b82f6',
+                        'Sakit': '#f59e0b',
+                        'Alfa': '#ef4444',
+                        'Belum Hadir': '#64748b'
+                    };
+                    const statusColor = statusColors[p.status] || '#64748b';
+
+                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px;">${p.status}</span>`;
                     
+                    // Jika user adalah admin/pengurus, tampilkan dropdown edit status
+                    if (hasPermission('rt_ronda_crud')) {
+                        statusContentHtml += `
+                            <select onchange="updateStatusPetugas('${absRondaJadwalId}', '${p.nama.replace(/'/g, "\\'")}', this.value)" style="display:block; font-size:9px; margin-top:4px; padding:2px; height:auto; border-radius:4px; width:100%; cursor:pointer;">
+                                <option value="Belum Hadir" ${p.status==='Belum Hadir'?'selected':''}>Set Belum</option>
+                                <option value="Hadir" ${p.status==='Hadir'?'selected':''}>Set Hadir</option>
+                                <option value="Izin" ${p.status==='Izin'?'selected':''}>Set Izin</option>
+                                <option value="Sakit" ${p.status==='Sakit'?'selected':''}>Set Sakit</option>
+                                <option value="Alfa" ${p.status==='Alfa'?'selected':''}>Set Alfa</option>
+                            </select>
+                        `;
+                    }
+
+                    // Tampilkan PIN dan tombol QR hanya jika token tersedia
                     const qrPinHtml = `
                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px;">${p.pin || '-'}</span>
+                            <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px;">
+                                ${p.pin && p.pin !== '-' ? p.pin : '-'}
+                            </span>
                             ${p.token && p.token !== '-' ? 
-                                `<button class="btn-small" onclick='tampilkanQR(${JSON.stringify(p.token)})' style="padding:2px 6px; margin:0;">QR</button>` 
+                                `<button class="btn-small" onclick='tampilkanQR(${JSON.stringify(p.token)})' style="padding:2px 6px; margin:0; background:#3b82f6;">QR</button>` 
                                 : ''}
                         </div>
                     `;
 
-                    const aksiHtml = isHadir 
+                    // Tombol Reset diizinkan untuk semua status kecuali yang belum hadir
+                    const aksiHtml = (p.status !== 'Belum Hadir') 
                         ? `<button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama}')" style="padding:2px 6px; margin:0;">Reset</button>`
                         : `<span class="muted">-</span>`;
 
                     tbody.innerHTML += `<tr>
                         <td><strong>${p.nama}</strong></td>
-                        <td><span class="status-badge" style="background:${statusColor}; font-size:10px;">${p.status}</span></td>
+                        <td>${statusContentHtml}</td>
                         <td>${p.metode || '-'}</td>
                         <td>${p.jam || '-'}</td>
                         <td>${qrPinHtml}</td>
                         <td>${aksiHtml}</td>
                     </tr>`;
                 });
+            } else {
+                console.error('Gagal memuat data absensi:', res.pesan);
             }
         })
-        .withFailureHandler(console.error)
+        .withFailureHandler(function(err) {
+            console.error('Error getRealtimeAbsensiModern:', err);
+        })
         .getRealtimeAbsensiModern(absRondaJadwalId);
+  }
+
+  function updateStatusPetugas(idJadwal, nama, status) {
+    showLoading('Memperbarui status...');
+    google.script.run.withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.status === 'success') {
+        showSuccess(res.pesan);
+        muatRealtimeAbsensi();
+      } else showError(res.pesan);
+    }).updateStatusAbsensi(idJadwal, nama, status);
   }
 
   function resetAbsensiPetugasManual(nama) {
@@ -5713,37 +5764,75 @@
   }
 
   async function showQrScanner() {
-    if (html5QrCode) {
-      try { await html5QrCode.stop(); } catch(e) {}
-      document.getElementById('qr-reader').innerHTML = '';
+    try {
+      document.getElementById('absRondaUserSelect').style.display = 'none';
+      document.getElementById('absRondaQrScannerContainer').style.display = 'block';
+
+      const readerDiv = document.getElementById('qr-reader');
+      if (readerDiv) {
+          readerDiv.innerHTML = '<div style="padding:40px; text-align:center;"><div class="bbx-spinner" style="margin:0 auto;"></div><p style="color:white; margin-top:10px;">Menghubungkan Kamera...</p></div>';
+      }
+
+      // Cek ketersediaan kamera sebelum membuka container
+      const devices = await Html5Qrcode.getCameras();
+      if (!devices || devices.length === 0) {
+        throw new Error("Kamera tidak ditemukan di perangkat ini.");
+      }
+
+      // Beri waktu browser untuk melakukan reflow UI
+      setTimeout(() => {
+          startScannerSession();
+      }, 400);
+    } catch (e) {
+      hideAbsenMetode();
+      showError("Izin kamera ditolak atau tidak tersedia: " + e.message);
     }
-    startScannerSession();
   }
 
   async function startScannerSession() {
-    const btn = document.querySelector('#absRondaUserSelect .btn-primary');
-    if (btn) btn.disabled = true;
-
-    document.getElementById('absRondaUserSelect').style.display = 'none';
-    document.getElementById('absRondaQrScannerContainer').style.display = 'block';
-
-    html5QrCode = new Html5Qrcode("qr-reader");
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
-          await html5QrCode.stop();
-          html5QrCode = null;
-          if (btn) btn.disabled = false;
-          submitAbsensiModern('QR', decodedText);
-        }
-      );
-    } catch (err) {
-        if (btn) btn.disabled = false;
-        showError('Gagal mengakses kamera: ' + err);
-        hideAbsenMetode();
+    const readerDiv = document.getElementById('qr-reader');
+    
+    // Pastikan instance lama dimatikan sepenuhnya
+    if (html5QrCode) {
+      try {
+        if (html5QrCode.isScanning) await html5QrCode.stop();
+      } catch(e) {}
+      html5QrCode = null;
     }
+
+    if (readerDiv) readerDiv.innerHTML = '';
+    html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: (w, h) => { let s = Math.min(w, h) * 0.7; return { width: s, height: s }; } },
+        async (decodedText) => {
+            // Sukses Scan: stop kamera segera agar tidak trigger scan ganda
+            try {
+              if (html5QrCode && html5QrCode.isScanning) {
+                const scannerRef = html5QrCode;
+                html5QrCode = null;
+                await scannerRef.stop();
+              }
+            } catch(e) { console.error("Kamera gagal dimatikan:", e); }
+            
+            submitAbsensiModern('QR', decodedText);
+        }
+    ).catch(err => {
+        console.error('Html5Qrcode start error:', err);
+        if (readerDiv) {
+          readerDiv.innerHTML = `
+            <div style="padding:30px; text-align:center;">
+              <i class="material-icons" style="font-size:48px; color:var(--primary-red);">videocam_off</i>
+              <div style="font-weight:700; margin-top:10px;">Kamera Gagal Dimuat</div>
+              <p class="muted" style="font-size:12px; margin:10px 0;">${err}</p>
+              <button class="btn-small" onclick="startScannerSession()">Coba Ulang</button>
+            </div>`;
+        } else {
+          showError('Gagal mengakses kamera: ' + err);
+          hideAbsenMetode();
+        }
+    });
   }
 
   function showPinInput() {
