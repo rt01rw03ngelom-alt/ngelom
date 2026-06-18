@@ -5582,6 +5582,12 @@
     adminPanel.style.display = 'block';
     userPanel.style.display = 'none';
     
+    // Jika response tidak valid, jangan lanjutkan
+    if (!response || !response.jadwalId) {
+        console.warn('Data jadwal tidak lengkap, tidak bisa cek sesi.');
+        return;
+    }
+
     google.script.run.withSuccessHandler(function(res) {
       console.log('SESSION DATA', res);
       const noSess = document.getElementById('absRondaNoSession');
@@ -5600,7 +5606,7 @@
         if (actSess?.style) actSess.style.display = 'none';
       }
       muatRealtimeAbsensi();
-    }).getRondaAbsensiSession(absRondaJadwalId);
+    }).getRondaAbsensiSession(response.jadwalId);
   }
 
   function generateAbsenQr(token) {
@@ -5612,8 +5618,34 @@
   function startAbsensiSession() {
     const tglJadwal = document.getElementById('absRondaDate').value;
     if (!tglJadwal) return showWarning('Pilih tanggal jadwal terlebih dahulu');
+    if (!absRondaJadwalId) return showWarning('Jadwal tidak ditemukan untuk tanggal ini.');
 
-    checkActiveSessionAdmin();
+    showLoading('Membuka sesi absensi...');
+    google.script.run
+        .withSuccessHandler(function(res) {
+            Swal.close();
+            if (res.status === 'success') {
+                // Tampilkan QR Code
+                generateAbsenQr(res.token);
+                // Tampilkan PIN
+                document.getElementById('absRondaPinDisplay').innerText = res.pin;
+                // Mulai timer
+                startAbsensiTimer(res.expired);
+                // Sembunyikan tombol "Buka Sesi", tampilkan panel aktif
+                document.getElementById('absRondaNoSession').style.display = 'none';
+                document.getElementById('absRondaActiveSession').style.display = 'block';
+                showSuccess('Sesi absensi berhasil dibuka!');
+                // Refresh daftar hadir
+                muatRealtimeAbsensi();
+            } else {
+                showError(res.pesan);
+            }
+        })
+        .withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal membuka sesi: ' + err.message);
+        })
+        .generateAbsensiToken(absRondaJadwalId);
   }
 
   function stopAbsensiSession() {
