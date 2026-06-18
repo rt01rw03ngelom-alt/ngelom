@@ -2814,6 +2814,16 @@
 
     <!-- ADMIN PANEL: Muncul jika User adalah Admin/Pengurus -->
     <div id="absRondaAdminPanel" style="display:none;">
+      <!-- Tombol Absen untuk Admin/Pengurus -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <button class="btn-small" onclick="showQrScanner()" style="background:#3b82f6;">
+          <i class="material-icons" style="font-size:16px; vertical-align:middle;">photo_camera</i> Absen QR
+        </button>
+        <button class="btn-small" onclick="showPinInput()" style="background:#f59e0b;">
+          <i class="material-icons" style="font-size:16px; vertical-align:middle;">pin</i> Absen PIN
+        </button>
+      </div>
+
       <button class="btn-small" onclick="muatRealtimeAbsensi()" style="margin-bottom:10px;">
         <i class="material-icons" style="font-size:16px; vertical-align:middle;">refresh</i> Refresh Daftar
       </button>
@@ -5492,18 +5502,31 @@
       if (!view) return showError('Layar absensi tidak ditemukan');
 
       view.style.display = 'block'; // Ensure the view is visible before loading data
-      var dateEl = document.getElementById('absRondaDate');
-      if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+      
+      // Ambil tanggal terdekat secara asinkron
+      getNearestRondaDate().then(function(date) {
+        var dateEl = document.getElementById('absRondaDate');
+        if (dateEl) dateEl.value = date;
+        muatHalamanAbsensi();
+      });
+
 
     history.pushState({ view: 'absensiRondaView', tab: 'warga', onLoad: 'muatHalamanAbsensi' }, '', '#absensiRonda');
 
       // tampilkan loading cepat biar tidak terlihat blank
-      var header = document.getElementById('absRondaHeader');
       if (header) header.innerHTML = '<div class="card-item" style="text-align:center;">Memuat absensi...</div>';
-      var tbody = document.getElementById('tbodyAbsRealtime');
       if (tbody) tbody.innerHTML = '';
 
-      muatHalamanAbsensi(); // Load data for the selected date
+      // Ambil tanggal terdekat secara asinkron
+      getNearestRondaDate().then(function(res) {
+        if (res.status === 'success' && res.data) {
+          if (dateEl) dateEl.value = res.data;
+        }
+        muatHalamanAbsensi(); // Load data for the selected date
+      }).catch(function(err) {
+        console.error('Error getting nearest ronda date:', err);
+        muatHalamanAbsensi(); // Fallback to loading with current date
+      });
     } catch (e) {
       console.error('bukaAbsensiRonda error:', e);
       showError('Gagal membuka absensi: ' + (e && e.message ? e.message : e));
@@ -6039,7 +6062,7 @@
         } else {
           showError(res.pesan);
           if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
-          else showQrScanner(); // Buka kembali scanner jika error
+          // Biarkan tombol scan/PIN tetap aktif
         }
       })
       .withFailureHandler(function(err) {
@@ -6049,6 +6072,46 @@
         showError('Terjadi gangguan koneksi: ' + err.message);
       })
       .simpanAbsensi(absRondaJadwalId, currentUser.nama, metode, val);
+  }
+
+  // Fungsi baru untuk mendapatkan tanggal jadwal ronda terdekat
+  function getNearestRondaDate() {
+    return new Promise((resolve) => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      // Ambil data ronda untuk bulan ini dan bulan depan (jika perlu)
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.status === 'success' && res.data.length > 0) {
+            // Cari jadwal terdekat dari hari ini
+            const todayStr = today.toISOString().split('T')[0];
+            let nearest = null;
+            let minDiff = Infinity;
+            res.data.forEach(item => {
+              if (item.tanggal >= todayStr) {
+                const diff = new Date(item.tanggal) - today;
+                if (diff >= 0 && diff < minDiff) {
+                  minDiff = diff;
+                  nearest = item.tanggal;
+                }
+              }
+            });
+            if (nearest) {
+              resolve(nearest);
+            } else {
+              // Jika tidak ada jadwal mendatang, ambil yang terakhir (atau hari ini)
+              resolve(todayStr);
+            }
+          } else {
+            resolve(today.toISOString().split('T')[0]);
+          }
+        })
+        .withFailureHandler(function() {
+          resolve(today.toISOString().split('T')[0]);
+        })
+        .getRonda(0, year); // 0 = semua bulan
+    });
   }
 
   function startAbsensiTimer(exp) {
