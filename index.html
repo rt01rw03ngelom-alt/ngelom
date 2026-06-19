@@ -5956,11 +5956,24 @@
   async function showQrScanner() {
     // Stop any existing scanner instance
     if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-      await html5QrCodeScanner.stop();
+      try {
+        await html5QrCodeScanner.stop();
+      } catch (e) {
+        // ignore
+      }
     }
-    
+
     try {
+      // 🔹 Minta izin kamera secara eksplisit (agar pop-up izin muncul di semua browser)
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false
+      });
+      // Hentikan sementara; library akan menginisialisasi ulang stream
+      stream.getTracks().forEach(track => track.stop());
+
       document.getElementById('absRondaUserSelect').style.display = 'none';
+      document.getElementById('absRondaPinInputContainer').style.display = 'none';
       document.getElementById('absRondaQrScannerContainer').style.display = 'block';
 
       // Ensure previous scanner instance is stopped
@@ -5969,26 +5982,47 @@
       }
 
       html5QrCodeScanner = new Html5QrcodeScanner(
-        "qr-reader", { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false, rememberLastUsedCamera: true }, false
+        'qr-reader',
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          disableFlip: false,
+          rememberLastUsedCamera: true
+        },
+        false
       );
 
       html5QrCodeScanner.render(
-        (decodedText, decodedResult) => {
+        (decodedText) => {
           // Stop scanning and clear the UI
           if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-            html5QrCodeScanner.stop().then(() => {
-              html5QrCodeScanner.clear();
-              html5QrCodeScanner = null;
-            });
+            html5QrCodeScanner
+              .stop()
+              .then(() => {
+                html5QrCodeScanner.clear();
+                html5QrCodeScanner = null;
+              })
+              .catch(() => {
+                // ignore
+              });
           }
+
           submitAbsensiModern('QR', decodedText);
-        }, (errorMessage) => { /* Optional: handle scan errors */ }
+        },
+        (errorMessage) => {
+          // Abaikan error scan (biasanya karena frame kosong)
+        }
       );
     } catch (e) {
       console.error('showQrScanner error:', e);
-      showError('Gagal memuat kamera: ' + e.message);
+      showError('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.');
+      const qrCont = document.getElementById('absRondaQrScannerContainer');
+      const userSel = document.getElementById('absRondaUserSelect');
+      if (qrCont) qrCont.style.display = 'none';
+      if (userSel) userSel.style.display = 'block';
     }
   }
+
 
   function showPinInput() {
     document.getElementById('absRondaUserSelect').style.display = 'none';
@@ -11024,5 +11058,9 @@ function renderRekapKasWarga(data) {
     });
   }
 
+
+
   refreshNavVisibility();
 </script>
+
+
