@@ -12,7 +12,7 @@
     const APP_VERSION = '1.2.9';
     (function () {
       try {
-        const key = 'rt-app-version';https://script.google.com/macros/s/AKfycbydS8ALTDI4VLknGBIt6RrJON0x2zfutMk2LRL_Dapw9Tyv6lfel8BfH_itxMtdUt78cg/exec
+        const key = 'rt-app-version';
         const last = localStorage.getItem(key);
         if (last !== APP_VERSION) {
           localStorage.setItem(key, APP_VERSION);
@@ -38,8 +38,6 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
       --primary-color: #ef4444; /* Default RT */
@@ -1902,27 +1900,7 @@
       background-color: rgba(16, 185, 129, 0.35) !important;
     } 
 
-    /* CSS Absensi Ronda Malam */
-    .btn-status-abs {
-      padding: 10px 6px;
-      border-radius: 10px;
-      font-weight: 800;
-      border: none;
-      color: white;
-      font-size: 13px;
-      flex: 1;
-      cursor: pointer;
-      transition: 0.2s;
-      min-height: 44px;
-    }
-    .abs-hadir { background-color: #10b981; }
-    .abs-izin { background-color: #3b82f6; }
-    .abs-sakit { background-color: #f59e0b; }
-    .abs-alfa { background-color: #ef4444; }
-    .abs-active { outline: 4px solid rgba(0,0,0,0.2); transform: scale(1.05); z-index: 5; }
-    .abs-card { border-radius: 14px; margin-bottom: 15px; padding: 18px; font-size: 16px; }
-    
-    /* Perbaikan Masalah 2: Kolom Aksi */
+    /* Kolom Aksi */
     .aksi-cell {
       display: flex !important;
       gap: 8px;
@@ -1937,6 +1915,17 @@
       border-radius: 8px;
       padding: 6px 12px;
       font-weight: 700;
+    }
+
+    #btnSalinRondaWa {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    #btnSalinRondaWa:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(37, 211, 102, 0.45) !important;
+    }
+    #btnSalinRondaWa:active {
+      transform: translateY(0);
     }
 
     /* Prefix Rp untuk Input Nominal */
@@ -2795,108 +2784,6 @@
     <div id="listLaporanSemua"></div>
   </div>
 
-  <!-- LAYAR ABSENSI RONDA -->
-  <div id="absensiRondaView" class="screen">
-    <div class="page-header">
-      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Monitoring Ronda Malam</h3>
-    </div>
-    
-    <div class="filter-bar" style="margin-bottom: 20px;">
-      <div class="filter-group">
-        <label>Pilih Tanggal</label>
-        <input type="date" id="absRondaDate" onchange="muatHalamanAbsensi()" style="margin:0; height:48px; font-weight:700;">
-      </div>
-    </div>
-
-    <!-- Info Jadwal -->
-    <div id="absRondaHeader"></div>
-
-    <!-- ADMIN PANEL: Muncul jika User adalah Admin/Pengurus -->
-    <div id="absRondaAdminPanel" style="display:none;">
-      <!-- Tombol Absen untuk Admin/Pengurus -->
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-        <button class="btn-small" onclick="showQrScanner()" style="background:#3b82f6;">
-          <i class="material-icons" style="font-size:16px; vertical-align:middle;">photo_camera</i> Absen QR
-        </button>
-        <button class="btn-small" onclick="showPinInput()" style="background:#f59e0b;">
-          <i class="material-icons" style="font-size:16px; vertical-align:middle;">pin</i> Absen PIN
-        </button>
-      </div>
-
-      <button class="btn-small" onclick="muatRealtimeAbsensi()" style="margin-bottom:10px;">
-        <i class="material-icons" style="font-size:16px; vertical-align:middle;">refresh</i> Refresh Daftar
-      </button>
-      <div id="absRondaNoSession" class="card-item" style="text-align:center; padding:30px;">
-        <i class="material-icons" style="font-size:48px; color:var(--text-muted); margin-bottom:15px;">lock</i>
-        <div style="font-weight:700; margin-bottom:10px;">Sesi Absensi Belum Dibuka</div>
-        <button class="btn-primary" onclick="startAbsensiSession()">Buka Sesi Sekarang</button>
-      </div>
-
-      <div id="absRondaActiveSession" style="display:none;">
-        <div class="card-item" style="background:var(--bg-app); border-left:6px solid #f59e0b; text-align:center;">
-          <div id="absRondaTimer" style="font-weight:800; color:var(--primary-red); font-size:18px; margin-bottom:15px;">00:00:00</div>
-          <div style="display:flex; flex-direction:column; align-items:center; gap:15px;">
-            <!-- TEMPAT QR CODE MUNCUL -->
-            <div id="absRondaQrDisplay" style="background:white; padding:10px; border-radius:12px; box-shadow:var(--shadow-md);"></div>
-            <div style="font-size:11px; color:var(--text-muted); font-weight:800;">PIN AKSES:</div>
-            <div id="absRondaPinDisplay" style="font-size:32px; font-weight:900; letter-spacing:8px; color:var(--text-main);">------</div>
-          </div>
-          <button class="btn-action-subtle danger-hover" style="margin:20px auto 0;" onclick="stopAbsensiSession()">
-            <i class="material-icons">stop_circle</i> Tutup Sesi Absensi
-          </button>
-        </div>
-      </div>
-
-      <div class="kas-summary" id="absRondaSummary" style="margin:20px 0;"></div>
-
-      <div class="table-container">
-        <div class="table-header"><span><i class="material-icons">list_alt</i> Daftar Kehadiran</span></div>
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Nama</th><th>Status</th><th>Metode</th><th>Jam</th><th>QR/PIN</th><th>Aksi</th></tr></thead>
-            <tbody id="tbodyAbsRealtime"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- USER PANEL: Muncul untuk Warga/Petugas Ronda -->
-    <div id="absRondaUserPanel" style="display:none;">
-      <div id="absRondaUserSelect">
-        <div class="card-item" style="text-align:center; padding:30px;">
-          <i class="material-icons" style="font-size:48px; color:var(--primary-color); margin-bottom:15px;">qr_code_2</i>
-          <div style="font-weight:700; margin-bottom:20px;">Silakan Absen Di Sini</div>
-          <div style="display:grid; gap:12px;">
-            <button class="btn-primary" onclick="showQrScanner()">
-              <i class="material-icons" style="vertical-align:middle; margin-right:8px;">photo_camera</i> Scan QR Code
-            </button>
-            <button class="btn-secondary" onclick="showPinInput()" style="border:2px solid var(--primary-color); color:var(--primary-color); background:transparent;">
-              <i class="material-icons" style="vertical-align:middle; margin-right:8px;">pin</i> Masukkan PIN
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- TEMPAT CAMERA SCANNER MUNCUL -->
-      <div id="absRondaQrScannerContainer" style="display:none;">
-        <div class="card-item">
-          <div id="qr-reader" style="width:100%; min-height: 250px; border-radius:12px; overflow:hidden; background: #000;"></div>
-          <button class="btn-secondary" style="margin-top:15px;" onclick="hideAbsenMetode()">Batal</button>
-        </div>
-      </div>
-
-      <div id="absRondaPinInputContainer" style="display:none;">
-        <div class="card-item" style="text-align:center;">
-          <div style="font-weight:700; margin-bottom:15px;">Masukkan 6 Digit PIN</div>
-          <input type="number" id="inputAbsenPin" placeholder="------" style="text-align:center; font-size:24px; font-weight:800; letter-spacing:10px; height:60px;">
-          <button class="btn-primary" style="margin-top:15px;" onclick="submitPinAbsensi()">Kirim PIN</button>
-          <button class="btn-secondary" onclick="hideAbsenMetode()">Batal</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="rondaView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
@@ -2930,13 +2817,17 @@
         <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:5px;">south</i> Ke Bulan Sekarang
       </button>
     </div>
-    <div style="margin-bottom:1.2rem; text-align:center;">
-      <button id="btnSalinRondaWa" class="btn-small" onclick="shareRondaWA()" style="width:auto; padding:12px 24px; border-radius:12px; box-shadow:var(--shadow-md); background:#25D366; display:flex; align-items:center; gap:8px; margin:0 auto;">
-        <i class="material-icons">whatsapp</i> Salin Jadwal ke WhatsApp
+    <div style="text-align:center; margin:20px 0;">
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px; font-weight:600;">
+        📋 Bagikan jadwal ronda ke grup WhatsApp
+      </div>
+      <button id="btnSalinRondaWa" class="btn-primary" onclick="shareRondaWA()"
+              style="width:auto; padding:16px 32px; border-radius:16px;
+                     background:#25D366; font-size:18px; font-weight:800;
+                     box-shadow:0 8px 24px rgba(37,211,102,0.3); display:inline-flex; align-items:center; gap:10px; margin:0 auto;">
+        <i class="material-icons" style="vertical-align:middle;">whatsapp</i>
+        Salin Jadwal ke WhatsApp
       </button>
-      <button class="btn-small" onclick="bukaAbsensiRonda()" style="width:auto; padding:12px 24px; border-radius:12px; box-shadow:var(--shadow-md); background:var(--primary-dark); display:inline-flex; align-items:center; gap:8px; margin-top:10px;">
-        <i class="material-icons">how_to_reg</i> Absensi Ronda Malam
-      </button>      
     </div>
     <div id="rondaFormCrud" class="crud-form">
       <h4 id="rondaJudulForm">Tambah Jadwal Ronda</h4> 
@@ -5373,7 +5264,6 @@
     warga: [
       { title: "Jadwal Kegiatan", icon: "calendar_month", roles: ["admin", "pengurus rt", "warga"], action: "bukaJadwal", perm: "rt_jadwal" },
       { title: "Jadwal Ronda", icon: "security", roles: ["admin", "pengurus rt", "warga"], action: "bukaRonda", perm: "rt_ronda" },
-      { title: "Absensi Ronda", icon: "how_to_reg", roles: ["admin", "pengurus rt", "warga"], action: "bukaAbsensiRonda", perm: "rt_ronda" },
       { title: "Kelola User", icon: "manage_accounts", roles: ["admin"], action: "bukaKelolaUser", perm: "rt_user" },
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
@@ -5487,711 +5377,6 @@
     }
   }
   
-  // ======================== FITUR ABSENSI RONDA MALAM ========================
-  var absRondaMaster = [];
-  var absRondaJadwalId = null;
-  var html5QrCode = null;
-  var html5QrCodeScanner = null; // New variable for Html5QrcodeScanner instance
-  var absRondaActiveToken = null;
-  var absRondaRefreshInterval = null;
-
-  function bukaAbsensiRonda() {
-    try {
-      sembunyikanSemuaLayar();
-      var view = document.getElementById('absensiRondaView');
-      if (!view) return showError('Layar absensi tidak ditemukan');
-
-      view.style.display = 'block'; // Ensure the view is visible before loading data
-      
-      // Ambil tanggal terdekat secara asinkron
-      getNearestRondaDate().then(function(date) {
-        var dateEl = document.getElementById('absRondaDate');
-        if (dateEl) dateEl.value = date;
-        muatHalamanAbsensi();
-      });
-
-
-    history.pushState({ view: 'absensiRondaView', tab: 'warga', onLoad: 'muatHalamanAbsensi' }, '', '#absensiRonda');
-
-      // tampilkan loading cepat biar tidak terlihat blank
-      if (header) header.innerHTML = '<div class="card-item" style="text-align:center;">Memuat absensi...</div>';
-      if (tbody) tbody.innerHTML = '';
-
-      // Ambil tanggal terdekat secara asinkron
-      getNearestRondaDate().then(function(res) {
-        if (res.status === 'success' && res.data) {
-          if (dateEl) dateEl.value = res.data;
-        }
-        muatHalamanAbsensi(); // Load data for the selected date
-      }).catch(function(err) {
-        console.error('Error getting nearest ronda date:', err);
-        muatHalamanAbsensi(); // Fallback to loading with current date
-      });
-    } catch (e) {
-      console.error('bukaAbsensiRonda error:', e);
-      showError('Gagal membuka absensi: ' + (e && e.message ? e.message : e));
-    }
-  }
-
-
-  function muatHalamanAbsensi() {
-    var tgl = document.getElementById('absRondaDate').value;
-    if (!tgl) return;
-
-    showLoading('Memuat data absensi...');
-    const isPengurus = (currentUser.role === 'admin' || currentUser.role === 'pengurus rt');
-
-    google.script.run
-      .withSuccessHandler(function(res) {
-        let data;
-        try {
-          data = typeof res === 'string' ? JSON.parse(res) : res;
-        } catch (err) {
-          console.error('JSON gagal', err);
-          const header = document.getElementById('absRondaHeader');
-          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">Gagal memproses data dari server.</div>`;
-          return;
-        }
-
-        // Tangani error dari server
-        if (data && data.status === 'error') {
-          const header = document.getElementById('absRondaHeader');
-          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan || 'Terjadi kesalahan.'}</div>`;
-
-          const adminPanel = document.getElementById('absRondaAdminPanel');
-          const userPanel = document.getElementById('absRondaUserPanel');
-          if (adminPanel) adminPanel.style.display = 'none';
-          if (userPanel) userPanel.style.display = 'none';
-          return;
-        }
-
-        if (!data || !data.schedule) {
-          const header = document.getElementById('absRondaHeader');
-          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">Data jadwal tidak valid.</div>`;
-          return;
-        }
-
-        if (data.status === 'success') {
-          absRondaJadwalId = data.jadwalId;
-          renderAbsRondaHeader(data.schedule);
-          
-          // Close loading after initial data is fetched
-          Swal.close();
-
-          requestAnimationFrame(() => { // Use requestAnimationFrame for UI updates
-            if (isPengurus) checkActiveSessionAdmin(data); // Admin/Pengurus view
-            else checkActiveSessionUser(data); // Warga view
-          });
-        } else {
-          const header = document.getElementById('absRondaHeader');
-          if (header) header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">${data.pesan || 'Gagal memuat data.'}</div>`;
-
-          const adminPanel = document.getElementById('absRondaAdminPanel');
-          const userPanel = document.getElementById('absRondaUserPanel');
-          if (adminPanel) adminPanel.style.display = 'none';
-          if (userPanel) userPanel.style.display = 'none';
-        }
-        Swal.close(); // Close loading after initial data is fetched
- })
-      .withFailureHandler(function(err) {
-        console.error('Gagal memuat data absensi:', err);
-        const header = document.getElementById('absRondaHeader');
-        if (header) {
-          header.innerHTML = `<div class="card-item" style="color:red; text-align:center;">
-            Gagal terhubung ke server. Periksa koneksi.
-            <button class="btn-small" onclick="muatHalamanAbsensi()">Coba Lagi</button>
-          </div>`;
-        }
-
-        const adminPanel = document.getElementById('absRondaAdminPanel');
-        const userPanel = document.getElementById('absRondaUserPanel');
-        if (adminPanel) adminPanel.style.display = 'none';
-        if (userPanel) userPanel.style.display = 'none';
- })
-      .getAbsensiInitialData(tgl);
-  }
-
-
-  // LOGIKA PENGURUS (Admin/Pengurus RT)
-  function checkActiveSessionAdmin(response) {
-    const adminPanel = document.getElementById('absRondaAdminPanel');
-    const userPanel = document.getElementById('absRondaUserPanel');
-    const noSession = document.getElementById('absRondaNoSession');
-    const activeSession = document.getElementById('absRondaActiveSession');
-
-    if (!adminPanel || !userPanel) {
-      console.warn('Panel absensi belum dirender, mencoba ulang...');
-      setTimeout(() => checkActiveSessionAdmin(response), 100);
-      return;
-    }
-
-    adminPanel.style.display = 'block';
-    userPanel.style.display = 'none';
-    hideAbsenMetode(); // Ensure user input methods are hidden
-    
-    if (!response || !response.jadwalId || !response.schedule) {
-        console.warn('Data jadwal tidak lengkap, tidak bisa cek sesi.');
-        if (noSession) noSession.style.display = 'block';
-        if (activeSession) activeSession.style.display = 'none';
-        return;
-    }
-
-    google.script.run
-        .withSuccessHandler(function(res) {
-            if (res.status === 'error') {
-                showError(res.pesan);
-                if (noSession) noSession.style.display = 'block';
-                if (activeSession) activeSession.style.display = 'none';
-                return;
-            }
-            if (res.active) {
-                if (noSession) noSession.style.display = 'none';
-                if (activeSession) activeSession.style.display = 'block';
-
-                // Display PIN and QR for admin
-                const pinDisplay = document.getElementById('absRondaPinDisplay');
-                const qrDisplay = document.getElementById('absRondaQrDisplay');
-                if (pinDisplay) pinDisplay.innerText = res.pin || '------';
-            if (qrDisplay) { // QR code besar disembunyikan – hanya PIN yang ditampilkan
-                qrDisplay.style.display = 'none'; // sembunyikan QR
-                qrDisplay.innerHTML = '';          // kosongkan isi
-                }
-
-                // Start timer if expiry is provided
-                if (res.expiryTime) {
-                    startAbsensiTimer(res.expiryTime);
-                } else { 
-                    clearInterval(absRondaRefreshInterval); 
-                    document.getElementById('absRondaTimer').innerText = 'SESI AKTIF'; 
-                }
-            } else {
-                if (noSession) noSession.style.display = 'block';
-                if (activeSession) activeSession.style.display = 'none';
-            }
-            muatRealtimeAbsensi(); 
-        })
-    .withFailureHandler(console.error)
-    .getRondaAbsensiSession(response.jadwalId);
-  }
-
-  // Fungsi untuk menampilkan panel absensi bagi user (warga/petugas) yang akan absen
-  function checkActiveSessionUser(response) {
-      const adminPanel = document.getElementById('absRondaAdminPanel');
-      const userPanel = document.getElementById('absRondaUserPanel');
-      const userSelect = document.getElementById('absRondaUserSelect');
-      const noSessionMsg = `<div class="card-item" style="text-align:center; padding:30px;">
-          <i class="material-icons" style="font-size:48px; color:var(--text-muted); margin-bottom:15px;">lock</i>
-          <div style="font-weight:700; margin-bottom:10px;">Sesi Absensi Belum Dibuka</div>
-          <p class="muted" style="font-size:13px;">Pengurus belum membuka sesi absensi untuk jadwal ini.</p>
-      </div>`;
-      const alreadyAttendedMsg = `<div class="card-item" style="text-align:center; padding:30px;">
-          <i class="material-icons" style="font-size:48px; color:var(--pkk-green); margin-bottom:15px;">check_circle</i>
-          <div style="font-weight:700; margin-bottom:10px;">Anda Sudah Absen</div>
-          <p class="muted" style="font-size:13px;">Terima kasih sudah melakukan absensi untuk jadwal ini.</p>
-      </div>`;
-
-      if (adminPanel) adminPanel.style.display = 'none';
-      hideAbsenMetode(); // Ensure admin input methods are hidden
-      if (userPanel) {
-          userPanel.style.display = 'block';
-          document.getElementById('absRondaQrScannerContainer').style.display = 'none'; // Hide scanner
-          document.getElementById('absRondaPinInputContainer').style.display = 'none'; // Hide PIN input
-
-          google.script.run
-              .withSuccessHandler(function(res) {
-                  if (res.status === 'error') {
-                      userSelect.innerHTML = noSessionMsg;
-                      return;
-                  }
-                  if (res.active) {
-                      // Check if current user has already attended
-                      const currentUserNama = currentUser.nama; // Assuming currentUser is globally available
-                      const hasAttended = response.attendance.some(att => att.nama === currentUserNama && att.status === 'Hadir');
-                      
-                      if (hasAttended) {
-                          userSelect.innerHTML = alreadyAttendedMsg;
-                      } else {
-                          // Session active and user hasn't attended, show options
-                          userSelect.innerHTML = `<div class="card-item" style="text-align:center; padding:30px;">
-                              <i class="material-icons" style="font-size:48px; color:var(--primary-color); margin-bottom:15px;">qr_code_2</i>
-                              <div style="font-weight:700; margin-bottom:20px;">Silakan Absen Di Sini</div>
-                              <div style="display:grid; gap:12px;">
-                                <button class="btn-primary" onclick="showQrScanner()">
-                                  <i class="material-icons" style="vertical-align:middle; margin-right:8px;">photo_camera</i> Scan QR Code
-                                </button>
-                                <button class="btn-secondary" onclick="showPinInput()" style="border:2px solid var(--primary-color); color:var(--primary-color); background:transparent;">
-                                  <i class="material-icons" style="vertical-align:middle; margin-right:8px;">pin</i> Masukkan PIN
-                                </button>
-                              </div>
-                          </div>`;
-                      }
-                  } else {
-                      userSelect.innerHTML = noSessionMsg;
-                  }
-              })
-              .withFailureHandler(function(err) {
-                  console.error('Error checking absensi session:', err);
-                  userSelect.innerHTML = noSessionMsg; // Fallback to no session message on error
-              })
-              .getRondaAbsensiSession(absRondaJadwalId);
-      }
-  }
-  
-  function tampilkanDetailPetugas(nama, status) {
-    Swal.fire({
-      title: 'Detail Petugas Ronda',
-      html: `
-        <div style="text-align:left; padding:10px;">
-          <p style="font-size:16px; font-weight:700; color:var(--text-main);">Nama: <strong>${nama}</strong></p>
-          <p style="font-size:16px; font-weight:700; color:var(--text-main);">Status: <span class="status-badge" style="background:${getStatusColor(status)};">${status}</span></p>
-          <p class="muted" style="margin-top:15px;">Informasi lebih lanjut dapat dilihat di tabel kehadiran.</p>
-        </div>
-      `,
-      showConfirmButton: true,
-      confirmButtonText: 'Tutup',
-      confirmButtonColor: 'var(--primary-color)',
-      background: 'var(--bg-surface)',
-      customClass: { popup: 'professional-modal-radius' }
-    });
-  }
-
-
-  // Tentukan warna berdasarkan status
-  function getStatusColor(status) {
-      switch(status) {
-          case 'Hadir': return '#10b981';
-          case 'Izin': return '#3b82f6'; // Blue
-          case 'Sakit': return '#f59e0b'; // Orange
-          case 'Alfa': return '#ef4444'; // Red
-          case 'Belum Hadir': return '#64748b';
-          default: return '#64748b';
-      }
-  }
-
-  // Fungsi untuk memperbarui status petugas secara manual oleh admin/pengurus
-  function updateStatusPetugas(jadwalId, nama, statusBaru, currentStatus) {
-    if (!hasPermission('rt_ronda_crud')) {
-        showError('Anda tidak memiliki izin untuk mengubah status.');
-        return;
-    }
-    if (!absRondaJadwalId) {
-      showError('ID Jadwal tidak ditemukan.');
-      return;
-    }
-
-    // If status is changed from Hadir to something else, reset the attendance record
-    if (currentStatus === 'Hadir' && statusBaru !== 'Hadir') {
-        showConfirm(`Mengubah status dari Hadir akan mereset absensi ${nama}. Lanjutkan?`).then(res => {
-            if (res.isConfirmed) {
-                resetAbsensiPetugas(jadwalId, nama).then(() => {
-                    // After reset, update with the new status
-                    _updateStatusAbsensiBackend(jadwalId, nama, statusBaru);
-                }).catch(err => showError('Gagal mereset absensi: ' + err.message));
-            } else {
-                // Revert dropdown selection if user cancels
-                muatRealtimeAbsensi();
-            }
-        });
-    } else {
-        _updateStatusAbsensiBackend(jadwalId, nama, statusBaru);
-    }
-  }
-
-  function _updateStatusAbsensiBackend(jadwalId, nama, statusBaru) {
-    showLoading('Memperbarui status...');
-    google.script.run
-        .withSuccessHandler(function(res) {
-            Swal.close();
-            if (res.status === 'success') {
-                showSuccess(res.pesan);
-                muatRealtimeAbsensi(); // refresh daftar
-            } else {
-                showError(res.pesan);
-            }
-        })
-        .withFailureHandler(function(err) {
-            Swal.close(); // Ensure loading is closed
-            showError('Gagal: ' + err.message);
-        })
-        .updateStatusAbsensi(jadwalId, nama, statusBaru);
-  }
-
-  function generateAbsenQr(token) {
-    // Clear previous QR code if any
-    if (document.getElementById('absRondaQrDisplay').innerHTML !== '') document.getElementById('absRondaQrDisplay').innerHTML = '';
-    const cont = document.getElementById('absRondaQrDisplay');
-    cont.innerHTML = '';
-    new QRCode(cont, { text: token, width: 200, height: 200 });
-  }
-
-  async function startAbsensiSession() {
-    if (!absRondaJadwalId) return showWarning('Jadwal tidak ditemukan.');
-    showLoading('Membuka sesi absensi...');
-    try {
-      google.script.run.withSuccessHandler(function(res) {
-        Swal.close();
-        if (res.status === 'success') {
-          showSuccess('Sesi absensi berhasil dibuka!');
-          muatHalamanAbsensi();
-        } else showError(res.pesan);
-      }).openRondaAbsensi(absRondaJadwalId);
-    } catch (e) { showError(e.message); }
-  }
-
-  function stopAbsensiSession() {
-    showConfirm('Tutup sesi absensi? QR dan PIN tidak akan bisa digunakan lagi.').then(res => {
-      if (res.isConfirmed) {
-        showLoading('Menutup sesi...');
-        google.script.run.withSuccessHandler(function(res) { // Ensure res is handled
-          Swal.close(); // Ensure loading is closed
-          if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval);
-          muatHalamanAbsensi();
-        }).closeRondaAbsensi(absRondaJadwalId);
-      }
-    });
-  }
-
-  function muatRealtimeAbsensi() {
-    if (!absRondaJadwalId) {
-        console.warn('absRondaJadwalId belum tersedia');
-        return;
-    } else { // Clear any previous interval to prevent multiple calls
-    }
-
-    console.log('Mengambil data absensi untuk jadwal:', absRondaJadwalId);
-
-    google.script.run
-        .withSuccessHandler(function(res) {
-            console.log('Data absensi diterima:', res);
-            if (res.status === 'success') {
-                const tbody = document.getElementById('tbodyAbsRealtime');
-                if (!tbody) return;
-                tbody.innerHTML = ''; // Clear existing rows
-
-                res.data.forEach(function(p) {
-                    const statusColor = getStatusColor(p.status || 'Belum Hadir');
-                    let statusContentHtml = `<span class="status-badge" style="background:${statusColor}; font-size:10px; min-width:70px;">${p.status}</span>`;
-
-                    // Pengecekan Admin/Pengurus untuk tombol Edit
-                    const isManagement = hasPermission('rt_ronda_crud');
-                    let aksiHtml = '';
-                    
-                    if (isManagement) {
-                        const statusOptions = ['Hadir', 'Izin', 'Sakit', 'Alfa', 'Belum Hadir']; // Options for status dropdown
-                        let optionsHtml = statusOptions.map(s =>
-                            `<option value="${s}" ${p.status === s ? 'selected' : ''}>${s}</option>`
-                        ).join('');
-                        
-                        aksiHtml = `<div class="aksi-cell">
-                            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${p.nama.replace(/'/g, "\\'")}', '${p.status}')" title="Detail">
-                                <i class="material-icons" style="font-size:16px;">visibility</i>
-                            </button>
-                            <select class="status-select" data-nama="${p.nama.replace(/'/g, "\\'")}" data-current-status="${p.status}"
-                                    onchange="updateStatusPetugas('${absRondaJadwalId}', '${p.nama.replace(/'/g, "\\'")}', this.value)" 
-                                    style="padding:2px 4px; font-size:11px; border-radius:4px; background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-color);">
-                                ${optionsHtml}
-                            </select>
-                            <button class="btn-small danger" onclick="resetAbsensiPetugasManual('${p.nama.replace(/'/g, "\\'")}')" title="Hapus/Reset">
-                                <i class="material-icons" style="font-size:16px;">delete_sweep</i>
-                            </button>
-                        </div>`;
-                    } else {
-                        aksiHtml = `<div class="aksi-cell">
-                            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${p.nama.replace(/'/g, "\\'")}', '${p.status}')">
-                                <i class="material-icons" style="font-size:16px;">info</i> Detail
-                            </button>
-                        </div>`;
-                    }
-
-                    // Tampilkan PIN dan tombol QR hanya jika token tersedia dan user adalah admin/pengurus
-                    const qrPinHtml = `
-                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-size:12px; font-weight:700; background:var(--bg-app); padding:2px 6px; border-radius:4px; min-width:50px; text-align:center;">
-                                ${p.pin && p.pin !== '-' ? p.pin : '-'}
-                            </span>
-                            ${p.qrToken && p.qrToken !== '-' ?
-                                `<button class="btn-small" onclick='tampilkanQR(${JSON.stringify(p.token)})' style="padding:2px 6px; margin:0; background:#3b82f6;">QR</button>` 
-                                : ''}
-                        </div>
-                    `;
-                    tbody.innerHTML += `<tr>
-                        <td><strong>${p.nama}</strong></td>
-                        <td>${statusContentHtml}</td>
-                        <td>${p.metode || '-'}</td>
-                        <td>${p.jam || '-'}</td>
-                        <td>${qrPinHtml}</td>
-                        <td>${aksiHtml}</td>
-                    </tr>`;
-                });
-            } else {
-                console.error('Gagal memuat data absensi:', res.pesan);
-            }
-        })
-        .withFailureHandler(function(err) {
-            console.error('Error getRealtimeAbsensiModern:', err);
-        })
-        .getRealtimeAbsensiModern(absRondaJadwalId);
-  }
-
-  function tampilkanQR(token) {
-      // Token dikirim sebagai JSON string payload untuk Guard
-      const payload = typeof token === 'string' ? token : JSON.stringify(token);
-
-      Swal.fire({
-          title: 'QR Absensi Petugas',
-          html: `<div id="qrModalContainer" style="display:flex; justify-content:center; padding:10px;"></div>
-                 <p class="muted" style="font-size:12px; margin-top:10px;">Tunjukkan kode ini ke kamera scanner.</p>`,
-          showConfirmButton: true,
-          confirmButtonText: 'Tutup',
-          didOpen: function() {
-              new QRCode(document.getElementById('qrModalContainer'), {
-                  text: payload,
-                  width: 200,
-                  height: 200
-              });
-          }
-      });
-  }
-
-  async function showQrScanner() {
-    // Stop any existing scanner instance
-    if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-      try {
-        await html5QrCodeScanner.stop();
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    try {
-      // 🔹 Minta izin kamera secara eksplisit (agar pop-up izin muncul di semua browser)
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false
-      });
-      // Hentikan sementara; library akan menginisialisasi ulang stream
-      stream.getTracks().forEach(track => track.stop());
-
-      document.getElementById('absRondaUserSelect').style.display = 'none';
-      document.getElementById('absRondaPinInputContainer').style.display = 'none';
-      document.getElementById('absRondaQrScannerContainer').style.display = 'block';
-
-      // Ensure previous scanner instance is stopped
-      if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-        await html5QrCodeScanner.stop();
-      }
-
-      html5QrCodeScanner = new Html5QrcodeScanner(
-        'qr-reader',
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          disableFlip: false,
-          rememberLastUsedCamera: true
-        },
-        false
-      );
-
-      html5QrCodeScanner.render(
-        (decodedText) => {
-          // Stop scanning and clear the UI
-          if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-            html5QrCodeScanner
-              .stop()
-              .then(() => {
-                html5QrCodeScanner.clear();
-                html5QrCodeScanner = null;
-              })
-              .catch(() => {
-                // ignore
-              });
-          }
-
-          submitAbsensiModern('QR', decodedText);
-        },
-        (errorMessage) => {
-          // Abaikan error scan (biasanya karena frame kosong)
-        }
-      );
-    } catch (e) {
-      console.error('showQrScanner error:', e);
-      showError('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.');
-      const qrCont = document.getElementById('absRondaQrScannerContainer');
-      const userSel = document.getElementById('absRondaUserSelect');
-      if (qrCont) qrCont.style.display = 'none';
-      if (userSel) userSel.style.display = 'block';
-    }
-  }
-
-
-  function showPinInput() {
-    document.getElementById('absRondaUserSelect').style.display = 'none';
-    document.getElementById('absRondaPinInputContainer').style.display = 'block';
-    document.getElementById('inputAbsenPin').focus();
-  }
-
-  // Fungsi untuk mereset absensi petugas secara manual oleh admin/pengurus
-  function resetAbsensiPetugasManual(nama) {
-    if (!hasPermission('rt_ronda_crud')) {
-      showError('Anda tidak memiliki izin untuk mereset absensi.'); // Error message
-      return;
-    }
-    if (!absRondaJadwalId) {
-      showError('ID Jadwal tidak ditemukan.');
-      return;
-    }
-    showConfirm(`Reset kehadiran untuk ${nama}?`).then(res => {
-      if (res.isConfirmed) {
-        showLoading('Mereset...');
-        google.script.run
-            .withSuccessHandler(res => {
-                Swal.close(); // Ensure loading is closed
-                if (res.status === 'success') { 
-                    showSuccess(res.pesan); 
-                    muatRealtimeAbsensi(); 
-                } else showError(res.pesan);
-            }).resetAbsensiPetugas(absRondaJadwalId, nama);
-        }
-    }).catch(err => {
-      Swal.close(); // Ensure loading is closed
-      showError('Gagal mereset: ' + err.message);
-    });
-  }
-
-  function hideAbsenMetode() {
-    if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-      html5QrCodeScanner.stop().then(() => html5QrCodeScanner.clear());
-      html5QrCodeScanner = null;
-    }
-
-    document.getElementById('absRondaUserSelect').style.display = 'block';
-    document.getElementById('absRondaQrScannerContainer').style.display = 'none';
-    document.getElementById('absRondaPinInputContainer').style.display = 'none';
-  }
-
-  function submitPinAbsensi() {
-    const pin = document.getElementById('inputAbsenPin').value;
-    if (pin.length < 6) return showWarning('Masukkan 6 digit PIN');
-    submitAbsensiModern('PIN', pin);
-  }
-
-  function submitAbsensiModern(metode, val) {
-    if (!absRondaJadwalId || !currentUser.nama) return showError('Data absensi tidak lengkap.');
-
-    // Matikan tombol submit PIN untuk mencegah klik ganda
-    const btnPin = document.querySelector('#absRondaPinInputContainer .btn-primary'); // Get button reference
-    if (btnPin) btnPin.disabled = true;
-
-    showLoading('Memvalidasi kehadiran...');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (btnPin) btnPin.disabled = false;
-        // 2. Aktifkan kembali tombol setelah respons sukses
-        Swal.close(); // Close loading modal
-        if (res.status === 'success') {
-          Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.pesan, confirmButtonColor: '#10b981' }).then(() => {
-            hideAbsenMetode(); // Hide input method (PIN or QR scanner)
-            kembaliKeDashboard();
-          });
-        } else {
-          showError(res.pesan);
-          if (metode === 'PIN') document.getElementById('inputAbsenPin').value = '';
-          // Biarkan tombol scan/PIN tetap aktif
-        }
-      })
-      .withFailureHandler(function(err) {
-        // 3. Aktifkan kembali tombol jika terjadi error
-        if (btnPin) btnPin.disabled = false; // Re-enable on failure
-        Swal.close();
-        showError('Terjadi gangguan koneksi: ' + err.message);
-      })
-      .simpanAbsensi(absRondaJadwalId, currentUser.nama, metode, val);
-  }
-
-  // Fungsi baru untuk mendapatkan tanggal jadwal ronda terdekat
-  function getNearestRondaDate() {
-    return new Promise((resolve) => {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1;
-      // Ambil data ronda untuk bulan ini dan bulan depan (jika perlu)
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res.status === 'success' && res.data.length > 0) {
-            // Cari jadwal terdekat dari hari ini
-            const todayStr = today.toISOString().split('T')[0];
-            let nearest = null;
-            let minDiff = Infinity;
-            res.data.forEach(item => {
-              if (item.tanggal >= todayStr) {
-                const diff = new Date(item.tanggal) - today;
-                if (diff >= 0 && diff < minDiff) {
-                  minDiff = diff;
-                  nearest = item.tanggal;
-                }
-              }
-            });
-            if (nearest) {
-              resolve(nearest);
-            } else {
-              // Jika tidak ada jadwal mendatang, ambil yang terakhir (atau hari ini)
-              resolve(todayStr);
-            }
-          } else {
-            resolve(today.toISOString().split('T')[0]);
-          }
-        })
-        .withFailureHandler(function() {
-          resolve(today.toISOString().split('T')[0]);
-        })
-        .getRonda(0, year); // 0 = semua bulan
-    });
-  }
-
-  function startAbsensiTimer(exp) {
-    const target = new Date(exp).getTime();
-    if (absRondaRefreshInterval) clearInterval(absRondaRefreshInterval); // Clear previous interval
-    
-    absRondaRefreshInterval = setInterval(() => {
-      const now = new Date().getTime();
-      const diff = target - now;
-      if (diff <= 0) {
-        clearInterval(absRondaRefreshInterval);
-        document.getElementById('absRondaTimer').innerText = 'SESI BERAKHIR';
-        muatHalamanAbsensi(); // Refresh the page to show session closed state
-        return;
-      }
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-      document.getElementById('absRondaTimer').innerText = `Berakhir dalam: ${h}j ${m}m ${s}d`;
-      
-      // Auto refresh realtime list every 10 seconds (only if admin panel is visible)
-      if (s % 10 === 0 && document.getElementById('absensiRondaView').style.display === 'block') muatRealtimeAbsensi();
-    }, 1000);
-  }
-
-  function renderAbsRondaHeader(sch) {
-    const header = document.getElementById('absRondaHeader');
-    if (!header) return;
-
-    var now = new Date().toISOString().split('T')[0];
-    var isSelesai = sch.tanggal < now;
-    var hariIndo = sch.hari.replace('Monday','Senin').replace('Tuesday','Selasa').replace('Wednesday','Rabu').replace('Thursday','Kamis').replace('Friday','Jumat').replace('Saturday','Sabtu').replace('Sunday','Minggu');
-    header.innerHTML = `
-      <div class="card-item" style="border-left-color: var(--primary-color);">
-        <div style="display:flex; justify-content:space-between;">
-          <div><div style="font-size:20px; font-weight:800;">${sch.tanggal}</div><div class="muted">${hariIndo} • 22.00 - 05.00 WIB</div></div>
-          <span class="status-badge ${isSelesai?'status-selesai':'status-diproses'}">${isSelesai?'Selesai':'Aktif'}</span>
-        </div>
-        <div style="margin-top:12px; font-size:16px;">
-          <div><strong>Lokasi:</strong> Pos Ronda</div>
-          <div><strong>Regu:</strong> ${sch.kelompok}</div>
-          <div style="font-size:14px; color:var(--text-muted); margin-top:5px; background:var(--bg-app); padding:8px; border-radius:8px;">Petugas: ${sch.petugas}</div>
-        </div>
-      </div>`;
-  }
-
   // ======================== MODUL KARANG TARUNA (JS) ========================
   
   function bukaKtJadwal() {
@@ -7522,9 +6707,6 @@ function bukaJadwal() {
           </span>`).join('') + '</div>' : '-'; // Petugas list
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div class="aksi-cell">
-            <button class="btn-edit-pro" onclick="tampilkanDetailPetugas('${item.petugas.replace(/'/g, "\\'")}', 'Belum Hadir')" title="Detail">
-                <i class="material-icons" style="font-size:16px;">visibility</i>
-            </button>
             <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
               <i class="material-icons" style="font-size:16px;">edit</i>
             </button>
@@ -7613,7 +6795,7 @@ function bukaJadwal() {
       filterBulan.value = String(bulanSkrg);
 
       // Ensure button visibility is updated here too
-      document.getElementById('btnSalinRondaWa').style.display = hasPermission('rt_ronda_crud') ? 'block' : 'none';
+      document.getElementById('btnSalinRondaWa').style.display = 'inline-flex';
       muatDataRonda(); // Load ronda data
     }).getTahunRondaList();
   }
@@ -11062,5 +10244,3 @@ function renderRekapKasWarga(data) {
 
   refreshNavVisibility();
 </script>
-
-
