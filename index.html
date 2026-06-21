@@ -3442,6 +3442,42 @@
 
   // ======================== GLOBAL VARIABLES ========================
   var currentUser = { role: 'warga' };
+
+  /**
+   * 10XTHINK: Format nominal Rupiah dengan pemisah ribuan saat user mengetik
+   * Digunakan pada input dengan atribut oninput="formatNominal(this)"
+   */
+  function formatNominal(input) {
+    if (!input || typeof input.value !== 'string') return;
+    // Hapus semua karakter non-digit
+    let value = input.value.replace(/\D/g, '');
+    if (value === '') {
+      input.value = '';
+      return;
+    }
+    let num = parseInt(value, 10);
+    if (!isNaN(num)) {
+      input.value = num.toLocaleString('id-ID');
+    }
+  }
+
+  /**
+   * 10XTHINK: Sama seperti formatNominal, digunakan pada blur untuk konsistensi
+   * Dipanggil dari onblur="autoRound(this)"
+   */
+  function autoRound(input) {
+    if (!input || typeof input.value !== 'string') return;
+    let value = input.value.replace(/\D/g, '');
+    if (value === '') {
+      input.value = '';
+      return;
+    }
+    let num = parseInt(value, 10);
+    if (!isNaN(num)) {
+      input.value = num.toLocaleString('id-ID');
+    }
+  }
+
   var currentToken = null;
   var allUsers = []; // Global variable to store all user data
   
