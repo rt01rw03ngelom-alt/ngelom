@@ -6760,9 +6760,10 @@ function bukaJadwal() {
           `<span class="status-badge" style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; white-space: nowrap; gap: 4px;">
             <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${p}
           </span>`).join('') + '</div>' : '-'; // Petugas list
+        var tempatJagaDisplay = item.tempat_jaga || getTempatJagaDefault(item.kelompok);
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div class="aksi-cell">
-            <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${(item.tempat_jaga || "Gang 4 A").replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
+            <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${tempatJagaDisplay.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
               <i class="material-icons" style="font-size:16px;">edit</i>
             </button>
             <button class="btn-small danger action-btn" onclick="hapusRonda(${item.row})">
@@ -6774,7 +6775,7 @@ function bukaJadwal() {
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
           <td style="white-space: nowrap; width: 1%;"><strong>${item.kelompok}</strong></td>
-          <td style="white-space: nowrap; width: 1%;"><span class="status-badge" style="background:var(--bg-app); color:var(--primary-color); border:1px solid var(--border-color);">${item.tempat_jaga || 'Gang 4 A'}</span></td>
+          <td style="white-space: nowrap; width: 1%;"><span class="status-badge" style="background:var(--bg-app); color:var(--primary-color); border:1px solid var(--border-color);">${tempatJagaDisplay}</span></td>
           <td>${petugasList}</td>
           <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
