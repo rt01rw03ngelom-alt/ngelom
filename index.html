@@ -6561,10 +6561,12 @@ function bukaJadwal() {
       const dObj = parse(entry.tanggal);
       const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][dObj.getDay()];
       const isToday = entry.tanggal === todayStr;
+      const tempatJaga = entry.tempat_jaga || getTempatJagaDefault(entry.kelompok);
 
       return `
         <div style="border-left:4px solid ${isToday ? 'var(--primary-color)' : 'rgba(var(--primary-color-rgb),0.2)'}; padding-left:10px; margin-bottom:5px;">
           <div style="font-size:12px; font-weight:800; color:var(--text-main);">${hari}, Tgl ${entry.tanggal.split('-')[2]} • ${entry.kelompok}</div>
+          <div style="margin-top:2px; font-size:11px; color:var(--primary-color); display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:14px;">place</i> ${tempatJaga}</div>
           <div style="margin-top:4px;">${(entry.kelompok === 'LIBUR') ? '<span class="muted" style="font-size:10px;">Ditiadakan</span>' : (names || '<span class="muted" style="font-size:10px;">Ditiadakan</span>')}</div>
         </div>`;
     };
@@ -6593,7 +6595,8 @@ function bukaJadwal() {
       const p = entry.tanggal.split('-'); // Split date string
       const d = new Date(p[0], p[1]-1, p[2]);
       const list = String(entry.petugas || "Ditiadakan").split(/\r?\n/).filter(n => n.trim() !== "").join(", ");
-      return `${daysIndo[d.getDay()]}, Tgl ${p[2]} - ${entry.kelompok}\n  Petugas: ${list}`;
+      const tempat = entry.tempat_jaga || getTempatJagaDefault(entry.kelompok);
+      return `${daysIndo[d.getDay()]}, Tgl ${p[2]} - ${entry.kelompok} (Tempat Jaga: ${tempat})\n  Petugas: ${list}`;
     };
 
     const monthW2 = monthIndo[new Date(pickedRondaWeek2.tanggal.split('-')[0], pickedRondaWeek2.tanggal.split('-')[1]-1, pickedRondaWeek2.tanggal.split('-')[2]).getMonth()];
