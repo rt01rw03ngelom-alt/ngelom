@@ -6739,7 +6739,7 @@ function bukaJadwal() {
         if (isYearly) {
           var currentMonthLabel = months[iMonth - 1] + ' ' + iYear; // Month label
           if (currentMonthLabel !== lastMonthLabel) {
-            html += `<tr><td colspan="4" class="month-divider" id="month-header-${iMonth}"><i class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:5px;">calendar_month</i>${currentMonthLabel}</td></tr>`;
+            html += `<tr><td colspan="5" class="month-divider" id="month-header-${iMonth}"><i class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:5px;">calendar_month</i>${currentMonthLabel}</td></tr>`;
             lastMonthLabel = currentMonthLabel;
           }
         }
