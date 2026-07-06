@@ -2848,7 +2848,11 @@
       <h4 id="rondaJudulForm">Tambah Jadwal Ronda</h4> 
       <input type="hidden" id="rondaRow">
       <input type="date" id="rondaTanggal">
-      <input type="text" id="rondaKelompok" placeholder="Nama Kelompok (Misal: Regu A)">
+      <input type="text" id="rondaKelompok" placeholder="Nama Kelompok (Misal: Regu A)" onkeyup="autoSetTempatJaga()" onchange="autoSetTempatJaga()">
+      <select id="rondaTempatJaga" style="margin-bottom: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+        <option value="Gang 4 A">Gang 4 A</option>
+        <option value="Gang 4 B">Gang 4 B</option>
+      </select>
       <textarea id="rondaPetugas" rows="4" placeholder="Daftar Petugas (Satu baris satu nama)"></textarea>
       <button class="btn-primary" onclick="simpanDataRonda()">Simpan</button>
       <button class="btn-secondary" onclick="tutupForm('rondaFormCrud','listRonda')">Batal</button>
@@ -6719,7 +6723,7 @@ function bukaJadwal() {
     list.innerHTML = '';
     if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
     if (filtered.length > 0) {
-      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>'; // Table header
+      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Tempat Jaga</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>'; // Table header
       var lastMonthLabel = '';
 
       filtered.forEach(function(item) {
@@ -6758,7 +6762,7 @@ function bukaJadwal() {
           </span>`).join('') + '</div>' : '-'; // Petugas list
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div class="aksi-cell">
-            <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
+            <button class="btn-edit-pro" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${(item.tempat_jaga || "Gang 4 A").replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')" title="Edit">
               <i class="material-icons" style="font-size:16px;">edit</i>
             </button>
             <button class="btn-small danger action-btn" onclick="hapusRonda(${item.row})">
@@ -6770,6 +6774,7 @@ function bukaJadwal() {
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
           <td style="white-space: nowrap; width: 1%;"><strong>${item.kelompok}</strong></td>
+          <td style="white-space: nowrap; width: 1%;"><span class="status-badge" style="background:var(--bg-app); color:var(--primary-color); border:1px solid var(--border-color);">${item.tempat_jaga || 'Gang 4 A'}</span></td>
           <td>${petugasList}</td>
           <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
@@ -7033,21 +7038,37 @@ function bukaJadwal() {
     renderRekapKasKT(filtered);
   }
 
+  function autoSetTempatJaga() {
+    var kel = document.getElementById('rondaKelompok').value;
+    document.getElementById('rondaTempatJaga').value = getTempatJagaDefault(kel);
+  }
+
+  function getTempatJagaDefault(namaMinggu) {
+    if (!namaMinggu) return "Gang 4 A";
+    let romawi = namaMinggu.toUpperCase().replace("MINGGU", "").trim();
+    const mapRomawi = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15 };
+    let angka = mapRomawi[romawi];
+    if (!angka) return "Gang 4 A";
+    return (angka % 2 !== 0) ? "Gang 4 A" : "Gang 4 B";
+  }
+
   function bukaFormRonda() { // Function to open ronda form
     if (!hasPermission('rt_ronda_crud')) { showError('Anda tidak memiliki izin untuk menambah jadwal ronda.'); return; }
     document.getElementById('rondaRow').value = '';
     document.getElementById('rondaTanggal').value = new Date().toISOString().slice(0, 10);
     document.getElementById('rondaKelompok').value = '';
+    document.getElementById('rondaTempatJaga').value = 'Gang 4 A';
     document.getElementById('rondaPetugas').value = '';
     document.getElementById('rondaJudulForm').innerText = 'Tambah Jadwal Ronda';
     bukaFormMode('rondaFormCrud', 'listRonda');
   }
 
-  function editRonda(row, tanggal, kelompok, petugas) { // Function to edit ronda
+  function editRonda(row, tanggal, kelompok, tempat_jaga, petugas) { // Function to edit ronda
     if (!hasPermission('rt_ronda_crud')) { showError('Anda tidak memiliki izin untuk mengedit jadwal ronda.'); return; }
     document.getElementById('rondaRow').value = row;
     document.getElementById('rondaTanggal').value = tanggal;
     document.getElementById('rondaKelompok').value = kelompok;
+    document.getElementById('rondaTempatJaga').value = tempat_jaga || getTempatJagaDefault(kelompok);
     document.getElementById('rondaPetugas').value = petugas;
     document.getElementById('rondaJudulForm').innerText = 'Edit Jadwal Ronda';
     bukaFormMode('rondaFormCrud', 'listRonda');
@@ -7058,9 +7079,10 @@ function bukaJadwal() {
     var row = document.getElementById('rondaRow').value;
     var tanggal = document.getElementById('rondaTanggal').value;
     var kelompok = document.getElementById('rondaKelompok').value;
+    var tempat_jaga = document.getElementById('rondaTempatJaga').value;
     var petugas = document.getElementById('rondaPetugas').value;
 
-    if (!tanggal || !kelompok || !petugas) {
+    if (!tanggal || !kelompok || !petugas || !tempat_jaga) {
       return showWarning('Semua kolom wajib diisi!');
     }
 
@@ -7074,7 +7096,7 @@ function bukaJadwal() {
       } else {
         showError(res.pesan);
       }
-    }).simpanRonda(row, tanggal, kelompok, petugas);
+    }).simpanRonda(row, tanggal, kelompok, tempat_jaga, petugas);
   }
 
   function hapusRonda(row) {
