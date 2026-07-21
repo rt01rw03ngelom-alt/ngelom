@@ -2438,12 +2438,6 @@
           <div class="header-toggle-btn" onclick="logout()" title="Keluar">
             <i class="material-icons">power_settings_new</i>
           </div>
-    </div>
-    <!-- Active Menu Pill Badge -->
-    <div id="menuActiveBadge" class="active-menu-badge">
-      <span class="badge-dot"></span>
-      <span class="badge-label">Anda di</span>
-      <span class="badge-name" id="menuActiveBadgeLabel">Warga</span>
         </div>
       </div>
       <!-- Active Menu Pill Badge -->
@@ -8758,26 +8752,36 @@ function bukaJadwal() {
       return itemThn === tahun && itemBln === bulan;
     });
 
-    renderRekapKasWarga(filtered);
+  // Panggil render dengan data yang sudah difilter
+  renderRekapKasWarga(filtered, 'all'); // 'all' untuk menampilkan semua kategori
   }
 
-function renderRekapKasWarga(data) {
+function renderRekapKasWarga(data, kategoriFilter = 'kas') {
   const currentViewToken = window.__activeViewToken; // Capture current token
   var container = document.getElementById('tbodyRekapKasWarga');
   if (!container) {
     console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
     return;
   }
-
   container.innerHTML = '';
   if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
-  if (!data || data.length === 0) {
+
+  // Filter data berdasarkan kategori yang diinginkan ('kas', 'kematian', atau 'all')
+  var filteredData = data.filter(function(item) {
+    if (kategoriFilter === 'all') return true;
+    var kat = (item.kategori || '').toLowerCase().trim();
+    if (kategoriFilter === 'kematian') return kat.includes('kematian');
+    // Default ke 'kas' (semua selain kematian)
+    return !kat.includes('kematian');
+  });
+
+  if (!filteredData || filteredData.length === 0) {
     container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
     return;
   }
 
   // Urutkan berdasarkan tanggal ascending untuk saldo berjalan
-  var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  var sorted = [...filteredData].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
 
   var runningSaldo = 0;
   var isAdmin = hasPermission('rt_kas_crud');
@@ -8786,8 +8790,7 @@ function renderRekapKasWarga(data) {
     var isPemasukan = (item.jenis === 'Pemasukan');
     var nominal = item.jumlah || 0;
 
-    if (isPemasukan) runningSaldo += nominal;
-    else runningSaldo -= nominal;
+    runningSaldo += isPemasukan ? nominal : -nominal;
 
     var tr = document.createElement('tr');
 
@@ -8795,31 +8798,26 @@ function renderRekapKasWarga(data) {
     var tdTanggal = document.createElement('td');
     tdTanggal.innerText = item.tanggal || '-';
     tr.appendChild(tdTanggal);
-
     // Kategori
     var tdKategori = document.createElement('td');
     tdKategori.innerHTML = item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-';
     tr.appendChild(tdKategori);
-
     // Deskripsi
     var tdDeskripsi = document.createElement('td');
     tdDeskripsi.innerText = item.deskripsi || '-';
     tr.appendChild(tdDeskripsi);
-
     // Pemasukan
     var tdPemasukan = document.createElement('td');
     tdPemasukan.style.color = '#10b981';
     tdPemasukan.style.fontWeight = '700';
     tdPemasukan.innerText = isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
     tr.appendChild(tdPemasukan);
-
     // Pengeluaran
     var tdPengeluaran = document.createElement('td');
     tdPengeluaran.style.color = '#ef4444';
     tdPengeluaran.style.fontWeight = '700';
     tdPengeluaran.innerText = !isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
     tr.appendChild(tdPengeluaran);
-
     // Saldo
     var tdSaldo = document.createElement('td');
     tdSaldo.style.fontWeight = '800';
@@ -8827,7 +8825,6 @@ function renderRekapKasWarga(data) {
     tdSaldo.innerText = 'Rp ' + runningSaldo.toLocaleString('id-ID');
     tr.appendChild(tdSaldo);
 
-    // Aksi (hanya untuk admin/pengurus)
     var tdAksi = document.createElement('td');
     tdAksi.style.textAlign = 'center';
     tdAksi.style.whiteSpace = 'nowrap';
