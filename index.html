@@ -1207,31 +1207,49 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Modern Skeleton Loading System */
+    /* Professional Modern Skeleton Loading System */
     .skeleton-card {
       background: var(--bg-surface) !important;
       border: 1px solid var(--border-color) !important;
-      padding: 1.5rem;
+      padding: 1.25rem;
       border-radius: 16px;
       margin-bottom: 1rem;
       position: relative;
       overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
     .skeleton-line {
-      background: var(--border-color);
-      border-radius: 4px;
-      margin-bottom: 12px;
+      background: rgba(203, 213, 225, 0.4);
+      border-radius: 6px;
       position: relative;
       overflow: hidden;
     }
+    body.dark-mode .skeleton-line {
+      background: rgba(255, 255, 255, 0.08);
+    }
     .skeleton-line::after {
       content: "";
-      position: absolute; inset: 0;
+      position: absolute; 
+      inset: 0;
       transform: translateX(-100%);
-      background: linear-gradient(90deg, transparent, rgba(var(--primary-color-rgb), 0.08), transparent);
-      animation: bbx-shimmer 1.5s infinite;
+      background: linear-gradient(
+        90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.6) 50%, 
+        transparent 100%
+      );
+      animation: bbx-shimmer 1.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    body.dark-mode .skeleton-line::after {
+      background: linear-gradient(
+        90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.12) 50%, 
+        transparent 100%
+      );
     }
     @keyframes bbx-shimmer {
+      0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
     }
 
@@ -3500,19 +3518,45 @@
   var pickedRondaWeek1 = null;
   var pickedRondaWeek2 = null;
 
-  // 10XTHINK: Modern Loading & Error State Engine
-  const SPINNER_HTML = `<div class="loading-container"><div class="bbx-spinner"></div><p>Menghubungkan ke database...</p></div>`;
+  // 10XTHINK: Professional Skeleton & Loading State Engine
+  const SPINNER_HTML = `<div class="loading-container" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:20px; color:var(--text-muted);"><div class="bbx-spinner" style="width:24px; height:24px; border-width:3px;"></div><span style="font-size:13px; font-weight:600;">Memuat data...</span></div>`;
 
-  function renderSkeleton(containerId, count = 3) {
+  function renderSkeleton(containerId, count = 3, type = 'card') {
     const el = document.getElementById(containerId);
     if (!el) return;
-    let html = SPINNER_HTML;
-    for (let i = 0; i < count; i++) {
-      html += `<div class="card-item skeleton-card">
-        <div class="skeleton-line" style="width:40%; height:20px;"></div>
-        <div class="skeleton-line" style="width:100%; height:12px;"></div>
-        <div class="skeleton-line" style="width:85%; height:12px;"></div>
-      </div>`;
+    
+    let html = '';
+    if (type === 'table') {
+      for (let i = 0; i < count; i++) {
+        html += `<tr class="skeleton-row">
+          <td><div class="skeleton-line" style="width:75%; height:16px; margin:4px 0;"></div></td>
+          <td><div class="skeleton-line" style="width:90%; height:16px; margin:4px 0;"></div></td>
+          <td><div class="skeleton-line" style="width:60%; height:16px; margin:4px 0;"></div></td>
+          <td><div class="skeleton-line" style="width:50%; height:16px; margin:4px 0;"></div></td>
+        </tr>`;
+      }
+    } else if (type === 'gallery') {
+      html = '<div class="skeleton-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px; padding:4px 0;">';
+      for (let i = 0; i < count; i++) {
+        html += `<div class="skeleton-card" style="padding:10px;">
+          <div class="skeleton-line" style="width:100%; height:110px; border-radius:12px; margin-bottom:10px;"></div>
+          <div class="skeleton-line" style="width:70%; height:14px; margin-bottom:6px;"></div>
+          <div class="skeleton-line" style="width:40%; height:10px;"></div>
+        </div>`;
+      }
+      html += '</div>';
+    } else {
+      // Modern Clean Card Skeleton (Tanpa teks/spinner bertumpuk di atasnya)
+      for (let i = 0; i < count; i++) {
+        html += `<div class="card-item skeleton-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div class="skeleton-line" style="width:40%; height:18px; margin:0;"></div>
+            <div class="skeleton-line" style="width:25%; height:14px; margin:0; border-radius:12px;"></div>
+          </div>
+          <div class="skeleton-line" style="width:100%; height:12px; margin-bottom:10px;"></div>
+          <div class="skeleton-line" style="width:85%; height:12px; margin-bottom:0;"></div>
+        </div>`;
+      }
     }
     el.innerHTML = html;
   }
@@ -4023,8 +4067,11 @@
     }
   }
 
+  // ======================== ENGINE NOTIFIKASI MODERN & ADVANCED ========================
+  var currentNotifFilter = 'all';
+  var currentNotifSearch = '';
+
   function bukaNotifikasi() {
-    // tampilkan beberapa notifikasi terakhir (tanpa stop polling)
     showLoading('Memuat notifikasi...');
     google.script.run
       .withSuccessHandler(function(res) {
@@ -4033,70 +4080,289 @@
           return showError(res && res.pesan ? res.pesan : 'Gagal memuat notifikasi');
         }
         
-        // Sembunyikan badge saat user melihat daftar notifikasi
         document.getElementById('notifBadge').style.display = 'none';
-        var latestInHistory = 0;
-
         activeNotifications = res.data || [];
-        var list = activeNotifications;
-        if (!list.length) {
-          return Swal.fire({
-            title: 'Notifikasi',
-            text: 'Belum ada notifikasi baru untuk Anda.',
-            icon: 'info',
-            confirmButtonColor: 'var(--primary-color)'
-          });
-        }
-
-        // Cek apakah user Admin atau Pengurus (RT/PKK/KT)
-        var role = (currentUser.role || '').toLowerCase();
-        var isManagement = role === 'admin' || role.includes('pengurus');
-
-        var html = '<div style="text-align:left; max-height:65vh; overflow-y:auto; padding-right:5px;">';
-        list.forEach(function(it) {
+        
+        var latestInHistory = 0;
+        activeNotifications.forEach(function(it) {
           if (it.timestamp > latestInHistory) latestInHistory = it.timestamp;
-          
-          var dateStr = new Date(Number(it.timestamp)).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-          var aksiButtons = isManagement ? `
-            <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid var(--border-color); padding-top:8px;">
-              <button class="btn-action-subtle" onclick="editNotifikasiUI('${it.id}')">
-                <i class="material-icons" style="font-size:16px;">edit</i> Edit
-              </button>
-              <button class="btn-action-subtle danger-hover" onclick="hapusNotifikasiUI('${it.id}')">
-                <i class="material-icons" style="font-size:16px;">delete</i> Hapus
-              </button>
-            </div>` : '';
-
-          html += `
-            <div class="card-item" style="padding:12px; margin-bottom:10px; border-left-width:4px;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:4px;">
-                <div style="font-weight:800; color:var(--primary-color); font-size:14px;">${it.judul}</div>
-                <div style="font-size:10px; color:var(--text-muted); font-weight:600;">${dateStr}</div>
-              </div>
-              <div style="font-size:13px; margin-top:5px; color:var(--text-main); white-space:pre-wrap;">${it.isi}</div>
-              ${aksiButtons}
-            </div>`;
         });
-        html += '</div>';
-
-        // Simpan timestamp terbaru sebagai penanda user sudah membaca semua
         if (latestInHistory > 0) localStorage.setItem('lastReadNotifTs', String(latestInHistory));
 
-        Swal.fire({
-          title: 'Notifikasi Terbaru',
-          html: html,
-          width: '90%',
-          maxWidth: '500px',
-          showCloseButton: true,
-          showConfirmButton: false,
-          background: 'var(--bg-surface)'
-        });
+        renderModalNotifikasi();
       })
       .withFailureHandler(function(err) {
         Swal.close();
         showError('Gagal memuat notifikasi: ' + err.message);
       })
-      .getNotifikasiHistory(currentUser.role, 20);
+      .getNotifikasiHistory(currentUser.role, 50);
+  }
+
+  function renderModalNotifikasi() {
+    var role = (currentUser.role || '').toLowerCase();
+    var isManagement = role === 'admin' || role.includes('pengurus');
+
+    // Filter data berdasarkan pencarian & kategori
+    var filtered = activeNotifications.filter(function(it) {
+      var matchSearch = !currentNotifSearch || 
+        (it.judul || '').toLowerCase().includes(currentNotifSearch.toLowerCase()) || 
+        (it.isi || '').toLowerCase().includes(currentNotifSearch.toLowerCase());
+      
+      var matchKat = true;
+      if (currentNotifFilter !== 'all') {
+        var judulLower = (it.judul || '').toLowerCase();
+        var targetLower = (it.targetPage || '').toLowerCase();
+        if (currentNotifFilter === 'jadwal') matchKat = judulLower.includes('jadwal') || targetLower.includes('jadwal');
+        else if (currentNotifFilter === 'kas') matchKat = judulLower.includes('kas') || targetLower.includes('kas') || judulLower.includes('iuran');
+        else if (currentNotifFilter === 'pengaduan') matchKat = judulLower.includes('pengaduan') || targetLower.includes('pengaduan');
+        else if (currentNotifFilter === 'galeri') matchKat = judulLower.includes('galeri') || targetLower.includes('galeri');
+      }
+
+      return matchSearch && matchKat;
+    });
+
+    // Control Toolbar (Search, Filter, Auto-Hapus, Hapus Semua)
+    var controlToolbar = `
+      <div style="background:var(--bg-app); padding:10px 12px; border-radius:14px; margin-bottom:12px; border:1px solid var(--border-color);">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+          <div style="position:relative; flex:1;">
+            <i class="material-icons" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--text-muted);">search</i>
+            <input type="text" id="notifSearchInput" value="${escapeHtml(currentNotifSearch)}" placeholder="Cari notifikasi..." onkeyup="filterNotifLive(this.value)" style="padding-left:28px; height:36px; margin:0; font-size:12px; border-radius:8px; background:var(--bg-surface);">
+          </div>
+          <select id="notifKategoriSelect" onchange="filterNotifKategori(this.value)" style="height:36px; margin:0; width:auto; font-size:12px; border-radius:8px; background:var(--bg-surface); font-weight:600;">
+            <option value="all" ${currentNotifFilter==='all'?'selected':''}>Semua Kategori</option>
+            <option value="jadwal" ${currentNotifFilter==='jadwal'?'selected':''}>📅 Jadwal</option>
+            <option value="kas" ${currentNotifFilter==='kas'?'selected':''}>💰 Kas & Iuran</option>
+            <option value="pengaduan" ${currentNotifFilter==='pengaduan'?'selected':''}>📢 Pengaduan</option>
+            <option value="galeri" ${currentNotifFilter==='galeri'?'selected':''}>🖼️ Galeri</option>
+          </select>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
+          <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
+            <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
+          </button>
+          
+          ${isManagement ? `
+          <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
+            <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
+          </button>` : ''}
+        </div>
+      </div>`;
+
+    var listHtml = '<div style="text-align:left; max-height:55vh; overflow-y:auto; padding-right:4px;">';
+
+    if (!filtered.length) {
+      listHtml += `
+        <div style="text-align:center; padding:35px 15px; color:var(--text-muted);">
+          <i class="material-icons" style="font-size:42px; opacity:0.5; margin-bottom:6px;">notifications_off</i>
+          <div style="font-size:13px; font-weight:700;">Tidak Ada Notifikasi</div>
+          <div style="font-size:11px; margin-top:2px;">Coba ganti kata kunci atau filter kategori.</div>
+        </div>`;
+    } else {
+      filtered.forEach(function(it) {
+        var dateObj = new Date(Number(it.timestamp));
+        var dateStr = isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        
+        // Custom Category Badge & Styling
+        var badgeBg = 'rgba(239, 68, 68, 0.1)';
+        var badgeColor = 'var(--primary-color)';
+        var catName = 'Info';
+
+        var jLower = (it.judul || '').toLowerCase();
+        if (jLower.includes('jadwal')) { badgeBg = 'rgba(37, 99, 235, 0.1)'; badgeColor = '#2563eb'; catName = 'Jadwal'; }
+        else if (jLower.includes('kas') || jLower.includes('iuran')) { badgeBg = 'rgba(16, 185, 129, 0.1)'; badgeColor = '#10b981'; catName = 'Kas'; }
+        else if (jLower.includes('pengaduan')) { badgeBg = 'rgba(245, 158, 11, 0.1)'; badgeColor = '#d97706'; catName = 'Pengaduan'; }
+
+        var aksiButtons = isManagement ? `
+          <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:6px;">
+            <button class="btn-action-subtle" onclick="editNotifikasiUI('${it.id}')" style="font-size:11px; padding:4px 8px;">
+              <i class="material-icons" style="font-size:14px;">edit</i> Edit
+            </button>
+            <button class="btn-action-subtle danger-hover" onclick="hapusNotifikasiUI('${it.id}')" style="font-size:11px; padding:4px 8px;">
+              <i class="material-icons" style="font-size:14px;">delete</i> Hapus
+            </button>
+          </div>` : '';
+
+        listHtml += `
+          <div class="card-item" style="padding:12px 14px; margin-bottom:10px; border-left:4px solid ${badgeColor}; border-radius:12px; background:var(--bg-surface); box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px; background:${badgeBg}; color:${badgeColor}; text-transform:uppercase;">${catName}</span>
+              <span style="font-size:11px; color:var(--text-muted); font-weight:500;">${dateStr}</span>
+            </div>
+            <div style="font-weight:800; color:var(--text-main); font-size:13.5px; margin-bottom:4px;">${escapeHtml(it.judul)}</div>
+            <div style="font-size:12.5px; color:var(--text-muted); line-height:1.4; white-space:pre-wrap;">${escapeHtml(it.isi)}</div>
+            ${aksiButtons}
+          </div>`;
+      });
+    }
+    listHtml += '</div>';
+
+    Swal.fire({
+      title: '<div style="font-size:18px; font-weight:800; color:var(--text-main);">🔔 Notifikasi Terbaru</div>',
+      html: controlToolbar + listHtml,
+      width: 'min(92%, 480px)',
+      showCloseButton: true,
+      showConfirmButton: false,
+      background: 'var(--bg-surface)',
+      customClass: { popup: 'swal2-modern-loading' }
+    });
+  }
+
+  function filterNotifLive(val) {
+    currentNotifSearch = val || '';
+    renderModalNotifikasi();
+  }
+
+  function filterNotifKategori(val) {
+    currentNotifFilter = val || 'all';
+    renderModalNotifikasi();
+  }
+
+  function konfirmasiHapusSemuaNotif() {
+    Swal.fire({
+      title: 'Hapus Semua Notifikasi?',
+      text: 'Seluruh notifikasi di server dan aplikasi akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus Semua',
+      cancelButtonText: 'Batal'
+    }).then(function(res) {
+      if (res.isConfirmed) {
+        showLoading('Menghapus semua notifikasi...');
+        google.script.run
+          .withSuccessHandler(function(r) {
+            Swal.close();
+            if (r.status === 'success') {
+              showSuccess(r.pesan || 'Semua notifikasi dihapus!');
+              activeNotifications = [];
+              renderModalNotifikasi();
+            } else {
+              showError(r.pesan);
+            }
+          })
+          .withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal menghapus: ' + err.message);
+          })
+          .adminHapusSemuaNotifikasi('all');
+      }
+    });
+  }
+
+  function bukaSetWaktuHapusNotif() {
+    Swal.fire({
+      title: '⚙️ Auto-Hapus Notifikasi',
+      text: 'Pilih aturan pembersihan notifikasi lama secara otomatis:',
+      icon: 'question',
+      input: 'select',
+      inputOptions: {
+        '1year': '🗓️ Hapus Notifikasi > 1 Tahun',
+        '6months': '📅 Hapus Notifikasi > 6 Bulan',
+        '1month': '📆 Hapus Notifikasi > 1 Bulan',
+        'all': '🗑️ Hapus SEMUA Notifikasi Sekarang'
+      },
+      inputValue: localStorage.getItem('notifAutoCleanRule') || '1year',
+      showCancelButton: true,
+      confirmButtonText: 'Terapkan Aturan',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--primary-color)'
+    }).then(function(res) {
+      if (res.isConfirmed && res.value) {
+        var rule = res.value;
+        localStorage.setItem('notifAutoCleanRule', rule);
+        
+        showLoading('Jalankan pembersihan...');
+        google.script.run
+          .withSuccessHandler(function(r) {
+            Swal.close();
+            if (r.status === 'success') {
+              showSuccess(r.pesan || 'Pembersihan berhasil!');
+              bukaNotifikasi();
+            } else {
+              showError(r.pesan);
+            }
+          })
+          .withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal pembersihan: ' + err.message);
+          })
+          .adminHapusSemuaNotifikasi(rule);
+      }
+    });
+  }
+
+  function hapusNotifikasiUI(id) {
+    showConfirm('Hapus notifikasi ini?').then(function(res) {
+      if (res.isConfirmed) {
+        showLoading('Menghapus notifikasi...');
+        google.script.run
+          .withSuccessHandler(function(r) {
+            Swal.close();
+            if (r.status === 'success') {
+              showSuccess(r.pesan || 'Notifikasi dihapus!');
+              activeNotifications = activeNotifications.filter(function(n) { return n.id !== id; });
+              renderModalNotifikasi();
+            } else {
+              showError(r.pesan);
+            }
+          })
+          .withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal menghapus: ' + err.message);
+          })
+          .adminHapusNotifikasi(id);
+      }
+    });
+  }
+
+  function editNotifikasiUI(id) {
+    var target = activeNotifications.find(function(n) { return n.id === id; });
+    if (!target) return;
+
+    Swal.fire({
+      title: 'Edit Notifikasi',
+      html: `
+        <input id="editNotifJudul" class="swal2-input" placeholder="Judul Notifikasi" value="${escapeHtml(target.judul)}">
+        <textarea id="editNotifIsi" class="swal2-textarea" placeholder="Isi Notifikasi" style="height:100px;">${escapeHtml(target.isi)}</textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--primary-color)',
+      preConfirm: function() {
+        var j = document.getElementById('editNotifJudul').value;
+        var i = document.getElementById('editNotifIsi').value;
+        if (!j || !i) {
+          Swal.showValidationMessage('Judul dan isi tidak boleh kosong!');
+          return false;
+        }
+        return { judul: j, isi: i };
+      }
+    }).then(function(res) {
+      if (res.isConfirmed && res.value) {
+        showLoading('Menyimpan perubahan...');
+        google.script.run
+          .withSuccessHandler(function(r) {
+            Swal.close();
+            if (r.status === 'success') {
+              showSuccess(r.pesan || 'Notifikasi diperbarui!');
+              target.judul = res.value.judul;
+              target.isi = res.value.isi;
+              renderModalNotifikasi();
+            } else {
+              showError(r.pesan);
+            }
+          })
+          .withFailureHandler(function(err) {
+            Swal.close();
+            showError('Gagal mengedit: ' + err.message);
+          })
+          .adminEditNotifikasi(id, res.value.judul, res.value.isi, target.targetRole || 'all', target.targetPage || '');
+      }
+    });
   }
 
   var lightboxImages = [];
