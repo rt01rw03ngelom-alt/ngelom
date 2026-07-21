@@ -5319,6 +5319,30 @@
     }).getSettings();
   }
 
+  function showSuccess(msg) {
+    Swal.fire({
+      toast: true,
+      position: 'top-end', // Posisikan di pojok kanan atas
+      showConfirmButton: false,
+      timer: 3500, // Durasi sedikit lebih lama untuk dibaca
+      // Menggunakan HTML agar bisa menyisipkan ikon dan teks
+      html: `<i class="material-icons" style="color:var(--primary-color); font-size:20px;">waving_hand</i> <span>${msg}</span>`,
+      
+      // Terapkan custom class baru kita
+      customClass: {
+        popup: 'welcome-toast-pill' 
+      },
+      
+      // Animasi masuk dan keluar yang lebih halus
+      showClass: {
+        popup: 'animate__animated animate__fadeInDown'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOutUp'
+      }
+    });
+  }
+
   // 10XTHINK: DEFAULT LOGO & STRICT ISOLATION
   const DEFAULT_LOGO_KOP = getDirectUrl('1ymswVKV1HRYICMHrBPWYDioYoaLoKa4u'); // Menggunakan getDirectUrl untuk thumbnail
 
@@ -5706,8 +5730,8 @@
     renderMenu(tabName);
 
     var label = 'Warga'; // Default
-    if (tabName === 'karangtaruna') label = 'Karang Taruna';
-    else if (tabName === 'pkk') label = 'PKK';
+    if (tabName === 'karangtaruna') label = 'Karang Taruna'; // Hanya nama modul
+    else if (tabName === 'pkk') label = 'PKK'; // Hanya nama modul
 
     updatePillBadge(label);
   }
@@ -5719,7 +5743,7 @@
 
     setAplikasiActiveTab('profil');
     history.replaceState({view: 'profilView', tab: 'profil'}, '', '#profil');
-    updatePillBadge('Profil');
+    updatePillBadge('Profil'); // Tetap 'Profil'
 
     // Isi data user
     document.getElementById('profNama').innerText = currentUser.nama || '-';
@@ -5760,12 +5784,8 @@
     const badge = document.getElementById('menuActiveBadge');
     if (!badgeLabel || !badge) return;
 
-    badgeLabel.textContent = label;
-    badge.style.animation = 'none';
-    void badge.offsetWidth; // Trigger reflow
-    badge.style.animation = '';
+    badgeLabel.textContent = label; // Hanya set nama menu
   }
-
   /**
    * UI CRUD PENGATURAN TANDA TANGAN & LOGO
    */
