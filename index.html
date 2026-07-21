@@ -1543,6 +1543,26 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Custom Toast for Welcome Message */
+    .welcome-toast-pill {
+      position: absolute !important; /* Override default positioning */
+      top: 15px !important; /* Jarak dari atas header */
+      right: 15px !important; /* Jarak dari kanan */
+      width: auto !important; /* Ukuran mengikuti konten */
+      max-width: 260px !important; /* Batasi lebar */
+      padding: 10px 15px !important; /* Padding lebih kompak */
+      border-radius: 30px !important; /* Bentuk pill */
+      background: rgba(255, 255, 255, 0.9) !important; /* Background semi-transparan */
+      backdrop-filter: blur(10px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(10px) saturate(180%) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important; /* Shadow lembut */
+      border: 1px solid rgba(0, 0, 0, 0.08) !important;
+      color: var(--text-main) !important; /* Warna teks utama */
+      font-size: 13px !important; /* Ukuran font lebih kecil */
+      font-weight: 600 !important;
+      z-index: 10000 !important; /* Pastikan di atas elemen lain */
+    }
+
     input,
     textarea,
     select {
@@ -4171,26 +4191,11 @@
           // Trigger Notifikasi Sistem HP
           triggerSystemNotification(it.judul, it.isi, it.targetPage);          
           // PERBAIKAN: Modal Notifikasi Info di Tengah Layar (Center Alignment)
-          Swal.fire({
-            position: 'center',
-            icon: 'info',
-            title: '<span style="font-weight:800; color:var(--primary-dark);">' + (it.judul || 'Notifikasi') + '</span>',
-            html: it.isi ? '<div style="text-align:left; font-size:13px; line-height:1.4;">' + String(it.isi).replace(/\n/g, '<br>') + '</div>' : '',
-            width: 'min(88vw, 340px)', // Batasi lebar modal
-            confirmButtonColor: 'var(--primary-color)',
-            showConfirmButton: true,
-            confirmButtonText: 'Lihat',
-            showCancelButton: false,
-            timer: 30000, // Durasi diubah menjadi 30 detik
-            timerProgressBar: true,
-            didOpen: function(toast) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: '<span style="font-weight:800; color:var(--primary-dark);">' + (it.judul || 'Notifikasi') + '</span>', html: it.isi ? '<div style="text-align:left; font-size:13px; line-height:1.4;">' + String(it.isi).replace(/\n/g, '<br>') + '</div>' : '', showConfirmButton: true, confirmButtonText: 'Lihat', showCancelButton: false, timer: 6000, timerProgressBar: true, didOpen: function(toast) {
               // tidak perlu
-            },
-            showClass: {
-              popup: 'animate__animated animate__fadeInUp'
-            },
-          }).then(function(res) {
-            if (res && res.isConfirmed) {
+            } }).then(function(res) {
+            if (res && res.isConfirmed)
+            {
               handleNotifLihat(it.targetPage);
             }
           });
@@ -4801,7 +4806,7 @@
   function showSuccess(msg) {
     Swal.fire({
       toast: true,
-      position: 'top', // Posisi dasar, akan di-override oleh CSS
+      position: 'top-end', // Posisikan di pojok kanan atas
       showConfirmButton: false,
       timer: 3500, // Durasi sedikit lebih lama untuk dibaca
       // Menggunakan HTML agar bisa menyisipkan ikon dan teks
