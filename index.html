@@ -136,14 +136,94 @@
       border-top-color: rgba(255, 255, 255, 0.1) !important;
     }
 
+    /* SweetAlert Mobile & PWA Device Dimension Lock */
+    .swal2-container {
+      padding: 10px !important;
+      box-sizing: border-box !important;
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+
+    .swal2-popup {
+      width: calc(100vw - 24px) !important;
+      max-width: 440px !important;
+      padding: 20px 14px !important;
+      box-sizing: border-box !important;
+      margin: auto !important;
+      border-radius: 20px !important;
+      overflow-x: hidden !important;
+    }
+
+    .swal2-html-container, 
+    .swal2-content {
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden !important;
+      word-wrap: break-word !important;
+      word-break: break-word !important;
+      margin: 12px 0 !important;
+      padding: 0 !important;
+    }
+
+    /* Fix for Select & Input Dropdowns in SweetAlert Mobile */
+    .swal2-input,
+    .swal2-file,
+    .swal2-textarea,
+    .swal2-select,
+    .swal2-radio,
+    .swal2-checkbox {
+      max-width: 100% !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      font-size: 13px !important;
+      margin: 10px 0 !important;
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+      border: 1px solid var(--border-color) !important;
+      background-color: var(--bg-surface) !important;
+      color: var(--text-main) !important;
+      white-space: normal !important;
+      word-break: break-word !important;
+      text-overflow: ellipsis !important;
+      overflow: hidden !important;
+    }
+
+    .swal2-select option {
+      font-size: 12px !important;
+      max-width: 100% !important;
+      word-break: break-word !important;
+      white-space: normal !important;
+      background: var(--bg-surface) !important;
+      color: var(--text-main) !important;
+    }
+
+    .swal2-actions {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      gap: 8px !important;
+      flex-wrap: wrap !important;
+    }
+
+    .swal2-actions button {
+      flex: 1 1 auto !important;
+      min-width: 100px !important;
+      max-width: 100% !important;
+      border-radius: 12px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      padding: 10px 16px !important;
+    }
+
     /* SweetAlert Dark Mode Fix */
     body.dark-mode .swal2-popup {
       background-color: var(--bg-surface) !important;
       color: var(--text-main) !important;
       border: 1px solid var(--border-color);
     }
-    body.dark-mode .swal2-title, body.dark-mode .swal2-html-container, body.dark-mode .swal2-input, body.dark-mode .swal2-textarea {
+    body.dark-mode .swal2-title, body.dark-mode .swal2-html-container, body.dark-mode .swal2-input, body.dark-mode .swal2-textarea, body.dark-mode .swal2-select {
       color: var(--text-main) !important;
+      background-color: var(--bg-surface) !important;
     }
 
     body.dark-mode::before {
@@ -199,6 +279,13 @@
       border-bottom: 5px solid var(--primary-color);
     }
 
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -212,6 +299,7 @@
       line-height: 1.5;
       transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     /* Animasi Transisi Halus untuk Seluruh Komponen Utama saat Switch Tema */
