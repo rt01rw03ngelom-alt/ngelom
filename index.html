@@ -645,6 +645,40 @@
       animation: badgeFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* ======================== Custom App Toast Notification ======================== */
+    .app-toast {
+      position: absolute !important;
+      top: 15px !important;
+      right: 15px !important;
+      width: auto !important;
+      max-width: 280px !important;
+      padding: 12px 16px !important;
+      border-radius: 16px !important;
+      background: rgba(var(--bg-surface-rgb), 0.9) !important;
+      backdrop-filter: blur(10px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(10px) saturate(180%) !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: 1px solid var(--border-color) !important;
+      color: var(--text-main) !important;
+      z-index: 10002 !important;
+      cursor: pointer;
+    }
+    .app-toast .swal2-html-container {
+      margin: 0 !important;
+      text-align: left;
+    }
+    .app-toast .toast-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+    .app-toast .toast-message {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
     /* 10XTHINK: Perbaikan Toast Indikator Menu */
     /* Override posisi default SweetAlert2 untuk toast ini */
     .swal2-popup.bbx-menu-toast {
@@ -4190,16 +4224,8 @@
 
           // Trigger Notifikasi Sistem HP
           triggerSystemNotification(it.judul, it.isi, it.targetPage);          
-          // PERBAIKAN: Modal Notifikasi Info di Tengah Layar (Center Alignment)
-          Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: '<span style="font-weight:800; color:var(--primary-dark);">' + (it.judul || 'Notifikasi') + '</span>', html: it.isi ? '<div style="text-align:left; font-size:13px; line-height:1.4;">' + String(it.isi).replace(/\n/g, '<br>') + '</div>' : '', showConfirmButton: true, confirmButtonText: 'Lihat', showCancelButton: false, timer: 6000, timerProgressBar: true, didOpen: function(toast) {
-              // tidak perlu
-            } }).then(function(res) {
-            if (res && res.isConfirmed)
-            {
-              handleNotifLihat(it.targetPage);
-            }
-          });
-
+          // Gunakan fungsi toast terpusat yang baru
+          showAppToast(it.judul || 'Notifikasi', it.isi || 'Anda memiliki pemberitahuan baru.', 'info', () => handleNotifLihat(it.targetPage));
         }
 
         if (latest !== null) {
