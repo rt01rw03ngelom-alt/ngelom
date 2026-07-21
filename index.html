@@ -4394,6 +4394,8 @@
   }
 
   function konfirmasiHapusSemuaNotif() {
+    if (currentUser.role !== 'admin') return showError('Akses ditolak. Hanya admin yang dapat melakukan aksi ini.');
+
     Swal.fire({
       title: 'Hapus Semua Notifikasi?',
       text: 'Seluruh notifikasi di server dan aplikasi akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
@@ -4427,6 +4429,8 @@
   }
 
   function bukaSetWaktuHapusNotif() {
+    if (currentUser.role !== 'admin') return showError('Akses ditolak. Hanya admin yang dapat melakukan aksi ini.');
+
     Swal.fire({
       title: '⚙️ Auto-Hapus Notifikasi',
       text: 'Pilih aturan pembersihan notifikasi lama secara otomatis:',
@@ -4469,6 +4473,9 @@
   }
 
   function hapusNotifikasiUI(id) {
+    // Validasi frontend: Pastikan hanya admin atau pengurus yang bisa mencoba menghapus
+    if (!currentUser.role.includes('admin') && !currentUser.role.includes('pengurus')) return showError('Akses ditolak.');
+
     showConfirm('Hapus notifikasi ini?').then(function(res) {
       if (res.isConfirmed) {
         showLoading('Menghapus notifikasi...');
@@ -4493,6 +4500,9 @@
   }
 
   function editNotifikasiUI(id) {
+    // Validasi frontend: Pastikan hanya admin atau pengurus yang bisa mencoba mengedit
+    if (!currentUser.role.includes('admin') && !currentUser.role.includes('pengurus')) return showError('Akses ditolak.');
+
     var target = activeNotifications.find(function(n) { return n.id === id; });
     if (!target) return;
 
@@ -4789,20 +4799,26 @@
   }
 
   function showSuccess(msg) {
-    // PERBAIKAN: Toast modern di Top-Center
     Swal.fire({
       toast: true,
-      position: 'top',
-      icon: 'success',
-      title: msg,
-      timer: 30000,
-      timerProgressBar: true,
+      position: 'top', // Posisi dasar, akan di-override oleh CSS
       showConfirmButton: false,
-      background: 'var(--bg-surface)',
+      timer: 3500, // Durasi sedikit lebih lama untuk dibaca
+      // Menggunakan HTML agar bisa menyisipkan ikon dan teks
+      html: `<i class="material-icons" style="color:var(--primary-color); font-size:20px;">waving_hand</i> <span>${msg}</span>`,
+      
+      // Terapkan custom class baru kita
       customClass: {
-        popup: 'bbx-menu-toast'
+        popup: 'welcome-toast-pill' 
       },
-      showClass: { popup: 'animate__animated animate__fadeInDown' }
+      
+      // Animasi masuk dan keluar yang lebih halus
+      showClass: {
+        popup: 'animate__animated animate__fadeInDown'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOutUp'
+      }
     });
   }
 
