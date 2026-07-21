@@ -4188,7 +4188,7 @@
 
   function renderModalNotifikasi() {
     var role = (currentUser.role || '').toLowerCase();
-    var isManagement = role === 'admin' || role.includes('pengurus');
+    var isAdmin = role === 'admin';
 
     // Filter data berdasarkan pencarian & kategori
     var filtered = activeNotifications.filter(function(it) {
@@ -4209,10 +4209,21 @@
       return matchSearch && matchKat;
     });
 
-    // Control Toolbar (Search, Filter, Auto-Hapus, Hapus Semua)
+    // Control Toolbar (Search, Filter, Auto-Hapus & Hapus Semua khusus Admin)
+    var adminActions = isAdmin ? `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
+        <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
+          <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
+        </button>
+        
+        <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
+          <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
+        </button>
+      </div>` : '';
+
     var controlToolbar = `
       <div style="background:var(--bg-app); padding:10px 12px; border-radius:14px; margin-bottom:12px; border:1px solid var(--border-color);">
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:${isAdmin ? '8px' : '0'};">
           <div style="position:relative; flex:1;">
             <i class="material-icons" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--text-muted);">search</i>
             <input type="text" id="notifSearchInput" value="${escapeHtml(currentNotifSearch)}" placeholder="Cari notifikasi..." onkeyup="filterNotifLive(this.value)" style="padding-left:28px; height:36px; margin:0; font-size:12px; border-radius:8px; background:var(--bg-surface);">
@@ -4225,17 +4236,7 @@
             <option value="galeri" ${currentNotifFilter==='galeri'?'selected':''}>🖼️ Galeri</option>
           </select>
         </div>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
-          <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
-            <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
-          </button>
-          
-          ${isManagement ? `
-          <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
-            <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
-          </button>` : ''}
-        </div>
+        ${adminActions}
       </div>`;
 
     var listHtml = '<div style="text-align:left; max-height:55vh; overflow-y:auto; padding-right:4px;">';
@@ -4262,7 +4263,8 @@
         else if (jLower.includes('kas') || jLower.includes('iuran')) { badgeBg = 'rgba(16, 185, 129, 0.1)'; badgeColor = '#10b981'; catName = 'Kas'; }
         else if (jLower.includes('pengaduan')) { badgeBg = 'rgba(245, 158, 11, 0.1)'; badgeColor = '#d97706'; catName = 'Pengaduan'; }
 
-        var aksiButtons = isManagement ? `
+        // Tombol Edit & Hapus khusus Admin
+        var aksiButtons = isAdmin ? `
           <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:6px;">
             <button class="btn-action-subtle" onclick="editNotifikasiUI('${it.id}')" style="font-size:11px; padding:4px 8px;">
               <i class="material-icons" style="font-size:14px;">edit</i> Edit
@@ -4308,6 +4310,11 @@
   }
 
   function konfirmasiHapusSemuaNotif() {
+    if ((currentUser.role || '').toLowerCase() !== 'admin') {
+      showError('Akses Ditolak: Hanya Admin yang dapat menghapus semua notifikasi.');
+      return;
+    }
+
     Swal.fire({
       title: 'Hapus Semua Notifikasi?',
       text: 'Seluruh notifikasi di server dan aplikasi akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
@@ -4341,6 +4348,11 @@
   }
 
   function bukaSetWaktuHapusNotif() {
+    if ((currentUser.role || '').toLowerCase() !== 'admin') {
+      showError('Akses Ditolak: Hanya Admin yang dapat mengatur auto-hapus notifikasi.');
+      return;
+    }
+
     Swal.fire({
       title: '⚙️ Auto-Hapus Notifikasi',
       text: 'Pilih aturan pembersihan notifikasi lama secara otomatis:',
@@ -4383,6 +4395,11 @@
   }
 
   function hapusNotifikasiUI(id) {
+    if ((currentUser.role || '').toLowerCase() !== 'admin') {
+      showError('Akses Ditolak: Hanya Admin yang dapat menghapus notifikasi.');
+      return;
+    }
+
     showConfirm('Hapus notifikasi ini?').then(function(res) {
       if (res.isConfirmed) {
         showLoading('Menghapus notifikasi...');
@@ -4407,6 +4424,11 @@
   }
 
   function editNotifikasiUI(id) {
+    if ((currentUser.role || '').toLowerCase() !== 'admin') {
+      showError('Akses Ditolak: Hanya Admin yang dapat mengedit notifikasi.');
+      return;
+    }
+
     var target = activeNotifications.find(function(n) { return n.id === id; });
     if (!target) return;
 
