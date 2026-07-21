@@ -645,6 +645,23 @@
       animation: badgeFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* 10XTHINK: Perbaikan Toast Indikator Menu */
+    /* Override posisi default SweetAlert2 untuk toast ini */
+    .swal2-popup.bbx-menu-toast {
+      position: absolute !important;
+      top: 90px; /* Jarak dari atas header */
+      right: 20px;
+      width: auto !important; /* Ukuran mengikuti konten */
+      max-width: 280px !important;
+      padding: 0 !important; /* Hapus padding default Swal */
+      border-radius: 16px !important;
+      background: var(--bg-surface) !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: 1px solid var(--border-color) !important;
+      overflow: hidden !important;
+      z-index: 1002; /* Pastikan di atas konten lain */
+    }
+
     .active-menu-badge .badge-dot {
       width: 7px;
       height: 7px;
@@ -4152,22 +4169,26 @@
           notifAlreadyShownIds.add(it.id);
 
           // Trigger Notifikasi Sistem HP
-          triggerSystemNotification(it.judul, it.isi, it.targetPage);
-
-                    Swal.fire({
-            toast: true,
-            position: 'top-end',
+          triggerSystemNotification(it.judul, it.isi, it.targetPage);          
+          // PERBAIKAN: Modal Notifikasi Info di Tengah Layar (Center Alignment)
+          Swal.fire({
+            position: 'center',
             icon: 'info',
             title: '<span style="font-weight:800; color:var(--primary-dark);">' + (it.judul || 'Notifikasi') + '</span>',
             html: it.isi ? '<div style="text-align:left; font-size:13px; line-height:1.4;">' + String(it.isi).replace(/\n/g, '<br>') + '</div>' : '',
+            width: 'min(88vw, 340px)', // Batasi lebar modal
+            confirmButtonColor: 'var(--primary-color)',
             showConfirmButton: true,
             confirmButtonText: 'Lihat',
             showCancelButton: false,
-            timer: 10000, // Durasi diubah menjadi 10 detik
+            timer: 30000, // Durasi diubah menjadi 30 detik
             timerProgressBar: true,
             didOpen: function(toast) {
               // tidak perlu
-            }
+            },
+            showClass: {
+              popup: 'animate__animated animate__fadeInUp'
+            },
           }).then(function(res) {
             if (res && res.isConfirmed) {
               handleNotifLihat(it.targetPage);
@@ -4768,16 +4789,20 @@
   }
 
   function showSuccess(msg) {
-    // PERBAIKAN: Mengubah alert standar menjadi toast modern
+    // PERBAIKAN: Toast modern di Top-Center
     Swal.fire({
       toast: true,
-      position: 'top-end',
+      position: 'top',
       icon: 'success',
       title: msg,
-      timer: 10000, // Durasi diubah menjadi 10 detik
+      timer: 30000,
       timerProgressBar: true,
       showConfirmButton: false,
-      background: 'var(--bg-surface)'
+      background: 'var(--bg-surface)',
+      customClass: {
+        popup: 'bbx-menu-toast'
+      },
+      showClass: { popup: 'animate__animated animate__fadeInDown' }
     });
   }
 
@@ -5608,44 +5633,21 @@
     history.replaceState({view: 'dashboardView', tab: tabName}, '', '#' + tabName);
     renderMenu(tabName);
 
-    var label;
-    if (String(tabName).toLowerCase() === 'karangtaruna') label = 'Karang Taruna';
-    else if (String(tabName).toLowerCase() === 'pkk') label = 'PKK';
-    else label = String(tabName).charAt(0).toUpperCase() + String(tabName).slice(1);
+    var label = 'Warga'; // Default
+    if (tabName === 'karangtaruna') label = 'Karang Taruna';
+    else if (tabName === 'pkk') label = 'PKK';
 
-    // Update Active Menu Pill Badge di Header
-    var badgeLabel = document.getElementById('menuActiveBadgeLabel');
-    var badge = document.getElementById('menuActiveBadge');
-    if (badgeLabel) {
-      badgeLabel.textContent = label;
-      // Restart animasi badge
-      if (badge) {
-        badge.style.animation = 'none';
-        void badge.offsetWidth; // Reflow
-        badge.style.animation = '';
-      }
-    }
+    updatePillBadge(label);
   }
 
   function tampilkanProfil() {
     currentTab = 'profil';
     sembunyikanSemuaLayar();
     document.getElementById('profilView').style.display = 'block';
-    
+
     setAplikasiActiveTab('profil');
-    
-    // FIX: Update Active Menu Pill Badge di Header untuk Profil
-    var badgeLabel = document.getElementById('menuActiveBadgeLabel');
-    var badge = document.getElementById('menuActiveBadge');
-    if (badgeLabel) {
-      badgeLabel.textContent = 'Profil';
-      if (badge) {
-        badge.style.animation = 'none';
-        void badge.offsetWidth; // Reflow
-        badge.style.animation = '';
-      }
-    }
     history.replaceState({view: 'profilView', tab: 'profil'}, '', '#profil');
+    updatePillBadge('Profil');
 
     // Isi data user
     document.getElementById('profNama').innerText = currentUser.nama || '-';
@@ -5679,6 +5681,17 @@
     // Force reset ke nomor dukungan resmi jika admin_whatsapp kosong
     const contactEl = document.getElementById('profAdminContact');
     if (contactEl) contactEl.href = "https://wa.me/6285236356569";
+  }
+
+  function updatePillBadge(label) {
+    const badgeLabel = document.getElementById('menuActiveBadgeLabel');
+    const badge = document.getElementById('menuActiveBadge');
+    if (!badgeLabel || !badge) return;
+
+    badgeLabel.textContent = label;
+    badge.style.animation = 'none';
+    void badge.offsetWidth; // Trigger reflow
+    badge.style.animation = '';
   }
 
   /**
@@ -5776,29 +5789,12 @@
     var availableMenus = menus[tabName] || menus.warga;
     // Update Ringkasan Dashboard (Banner) berdasarkan Tab
     var label1 = document.getElementById('labelSummary1');
-    var label2 = document.getElementById('labelSummary2');
     var val1 = document.getElementById('totalKasIuranValue');
-    var val2 = document.getElementById('totalKonsumsiRondaIuranValue');
     var card2 = document.getElementById('summaryCard2');
     var summaryContainer = document.querySelector('.welcome-banner .kas-summary');
 
     if (tabName === 'karangtaruna') {
       if (label1) label1.innerText = 'Saldo Kas Karang Taruna';
-      card2.style.display = 'none'; // KT biasanya hanya menampilkan satu saldo utama
-      if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
-      if (summaryContainer) {
-        summaryContainer.style.display = 'grid';
-        summaryContainer.style.gridTemplateColumns = '1fr';
-      }
-      if (val1) val1.style.fontSize = '1.6rem';
-      val1.classList.add('skeleton-text');
-      val1.innerText = '0000000';
-      google.script.run.withSuccessHandler(function(res) {
-        val1.classList.remove('skeleton-text');
-        if (res.status === 'success' && currentTab === 'karangtaruna') {
-          val1.innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
-        }
-      }).ktGetKas();
     } else if (tabName === 'warga') {
       if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
       if (label2) label2.innerText = 'Total Uang Kematian';
@@ -5818,6 +5814,27 @@
       // Hilangkan ringkasan untuk menu PKK agar beranda lebih bersih dan fokus pada menu
       if (summaryContainer) summaryContainer.style.display = 'none';
       if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
+    }
+
+    var label2 = document.getElementById('labelSummary2');
+    var val2 = document.getElementById('totalKonsumsiRondaIuranValue');
+
+    if (tabName === 'karangtaruna') {
+      card2.style.display = 'none'; // KT biasanya hanya menampilkan satu saldo utama
+      if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
+      if (summaryContainer) {
+        summaryContainer.style.display = 'grid';
+        summaryContainer.style.gridTemplateColumns = '1fr';
+      }
+      if (val1) val1.style.fontSize = '1.6rem';
+      val1.classList.add('skeleton-text');
+      val1.innerText = '0000000';
+      google.script.run.withSuccessHandler(function(res) {
+        val1.classList.remove('skeleton-text');
+        if (res.status === 'success' && currentTab === 'karangtaruna') {
+          val1.innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
+        }
+      }).ktGetKas();
     }
 
     for (var i = 0; i < availableMenus.length; i++) {
