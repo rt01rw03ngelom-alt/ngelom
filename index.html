@@ -653,14 +653,16 @@
 
 
     .menu-container {
-      padding: clamp(16px, 5vw, 24px);
+      /* PERBAIKAN: Jarak dari welcome-banner diatur menjadi 24px */
+      margin-top: 24px; 
+      /* Padding atas dihapus, padding bawah dan samping dipertahankan */
+      padding: 0 clamp(16px, 5vw, 24px) clamp(16px, 5vw, 24px); 
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: clamp(12px, 4vw, 20px);
-      justify-content: center; /* Centers the grid itself */
-      align-items: stretch; /* Ensures items stretch to fill height */
-      width: 100%; /* Ensures it takes full width */
-      margin-top: 10px;
+      justify-content: center;
+      align-items: stretch;
+      width: 100%;
     }
 
 
@@ -2339,6 +2341,11 @@
           <span style="font-weight:800; font-size:20px; letter-spacing:-0.5px;" id="welcomeUserName">Halo, Warga!</span>
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
+      </div>
+      <!-- PERBAIKAN: Indikator Menu Aktif (Pill Badge) -->
+      <div id="activeMenuIndicator" class="active-menu-indicator" style="display: none;">
+        <span class="dot"></span>
+        <span id="activeMenuText"></span>
       </div>
       <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
         <div id="summaryCard1" class="summary-card" style="padding:12px; border-radius:15px;">
@@ -5567,28 +5574,17 @@
     else if (String(tabName).toLowerCase() === 'pkk') label = 'PKK';
     else label = String(tabName).charAt(0).toUpperCase() + String(tabName).slice(1);
 
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 1800,
-      icon: 'success',
-      iconColor: '#d32f2f',
-      background: 'var(--bg-surface)',
-      customClass: {
-        popup: 'bbx-menu-toast'
-      },
-      html:
-        '<div class="bbx-menu-toast__row">'
-          + '  <div class="bbx-menu-toast__icon">'
-          + '    <i class="material-icons">check_circle</i>'
-          + '  </div>'
-          + '  <div class="bbx-menu-toast__text">'
-          + '    <div class="bbx-menu-toast__title">Anda di ' + label + '</div>'
-          + '    <div class="bbx-menu-toast__subtitle">Menu aktif: ' + label + '</div>'
-          + '  </div>'
-          + '</div>'
-    });
+    // PERBAIKAN: Mengontrol Indikator Menu Aktif (Pill Badge)
+    const indicator = document.getElementById('activeMenuIndicator');
+    const indicatorText = document.getElementById('activeMenuText');
+    if (indicator && indicatorText) {
+      indicatorText.textContent = 'Menu Aktif: ' + label;
+      indicator.style.display = 'inline-flex';
+      // Trigger animasi fade-in
+      indicator.classList.remove('show');
+      void indicator.offsetWidth; // Reflow
+      indicator.classList.add('show');
+    }
   }
 
   function tampilkanProfil() {
