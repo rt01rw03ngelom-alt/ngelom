@@ -2276,9 +2276,10 @@
     <div style="display:flex; flex-direction:column;">
       <span id="activeMenuText" style="font-weight:700; font-size:14px;"></span>
       <span style="font-size:11px; color:var(--text-muted);">Menu Aktif</span>
+    </div> 
+      </div>
     </div>
-  </div>
-  
+
   <!-- Bottom Navigation Bar (Restored & Enhanced) -->
   <nav class="nav-bar-bottom" id="bottomNav">
     <button class="nav-item active" onclick="pilihMenu('warga')" id="nav-warga">
@@ -2296,6 +2297,11 @@
   </nav>
 
 <div id="dashboardView">
+    <div class="welcome-banner">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px;">
+        <div style="background:rgba(var(--primary-color-rgb), 0.1); padding:10px; border-radius:12px;">
+          <i class="material-icons" style="color:var(--primary-color); font-size:32px;">waving_hand</i>
+        </div>
         <div style="display:flex; flex-direction:column;">
           <span style="font-weight:800; font-size:20px; letter-spacing:-0.5px;" id="welcomeUserName">Halo, Warga!</span>
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
@@ -2347,7 +2353,6 @@
       </div>
     </div>
     <div class="menu-container" id="menuContainer"></div>
-  </div>
   </div>
 
     <!-- LAYAR PROFIL PENGGUNA -->
@@ -5068,7 +5073,7 @@
             // Deep Linking Logic: Tangkap parameter redirect
             const urlParams = new URLSearchParams(window.location.search);
             const redirectPage = urlParams.get('redirect');
-
+            
             if (redirectPage) {
               // Bersihkan URL dari parameter agar tidak redirect berulang saat refresh
               window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -5077,7 +5082,7 @@
             } else {
             history.replaceState({ view: 'dashboardView', tab: 'warga' }, '', '#warga');
             currentTab = 'warga';
-            kembaliKeDashboard();
+            pilihMenu('warga'); // PERBAIKAN: Panggil pilihMenu('warga') saat load
             }
 
             if (typeof muatDataKas === 'function') {
@@ -5206,7 +5211,7 @@
           // Set state awal setelah login
           history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
-          
+
           // Jalankan Registrasi Push setelah login sukses
           registrasiWebPush();
 
