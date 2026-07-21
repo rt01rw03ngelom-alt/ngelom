@@ -2438,6 +2438,12 @@
           <div class="header-toggle-btn" onclick="logout()" title="Keluar">
             <i class="material-icons">power_settings_new</i>
           </div>
+    </div>
+    <!-- Active Menu Pill Badge -->
+    <div id="menuActiveBadge" class="active-menu-badge">
+      <span class="badge-dot"></span>
+      <span class="badge-label">Anda di</span>
+      <span class="badge-name" id="menuActiveBadgeLabel">Warga</span>
         </div>
       </div>
       <!-- Active Menu Pill Badge -->
@@ -4271,6 +4277,31 @@
     }
   }
 
+  /**
+   * Fungsi terpusat untuk menampilkan toast notifikasi aplikasi.
+   * @param {string} title Judul notifikasi.
+   * @param {string} message Pesan notifikasi.
+   * @param {string} type Tipe ikon (info, success, warning, error).
+   * @param {function} onClickAction Aksi yang dijalankan saat toast diklik.
+   */
+  function showAppToast(title, message, type = 'info', onClickAction = null) {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 6000,
+      timerProgressBar: true,
+      html: `<div class="toast-title">${escapeHtml(title)}</div><div class="toast-message">${escapeHtml(message)}</div>`,
+      customClass: {
+        popup: 'app-toast',
+      },
+      didOpen: (toast) => {
+        if (onClickAction) {
+          toast.addEventListener('click', onClickAction);
+        }
+      }
+    });
+  }
   // ======================== ENGINE NOTIFIKASI MODERN & ADVANCED ========================
   var currentNotifFilter = 'all';
   var currentNotifSearch = '';
@@ -7925,6 +7956,9 @@ function bukaJadwal() {
   }
 
   function hapusNotifikasiUI(id) {
+    // Validasi frontend: Pastikan hanya admin atau pengurus yang bisa mencoba menghapus
+    if (!currentUser.role.includes('admin') && !currentUser.role.includes('pengurus')) return showError('Akses ditolak.');
+
     showConfirm('Hapus notifikasi ini secara permanen?').then((result) => {
       if (result.isConfirmed) {
         showLoading('Menghapus...');
