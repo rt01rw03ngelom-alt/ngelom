@@ -4252,6 +4252,7 @@
 
   function renderModalNotifikasi() {
     var role = (currentUser.role || '').toLowerCase();
+    var isAdmin = role === 'admin';
     var isManagement = role === 'admin' || role.includes('pengurus');
 
     // Filter data berdasarkan pencarian & kategori
@@ -4291,11 +4292,11 @@
         </div>
         
         <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
-          <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
+          ${isAdmin ? `<button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
             <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
-          </button>
+          </button>` : ''}
           
-          ${isManagement ? `
+          ${isAdmin ? `
           <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
             <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
           </button>` : ''}
@@ -5630,6 +5631,17 @@
     
     setAplikasiActiveTab('profil');
     
+    // FIX: Update Active Menu Pill Badge di Header untuk Profil
+    var badgeLabel = document.getElementById('menuActiveBadgeLabel');
+    var badge = document.getElementById('menuActiveBadge');
+    if (badgeLabel) {
+      badgeLabel.textContent = 'Profil';
+      if (badge) {
+        badge.style.animation = 'none';
+        void badge.offsetWidth; // Reflow
+        badge.style.animation = '';
+      }
+    }
     history.replaceState({view: 'profilView', tab: 'profil'}, '', '#profil');
 
     // Isi data user
