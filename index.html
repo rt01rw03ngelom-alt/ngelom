@@ -4163,7 +4163,7 @@
             showConfirmButton: true,
             confirmButtonText: 'Lihat',
             showCancelButton: false,
-            timer: 6000,
+            timer: 10000, // Durasi diubah menjadi 10 detik
             timerProgressBar: true,
             didOpen: function(toast) {
               // tidak perlu
@@ -4768,13 +4768,16 @@
   }
 
   function showSuccess(msg) {
+    // PERBAIKAN: Mengubah alert standar menjadi toast modern
     Swal.fire({
+      toast: true,
+      position: 'top-end',
       icon: 'success',
-      title: 'Berhasil!',
-      text: msg,
-      timer: 2000,
+      title: msg,
+      timer: 10000, // Durasi diubah menjadi 10 detik
+      timerProgressBar: true,
       showConfirmButton: false,
-      iconColor: '#d32f2f'
+      background: 'var(--bg-surface)'
     });
   }
 
