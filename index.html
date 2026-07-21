@@ -125,29 +125,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* PERBAIKAN: Indikator Menu Aktif (Pill Badge) */
-    .active-menu-indicator {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      background: var(--bg-surface);
-      color: var(--text-main);
-      padding: 12px 16px;
-      border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-color);
-      max-width: 90vw;
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      pointer-events: none;
-    }
-    .active-menu-indicator.show { opacity: 1; transform: translateY(0); }
-
     /* Pertahankan indikator warna pada card-item */
     body.dark-mode .card-item {
       border-left: 6px solid var(--primary-color) !important;
@@ -676,16 +653,14 @@
 
 
     .menu-container {
-      /* PERBAIKAN: Jarak dari welcome-banner diatur menjadi 24px */
-      margin-top: 24px; 
-      /* Padding atas dihapus, padding bawah dan samping dipertahankan */
-      padding: 0 clamp(16px, 5vw, 24px) clamp(16px, 5vw, 24px); 
+      padding: clamp(16px, 5vw, 24px);
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: clamp(12px, 4vw, 20px);
-      justify-content: center;
-      align-items: stretch;
-      width: 100%;
+      justify-content: center; /* Centers the grid itself */
+      align-items: stretch; /* Ensures items stretch to fill height */
+      width: 100%; /* Ensures it takes full width */
+      margin-top: 10px;
     }
 
 
@@ -893,12 +868,82 @@
       background: var(--primary-dark);
     }
 
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-app);
+      color: var(--text-main);
+      border: none;
+      border-radius: 40px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      margin-right: 8px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-small.danger {
+      background: #ef4444;
+    }
+
+    .btn-small.success {
+      background: #10b981;
+    }
+
     .btn-small.warning {
       background: #f59e0b;
     }
 
     .btn-small:hover {
       filter: brightness(0.95);
+    }
+
+    /* ======================== Toast (Menu) ======================== */
+    .bbx-menu-toast__row{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:2px 2px;
+    }
+    .bbx-menu-toast__icon{
+      width:40px;
+      height:40px;
+      border-radius:14px;
+      background:rgba(211,47,47,0.10);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 auto;
+    }
+    .bbx-menu-toast__icon i{
+      color:var(--primary-color);
+      font-size:22px;
+    }
+    .bbx-menu-toast__text{
+      text-align:left;
+      padding-top:2px;
+    }
+    .bbx-menu-toast__title{
+      font-weight:700;
+      color:var(--primary-dark);
+      letter-spacing:0.1px;
+      font-size:14.5px;
+      margin-bottom:2px;
+    }
+    .bbx-menu-toast__subtitle{
+      color:var(--text-muted);
+      font-size:12.5px;
+      line-height:1.3;
     }
 
     .card-item {
@@ -2268,18 +2313,6 @@
       </div>
     </div>
 
-  <!-- PERBAIKAN: Indikator Menu Aktif (Pill Badge) -->
-  <div id="activeMenuIndicator" class="active-menu-indicator">
-    <div style="background:rgba(16, 185, 129, 0.15); color:#059669; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-      <i class="material-icons" style="font-size:18px;">check_circle</i>
-    </div>
-    <div style="display:flex; flex-direction:column;">
-      <span id="activeMenuText" style="font-weight:700; font-size:14px;"></span>
-      <span style="font-size:11px; color:var(--text-muted);">Menu Aktif</span>
-    </div> 
-      </div>
-    </div>
-
   <!-- Bottom Navigation Bar (Restored & Enhanced) -->
   <nav class="nav-bar-bottom" id="bottomNav">
     <button class="nav-item active" onclick="pilihMenu('warga')" id="nav-warga">
@@ -2306,11 +2339,6 @@
           <span style="font-weight:800; font-size:20px; letter-spacing:-0.5px;" id="welcomeUserName">Halo, Warga!</span>
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
-      </div>
-      <!-- PERBAIKAN: Indikator Menu Aktif (Pill Badge) -->
-      <div id="activeMenuIndicator" class="active-menu-indicator" style="display: none;">
-        <span class="dot"></span>
-        <span id="activeMenuText"></span>
       </div>
       <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
         <div id="summaryCard1" class="summary-card" style="padding:12px; border-radius:15px;">
@@ -4160,7 +4188,7 @@
 
   function renderModalNotifikasi() {
     var role = (currentUser.role || '').toLowerCase();
-    var isAdmin = role === 'admin';
+    var isManagement = role === 'admin' || role.includes('pengurus');
 
     // Filter data berdasarkan pencarian & kategori
     var filtered = activeNotifications.filter(function(it) {
@@ -4181,21 +4209,10 @@
       return matchSearch && matchKat;
     });
 
-    // Control Toolbar (Search, Filter, Auto-Hapus & Hapus Semua khusus Admin)
-    var adminActions = isAdmin ? `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
-        <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
-          <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
-        </button>
-        
-        <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
-          <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
-        </button>
-      </div>` : '';
-
+    // Control Toolbar (Search, Filter, Auto-Hapus, Hapus Semua)
     var controlToolbar = `
       <div style="background:var(--bg-app); padding:10px 12px; border-radius:14px; margin-bottom:12px; border:1px solid var(--border-color);">
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:${isAdmin ? '8px' : '0'};">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
           <div style="position:relative; flex:1;">
             <i class="material-icons" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--text-muted);">search</i>
             <input type="text" id="notifSearchInput" value="${escapeHtml(currentNotifSearch)}" placeholder="Cari notifikasi..." onkeyup="filterNotifLive(this.value)" style="padding-left:28px; height:36px; margin:0; font-size:12px; border-radius:8px; background:var(--bg-surface);">
@@ -4208,7 +4225,17 @@
             <option value="galeri" ${currentNotifFilter==='galeri'?'selected':''}>🖼️ Galeri</option>
           </select>
         </div>
-        ${adminActions}
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding-top:2px;">
+          <button class="btn-action-subtle" onclick="bukaSetWaktuHapusNotif()" style="font-size:11px; padding:4px 10px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color);">
+            <i class="material-icons" style="font-size:14px;">auto_delete</i> Set Auto-Hapus
+          </button>
+          
+          ${isManagement ? `
+          <button class="btn-action-subtle danger-hover" onclick="konfirmasiHapusSemuaNotif()" style="font-size:11px; padding:4px 10px; color:#ef4444;">
+            <i class="material-icons" style="font-size:14px;">delete_sweep</i> Hapus Semua
+          </button>` : ''}
+        </div>
       </div>`;
 
     var listHtml = '<div style="text-align:left; max-height:55vh; overflow-y:auto; padding-right:4px;">';
@@ -4235,8 +4262,7 @@
         else if (jLower.includes('kas') || jLower.includes('iuran')) { badgeBg = 'rgba(16, 185, 129, 0.1)'; badgeColor = '#10b981'; catName = 'Kas'; }
         else if (jLower.includes('pengaduan')) { badgeBg = 'rgba(245, 158, 11, 0.1)'; badgeColor = '#d97706'; catName = 'Pengaduan'; }
 
-        // Tombol Edit & Hapus khusus Admin
-        var aksiButtons = isAdmin ? `
+        var aksiButtons = isManagement ? `
           <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:6px;">
             <button class="btn-action-subtle" onclick="editNotifikasiUI('${it.id}')" style="font-size:11px; padding:4px 8px;">
               <i class="material-icons" style="font-size:14px;">edit</i> Edit
@@ -4282,11 +4308,6 @@
   }
 
   function konfirmasiHapusSemuaNotif() {
-    if ((currentUser.role || '').toLowerCase() !== 'admin') {
-      showError('Akses Ditolak: Hanya Admin yang dapat menghapus semua notifikasi.');
-      return;
-    }
-
     Swal.fire({
       title: 'Hapus Semua Notifikasi?',
       text: 'Seluruh notifikasi di server dan aplikasi akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
@@ -4320,11 +4341,6 @@
   }
 
   function bukaSetWaktuHapusNotif() {
-    if ((currentUser.role || '').toLowerCase() !== 'admin') {
-      showError('Akses Ditolak: Hanya Admin yang dapat mengatur auto-hapus notifikasi.');
-      return;
-    }
-
     Swal.fire({
       title: '⚙️ Auto-Hapus Notifikasi',
       text: 'Pilih aturan pembersihan notifikasi lama secara otomatis:',
@@ -4367,11 +4383,6 @@
   }
 
   function hapusNotifikasiUI(id) {
-    if ((currentUser.role || '').toLowerCase() !== 'admin') {
-      showError('Akses Ditolak: Hanya Admin yang dapat menghapus notifikasi.');
-      return;
-    }
-
     showConfirm('Hapus notifikasi ini?').then(function(res) {
       if (res.isConfirmed) {
         showLoading('Menghapus notifikasi...');
@@ -4396,11 +4407,6 @@
   }
 
   function editNotifikasiUI(id) {
-    if ((currentUser.role || '').toLowerCase() !== 'admin') {
-      showError('Akses Ditolak: Hanya Admin yang dapat mengedit notifikasi.');
-      return;
-    }
-
     var target = activeNotifications.find(function(n) { return n.id === id; });
     if (!target) return;
 
@@ -5073,7 +5079,7 @@
             // Deep Linking Logic: Tangkap parameter redirect
             const urlParams = new URLSearchParams(window.location.search);
             const redirectPage = urlParams.get('redirect');
-            
+
             if (redirectPage) {
               // Bersihkan URL dari parameter agar tidak redirect berulang saat refresh
               window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -5082,7 +5088,7 @@
             } else {
             history.replaceState({ view: 'dashboardView', tab: 'warga' }, '', '#warga');
             currentTab = 'warga';
-            pilihMenu('warga'); // PERBAIKAN: Panggil pilihMenu('warga') saat load
+            kembaliKeDashboard();
             }
 
             if (typeof muatDataKas === 'function') {
@@ -5211,7 +5217,7 @@
           // Set state awal setelah login
           history.replaceState({view: 'dashboardView', tab: 'warga'}, '', '#warga');
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
-
+          
           // Jalankan Registrasi Push setelah login sukses
           registrasiWebPush();
 
@@ -5539,19 +5545,29 @@
     else if (String(tabName).toLowerCase() === 'pkk') label = 'PKK';
     else label = String(tabName).charAt(0).toUpperCase() + String(tabName).slice(1);
 
-    // PERBAIKAN: Mengontrol Indikator Menu Aktif (Pill Badge)
-    const indicator = document.getElementById('activeMenuIndicator');
-    const indicatorText = document.getElementById('activeMenuText');
-    if (indicator && indicatorText) {
-      indicatorText.textContent = 'Menu Aktif: ' + label;
-      indicator.style.display = 'inline-flex';
-      // Trigger animasi fade-in
-      indicator.classList.remove('show');
-      void indicator.offsetWidth; // Reflow
-      indicator.classList.add('show');
-    }
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 1800,
+      icon: 'success',
+      iconColor: '#d32f2f',
+      background: 'var(--bg-surface)',
+      customClass: {
+        popup: 'bbx-menu-toast'
+      },
+      html:
+        '<div class="bbx-menu-toast__row">'
+          + '  <div class="bbx-menu-toast__icon">'
+          + '    <i class="material-icons">check_circle</i>'
+          + '  </div>'
+          + '  <div class="bbx-menu-toast__text">'
+          + '    <div class="bbx-menu-toast__title">Anda di ' + label + '</div>'
+          + '    <div class="bbx-menu-toast__subtitle">Menu aktif: ' + label + '</div>'
+          + '  </div>'
+          + '</div>'
+    });
   }
-
 
   function tampilkanProfil() {
     currentTab = 'profil';
