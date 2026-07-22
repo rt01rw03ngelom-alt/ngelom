@@ -747,8 +747,8 @@
       text-align: left; 
       padding: 25px 25px 24px;
       border-radius: 28px; 
-      /* Menghilangkan overlap dan memberi jarak proporsional 20px */
-      margin: 20px auto 32px; 
+      /* PERBAIKAN: Mengurangi margin bawah agar tidak terlalu jauh dari menu */
+      margin: 20px auto 16px; 
       /* Tambahkan border tipis sebagai pembatas ekstra pada kartu */
       border: 1px solid rgba(0, 0, 0, 0.08); 
       
@@ -769,7 +769,7 @@
       justify-content: center; /* Centers the grid itself */
       align-items: stretch; /* Ensures items stretch to fill height */
       width: 100%; /* Ensures it takes full width */
-      margin-top: 10px;
+      margin-top: 0; /* Dihapus karena .welcome-banner sudah punya margin-bottom */
     }
 
 
@@ -5926,6 +5926,7 @@
       if (summaryContainer) {
         summaryContainer.style.display = 'flex'; // Diubah dari grid ke flex
         summaryContainer.style.flexDirection = 'column'; // Arah vertikal
+        summaryContainer.style.gap = '12px'; // Tambahkan gap agar konsisten
       }
       // Kembalikan ke nilai kas RT yang sudah ada di memori
       if (kasBackendTotalsGlobal) {
