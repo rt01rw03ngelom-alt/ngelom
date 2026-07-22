@@ -300,6 +300,9 @@
       transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      /* 10XTHINK: Mencegah pull-to-refresh di browser mobile (Chrome, dll) */
+      /* Ini akan menghentikan overscroll pada sumbu vertikal agar tidak memicu refresh halaman. */
+      overscroll-behavior-y: contain;
     }
 
     /* Animasi Transisi Halus untuk Seluruh Komponen Utama saat Switch Tema */
@@ -747,8 +750,8 @@
       text-align: left; 
       padding: 25px 25px 24px;
       border-radius: 28px; 
-      /* Menghilangkan overlap dan memberi jarak proporsional 20px */
-      margin: 20px auto 32px; 
+      /* Jarak atas 20px, jarak bawah 20px agar konsisten */
+      margin: 20px auto 20px; 
       /* Tambahkan border tipis sebagai pembatas ekstra pada kartu */
       border: 1px solid rgba(0, 0, 0, 0.08); 
       
@@ -769,7 +772,7 @@
       justify-content: center; /* Centers the grid itself */
       align-items: stretch; /* Ensures items stretch to fill height */
       width: 100%; /* Ensures it takes full width */
-      margin-top: 10px;
+      /* margin-top: 10px; Dihapus untuk mengurangi jarak */
     }
 
 
@@ -2475,24 +2478,24 @@
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
       </div>
-      <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
+      <div class="kas-summary" style="margin-top:0; display: flex; flex-direction: column; gap: 12px;">
         <div id="summaryCard1" class="summary-card" style="padding:12px; border-radius:15px;">
           <div class="summary-icon" style="width:36px; height:36px;">
             <i class="material-icons">payments</i>
           </div>
           <div class="summary-info">
-            <h3 id="labelSummary1" style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--primary-color); letter-spacing:0.5px;">Saldo Kas</h3>
+            <h3 id="labelSummary1" style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--primary-color); letter-spacing:0.5px;">TOTAL SALDO KAS</h3>
             <div style="display:flex; align-items:baseline;">
               <span id="totalKasIuranValue" style="font-size:1.3rem; font-weight:800; color:var(--text-main);">0</span>
             </div>
           </div>
         </div>
         <div id="summaryCard2" class="summary-card" style="padding:12px; border-radius:15px;">
-          <div class="summary-icon" style="width:36px; height:36px;">
+          <div class="summary-icon" style="width:36px; height:36px; background:rgba(139,92,246,0.1); color:#8b5cf6;">
             <i class="material-icons">local_florist</i>
           </div>
           <div class="summary-info">
-            <h3 id="labelSummary2" style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--primary-color); letter-spacing:0.5px;">Dana Kematian</h3>
+            <h3 id="labelSummary2" style="font-size:10px; font-weight:700; text-transform:uppercase; color:#8b5cf6; letter-spacing:0.5px;">KAS KEMATIAN</h3>
             <div style="display:flex; align-items:baseline;">
               <span id="totalKonsumsiRondaIuranValue" style="font-size:1.3rem; font-weight:800; color:var(--text-main);">0</span>
             </div>
@@ -3232,7 +3235,7 @@
           <i class="material-icons">payments</i>
         </div>
         <div class="summary-info">
-          <h3>Total Saldo Kas (Semua Tahun)</h3>
+          <h3>TOTAL SALDO KAS</h3>
           <h2 id="totalKasIuran">Rp 0</h2>
         </div>
       </div>
@@ -3241,7 +3244,7 @@
           <i class="material-icons">local_florist</i>
         </div>
         <div class="summary-info">
-          <h3>Total Uang Kematian</h3>
+          <h3>KAS KEMATIAN</h3>
           <h2 id="totalKonsumsiRondaIuran">Rp 0</h2>
         </div>
       </div>
