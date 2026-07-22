@@ -2475,29 +2475,28 @@
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
       </div>
-      <!-- PERBAIKAN: Layout diubah menjadi vertikal (flex-direction: column) untuk kelegaan visual -->
-      <div class="kas-summary" style="margin-top: 16px; display: flex; flex-direction: column; gap: 14px;">
-        <div id="summaryCard1" class="summary-card" style="padding: 20px; border-radius: 18px;">
-          <div class="summary-icon" style="width: 40px; height: 40px; background: rgba(var(--primary-color-rgb), 0.08);">
-            <i class="material-icons">payments</i>
-          </div>
+      <!-- REFAKTOR KARTU KAS: Layout vertikal dengan spacing dan tipografi yang lebih baik -->
+      <div class="kas-summary" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+        <div id="summaryCard1" class="summary-card" style="padding: 20px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between;">
           <div class="summary-info">
-            <!-- PERBAIKAN: Tipografi dan spasi disesuaikan -->
-            <h3 id="labelSummary1" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--primary-color); line-height: 1.4;">TOTAL SALDO KAS</h3>
-            <span id="totalKasIuranValue" style="font-size: 26px; font-weight: 800; color: var(--text-main); line-height: 1;">0</span>
+            <h3 id="labelSummary1" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--primary-color);">TOTAL SALDO KAS</h3>
+            <h2 id="totalKasIuranValue" style="font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--text-main);">0</h2>
+          </div>
+          <div class="summary-icon" style="width: 42px; height: 42px; background: rgba(var(--primary-color-rgb), 0.08);">
+            <i class="material-icons" style="font-size: 24px;">payments</i>
           </div>
         </div>
-        <div id="summaryCard2" class="summary-card" style="padding: 20px; border-radius: 18px;">
-          <div class="summary-icon" style="width: 40px; height: 40px; background: rgba(var(--primary-color-rgb), 0.08);">
-            <i class="material-icons">local_florist</i>
-          </div>
+        <div id="summaryCard2" class="summary-card" style="padding: 20px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between;">
           <div class="summary-info">
-            <!-- PERBAIKAN: Label diubah menjadi "KAS KEMATIAN" -->
-            <h3 id="labelSummary2" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--primary-color); line-height: 1.4;">KAS KEMATIAN</h3>
-            <span id="totalKonsumsiRondaIuranValue" style="font-size: 26px; font-weight: 800; color: var(--text-main); line-height: 1;">0</span>
+            <h3 id="labelSummary2" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--primary-color);">KAS KEMATIAN</h3>
+            <h2 id="totalKonsumsiRondaIuranValue" style="font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--text-main);">0</h2>
+          </div>
+          <div class="summary-icon" style="width: 42px; height: 42px; background: rgba(var(--primary-color-rgb), 0.08);">
+            <i class="material-icons" style="font-size: 24px;">local_florist</i>
           </div>
         </div>
       </div>
+
       <!-- Banner Ronda Malam Hari Ini -->
       <div id="rondaTodayBanner" class="summary-card" style="margin-top:14px; width:100%; display:none; padding:16px; border-radius:18px; background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.2); position:relative; overflow:hidden; cursor:pointer; user-select:none;">
         <div class="summary-icon" style="width:40px; height:40px; background:rgba(251,191,36,0.1); color:#d97706;">
