@@ -1689,17 +1689,6 @@
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
     }
-    .status-badge {
-      min-width: 72px;
-      height: 34px;
-      padding: 0 14px;
-      border-radius: 18px;
-      font-size: 14px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
     .iuran-left table, .iuran-right table {
       border-collapse: collapse;
       width: 100%;
@@ -1743,6 +1732,18 @@
       min-width: 110px;
       text-align: center;
       padding-right: 12px;
+    }
+
+    .status-badge {
+      min-width: 72px;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Perbaikan 4: AKSI */
@@ -1815,24 +1816,22 @@
     }
 
     .kas-summary {
-      display: flex;
-      flex-direction: column;
-      gap: 16px; /* Sesuai permintaan */
-      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
 
     .summary-card {
-      background: rgba(var(--primary-color-rgb), 0.08);
-      border-radius: 18px; /* Sesuai permintaan */
-      padding: 18px; /* Sesuai permintaan */
+      background: rgba(var(--primary-color-rgb), 0.08); /* Latar belakang tint warna tema */
+      border-radius: var(--border-radius);
+      padding: 1rem;
       box-shadow: var(--shadow-sm);
-      border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+      border: 1px solid rgba(var(--primary-color-rgb), 0.15); /* Border juga mengikuti warna tema */
       display: flex;
       align-items: center;
-      justify-content: space-between; /* Sesuai permintaan */
+      gap: 1rem;
       transition: transform 0.2s;
-      width: 100%; /* Sesuai permintaan */
-      min-height: 110px; /* Sesuai permintaan */
     }
 
     .summary-card:hover {
@@ -1840,35 +1839,31 @@
     }
 
     .summary-icon {
-      width: 44px; /* Sesuai permintaan */
-      height: 44px; /* Sesuai permintaan */
+      width: 48px;
+      height: 48px;
       background: rgba(var(--primary-color-rgb), 0.1);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--primary-color);
-      flex-shrink: 0; /* Mencegah ikon menyusut */
     }
 
     .summary-icon i {
-      font-size: 24px;
+      font-size: 28px;
     }
 
     .summary-info h3 {
       margin: 0;
-      font-size: 13px; /* Sesuai permintaan */
-      font-weight: 700; /* Sesuai permintaan */
-      color: var(--primary-color);
-      line-height: 1.4; /* Sesuai permintaan */
-      text-transform: uppercase;
-      letter-spacing: .3px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--primary-color); /* Label menggunakan warna tema */
     }
 
     .summary-info h2 {
-      margin: 8px 0 0 0; /* Sesuai permintaan */
-      font-size: 30px; /* Sesuai permintaan */
-      font-weight: 800; /* Sesuai permintaan */
+      margin: 0;
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      font-weight: 800;
       color: var(--text-main);
     }
 
@@ -2480,30 +2475,30 @@
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
       </div>
-      <!-- Kartu Informasi Saldo (Layout Vertikal) -->
-      <div class="kas-summary">
-        <div id="summaryCard1" class="summary-card">
+      <!-- REFAKTOR KARTU KAS: Layout vertikal dengan spacing dan tipografi yang lebih baik -->
+      <div class="kas-summary" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+        <div id="summaryCard1" class="summary-card" style="padding: 20px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between;">
           <div class="summary-info">
-            <h3 id="labelSummary1">TOTAL SALDO KAS</h3>
-            <h2 id="totalKasIuranValue">0</h2>
+            <h3 id="labelSummary1" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--primary-color);">TOTAL SALDO KAS</h3>
+            <h2 id="totalKasIuranValue" style="font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--text-main);">0</h2>
           </div>
-          <div class="summary-icon">
-            <i class="material-icons">payments</i>
+          <div class="summary-icon" style="width: 42px; height: 42px; background: rgba(var(--primary-color-rgb), 0.08);">
+            <i class="material-icons" style="font-size: 24px;">payments</i>
           </div>
         </div>
-        <div id="summaryCard2" class="summary-card">
+        <div id="summaryCard2" class="summary-card" style="padding: 20px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between;">
           <div class="summary-info">
-            <h3 id="labelSummary2">KAS KEMATIAN</h3>
-            <h2 id="totalKonsumsiRondaIuranValue">0</h2>
+            <h3 id="labelSummary2" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--primary-color);">KAS KEMATIAN</h3>
+            <h2 id="totalKonsumsiRondaIuranValue" style="font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--text-main);">0</h2>
           </div>
-          <div class="summary-icon">
-            <i class="material-icons">local_florist</i>
+          <div class="summary-icon" style="width: 42px; height: 42px; background: rgba(var(--primary-color-rgb), 0.08);">
+            <i class="material-icons" style="font-size: 24px;">local_florist</i>
           </div>
         </div>
       </div>
 
       <!-- Banner Ronda Malam Hari Ini -->
-      <div id="rondaTodayBanner" class="summary-card" style="margin-top:14px; width:100%; display:none; padding:16px; border-radius:18px; background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.2); position:relative; overflow:hidden; cursor:pointer; user-select:none; justify-content:flex-start;">
+      <div id="rondaTodayBanner" class="summary-card" style="margin-top:14px; width:100%; display:none; padding:16px; border-radius:18px; background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.2); position:relative; overflow:hidden; cursor:pointer; user-select:none;">
         <div class="summary-icon" style="width:40px; height:40px; background:rgba(251,191,36,0.1); color:#d97706;">
           <i class="material-icons">security</i>
         </div>
@@ -5901,8 +5896,11 @@
       card2.style.display = 'flex';
       var rb = document.getElementById('rondaTodayBanner');
       if (rb) { rb.style.display = 'flex'; muatRondaHariIni(false); }
-      if (summaryContainer) summaryContainer.style.display = 'flex'; // Gunakan flex
-      if (val1) val1.style.fontSize = ''; // Reset inline style agar CSS yang bekerja
+      if (summaryContainer) {
+        summaryContainer.style.display = 'grid';
+        summaryContainer.style.gridTemplateColumns = '1fr 1fr';
+      }
+      if (val1) val1.style.fontSize = '1.2rem';
       // Kembalikan ke nilai kas RT yang sudah ada di memori
       if (kasBackendTotalsGlobal) {
         updateRingkasanUI(kasBackendTotalsGlobal);
@@ -5911,6 +5909,27 @@
       // Hilangkan ringkasan untuk menu PKK agar beranda lebih bersih dan fokus pada menu
       if (summaryContainer) summaryContainer.style.display = 'none';
       if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
+    }
+
+    var label2 = document.getElementById('labelSummary2');
+    var val2 = document.getElementById('totalKonsumsiRondaIuranValue');
+
+    if (tabName === 'karangtaruna') {
+      card2.style.display = 'none'; // KT biasanya hanya menampilkan satu saldo utama
+      if (document.getElementById('rondaTodayBanner')) document.getElementById('rondaTodayBanner').style.display = 'none';
+      if (summaryContainer) {
+        summaryContainer.style.display = 'grid';
+        summaryContainer.style.gridTemplateColumns = '1fr';
+      }
+      if (val1) val1.style.fontSize = '1.6rem';
+      val1.classList.add('skeleton-text');
+      val1.innerText = '0000000';
+      google.script.run.withSuccessHandler(function(res) {
+        val1.classList.remove('skeleton-text');
+        if (res.status === 'success' && currentTab === 'karangtaruna') {
+          val1.innerText = (res.totalSaldo || 0).toLocaleString('id-ID');
+        }
+      }).ktGetKas();
     }
 
     for (var i = 0; i < availableMenus.length; i++) {
