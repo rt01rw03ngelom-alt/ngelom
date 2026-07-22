@@ -284,7 +284,6 @@
       max-width: 100vw;
       overflow-x: hidden;
       box-sizing: border-box;
-      overscroll-behavior-y: contain; /* Mencegah pull-to-refresh bawaan browser */
     }
 
     * {
@@ -300,6 +299,7 @@
       line-height: 1.5;
       transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     /* Animasi Transisi Halus untuk Seluruh Komponen Utama saat Switch Tema */
@@ -336,6 +336,7 @@
       background: transparent;
       min-height: 100vh;
       padding: 0;
+      overflow-x: visible; /* Tetap visible agar sticky tidak rusak */
     }
 
 
@@ -345,6 +346,7 @@
         box-shadow: var(--shadow-lg);
         margin: 20px auto;
         border-radius: var(--border-radius);
+        overflow: visible;
       }
 
       .menu-container {
@@ -744,9 +746,9 @@
       color: var(--text-main);
       text-align: left; 
       padding: 25px 25px 24px;
-      border-radius: 28px;
-      /* Jarak bawah disesuaikan agar lebih rapat dengan menu */
-      margin: 20px auto 20px; 
+      border-radius: 28px; 
+      /* Menghilangkan overlap dan memberi jarak proporsional 20px */
+      margin: 20px auto 32px; 
       /* Tambahkan border tipis sebagai pembatas ekstra pada kartu */
       border: 1px solid rgba(0, 0, 0, 0.08); 
       
@@ -767,6 +769,7 @@
       justify-content: center; /* Centers the grid itself */
       align-items: stretch; /* Ensures items stretch to fill height */
       width: 100%; /* Ensures it takes full width */
+      margin-top: 10px;
     }
 
 
@@ -1813,10 +1816,10 @@
     }
 
     .kas-summary {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .summary-card {
@@ -3223,19 +3226,19 @@
       <h3>Laporan Keuangan Warga</h3>
     </div>
 
-    <div class="kas-summary" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+    <div class="kas-summary">
       <div class="summary-card">
         <div class="summary-icon">
           <i class="material-icons">payments</i>
         </div>
         <div class="summary-info">
-          <h3>TOTAL SALDO KAS</h3>
+          <h3>Total Saldo Kas (Semua Tahun)</h3>
           <h2 id="totalKasIuran">Rp 0</h2>
         </div>
       </div>
       <div class="summary-card">
         <div class="summary-icon">
-          <i class="material-icons">volunteer_activism</i> <!-- Ikon diubah agar lebih relevan -->
+          <i class="material-icons">local_florist</i>
         </div>
         <div class="summary-info">
           <h3>Total Uang Kematian</h3>
@@ -4618,31 +4621,35 @@
   // ======================== PULL TO REFRESH LOGIC ========================
   var ptr = document.getElementById('pullToRefresh');
   var startY = 0;
+  var isPulling = false; // Flag untuk menandai gestur pull yang valid
   var pullDelta = 0;
   const PTR_THRESHOLD = 80;
+
   window.addEventListener('touchstart', function(e) {
-    if (window.scrollY === 0) {
+    // Hanya mulai gestur jika scroll di paling atas
+    if (window.scrollY === 0 && document.documentElement.scrollTop === 0) {
       startY = e.touches[0].pageY;
+      isPulling = true; // Aktifkan flag
       ptr.classList.remove('ptr-refreshing');
+    } else {
+      isPulling = false; // Non-aktifkan flag jika scroll tidak di atas
     }
   }, { passive: true });
+
   window.addEventListener('touchmove', function(e) {
-    if (window.scrollY === 0 && startY > 0) {
+    // Hanya proses jika flag isPulling aktif
+    if (isPulling) {
       var currentY = e.touches[0].pageY;
       pullDelta = currentY - startY;
       
       if (pullDelta > 0) {
-        // Berikan efek resistance/tahanan agar tarikan terasa natural
         var move = Math.pow(pullDelta, 0.85);
-        if (move > 110) move = 110; // Batas maksimal tarikan visual
+        if (move > 110) move = 110;
         
-        // Hanya cegah scroll default jika pengguna benar-benar menarik ke bawah
-        if (pullDelta > 10) {
-          ptr.style.transform = 'translateY(' + move + 'px)';
-          ptr.querySelector('i').style.transform = 'rotate(' + (pullDelta * 2) + 'deg)';
-          // Mencegah scroll default HANYA jika pengguna menarik ke bawah.
-          if (e.cancelable) e.preventDefault();
-        }
+        ptr.style.transform = 'translateY(' + move + 'px)';
+        ptr.querySelector('i').style.transform = 'rotate(' + (pullDelta * 2) + 'deg)';
+        
+        if (pullDelta > 10 && e.cancelable) e.preventDefault();
       }
     }
   }, { passive: false });
@@ -4655,7 +4662,9 @@
     }
     startY = 0;
     pullDelta = 0;
+    isPulling = false; // Reset flag di akhir gestur
   });
+
   function triggerPullToRefresh() {
     ptr.classList.add('ptr-refreshing');
     ptr.style.transform = 'translateY(100px)';
@@ -4724,6 +4733,53 @@
       return 'https://drive.google.com/thumbnail?id=' + match[0] + '&sz=w800';
     }
     return url;
+  }
+
+  /**
+   * Menampilkan modal detail profil kader dengan gaya profesional
+   */
+  function tampilkanDetailKader(nama, jabatan, nohp, fotoUrl) {
+    var wa = nohp ? nohp.replace(/^0/, "62") : '';
+    var waLink = nohp ? `
+      <a href="https://wa.me/${wa}" target="_blank" style="text-decoration:none; color:white; background:#25D366; padding:10px 24px; border-radius:50px; display:inline-flex; align-items:center; gap:8px; font-weight:700; margin-top:15px; box-shadow:0 8px 16px rgba(37, 211, 102, 0.25);">
+        <i class="material-icons">chat</i> WhatsApp
+      </a>` : '';
+    
+    var avatarHtml = fotoUrl ? `
+      <img src="${getDirectUrl(fotoUrl, 'w400')}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid rgba(255,255,255,0.8); box-shadow:0 10px 25px rgba(0,0,0,0.2);">` : `
+      <div style="width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto; border:4px solid rgba(255,255,255,0.8);">
+        <i class="material-icons" style="font-size:64px; color:white;">person</i>
+      </div>`;
+
+    Swal.fire({
+      showConfirmButton: false,
+      showCloseButton: true,
+      padding: '0',
+      width: 'min(95%, 450px)',
+      background: 'transparent',
+      html: `
+        <div style="background:var(--bg-surface); border-radius:28px; overflow:hidden; box-shadow:var(--shadow-lg); border:1px solid var(--border-color);">
+          <div style="background:linear-gradient(135deg, var(--primary-red) 0%, #b71c1c 100%); padding:40px 20px 30px; text-align:center; position:relative;">
+            ${avatarHtml}
+          </div>
+          <div style="padding:30px 20px; text-align:center;">
+            <div style="font-size:22px; font-weight:800; color:var(--text-main); letter-spacing:-0.5px; line-height:1.2; margin-bottom:4px;">${nama}</div>
+            <div style="font-size:12px; font-weight:700; color:var(--primary-red); text-transform:uppercase; margin-top:4px; letter-spacing:1px;">${jabatan || 'Anggota'}</div>
+            <div style="height:1px; background:var(--border-color); margin:20px 40px;"></div>
+            <div style="font-size:15px; color:var(--text-muted); font-weight:500;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                <i class="material-icons" style="font-size:18px; color:var(--primary-red);">phone</i>
+                ${nohp || 'Nomor tidak tersedia'}
+              </div>
+            </div>
+            ${waLink}
+          </div>
+        </div>
+      `,
+      customClass: {
+        popup: 'professional-modal-radius'
+      }
+    });
   }
 
   /**
@@ -8824,22 +8880,6 @@ function renderRekapKasWarga(data, kategoriFilter = 'kas') {
   });
 }
 
-  function filterTabelTransaksi() {
-    var bulan = parseInt(document.getElementById('filterBulanTransaksi').value);
-    var tahun = parseInt(document.getElementById('filterTahunTransaksi').value);
-
-    var filtered = allKasData.filter(function(item) {
-      var p = item.tanggal.split('-');
-      if (p.length !== 3) return false;
-      var itemThn = parseInt(p[0]);
-      var itemBln = parseInt(p[1]);
-      if (bulan === 0) return itemThn === tahun;
-      return itemThn === tahun && itemBln === bulan;
-    });
-
-  // Panggil render dengan data yang sudah difilter
-  renderRekapKasWarga(filtered, 'all'); // 'all' untuk menampilkan semua kategori
-  }
   function muatGrafikKas() {
     var tahun = parseInt(document.getElementById('tahunKasSelect').value);
     updateRingkasanUI(kasBackendTotalsGlobal);
