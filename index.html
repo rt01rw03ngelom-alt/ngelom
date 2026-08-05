@@ -9484,15 +9484,7 @@
       container.innerHTML = '';
       if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
 
-      // Filter data berdasarkan kategori yang diinginkan ('kas', 'kematian', atau 'all')
-      var filteredData = data.filter(function (item) {
-        if (kategoriFilter === 'all') return true;
-        var kat = (item.kategori || '').toLowerCase().trim();
-        if (kategoriFilter === 'kematian') return kat.includes('kematian');
-        // Default ke 'kas' (semua selain kematian)
-        return !kat.includes('kematian');
-      });
-
+      var filteredData = data; // [FIX] Tidak perlu filter lagi, data sudah bersih dari filterTabelTransaksi
       if (!filteredData || filteredData.length === 0) {
         container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
         return;
