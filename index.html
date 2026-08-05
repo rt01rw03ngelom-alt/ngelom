@@ -4138,7 +4138,7 @@
   <script>
     // ======================== CLOUD HOSTING ADAPTER ========================
     // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyq5kroU3x0refNBM9J3gnwsLUDPAbJn3_aRg7YYKN_omEOvpwYgBqsk2VHSCxe4SfExw/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIHFujhx9M7fmA3Ppmt2utUJ8P3KhqwCtThvDLkuA5oJv0LF28-qLJ0SMYYOaGCuYnRg/exec";
 
     // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
     const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -9932,18 +9932,44 @@
 
     function fetchKasByDateRange(startDate, endDate) {
       showLoading('Memuat data kas...');
-      google.script.run.withSuccessHandler(function (res) {
-        Swal.close();
-        if (res.status === 'error') {
-          showError(res.pesan);
-          return;
-        }
-        var listData = res.data || [];
-        var katEl = document.getElementById('filterKategoriTransaksi');
-        renderRekapKasWarga(listData, katEl ? katEl.value : 'all');
-        updateRekapitulasiBlock(listData);
-      }).getKasWargaByDateRange(startDate, endDate);
+
+      // Convert string dates to Date objects for comparison
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      // Ensure endDate includes the entire day
+      endDate.setHours(23, 59, 59, 999);
+
+      // Filter the global allKasData array on the frontend
+      const filteredData = (allKasData || []).filter(item => {
+        if (!item || !item.tanggal) return false;
+        // Assuming item.tanggal is in 'YYYY-MM-DD' format
+        const itemDate = new Date(item.tanggal);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+
+      console.log("--- Debug: fetchKasByDateRange (Frontend Filter) ---");
+      console.log("Filtering from allKasData. StartDate:", startDateStr, "EndDate:", endDateStr);
+      console.log("Filtered data length for Rekapitulasi Block:", filteredData.length);
+
+      // Validation: Check for December transactions in filteredData
+      const decemberTransactions = filteredData.filter(item => {
+        const itemDate = new Date(item.tanggal);
+        return itemDate.getMonth() === 11; // December is month 11 (0-indexed)
+      });
+      console.log("Number of December transactions processed:", decemberTransactions.length);
+
+      // If the period includes December, but no December transactions are found, log an error
+      if (endDate.getMonth() === 11 && decemberTransactions.length === 0 && filteredData.length > 0) {
+        console.error("BUG ALERT: No December transactions found in filtered data for a December-inclusive range.");
+      } else if (endDate.getMonth() === 11 && decemberTransactions.length > 0) {
+        console.log("December transactions are present in the filtered data.");
+      }
+      console.log("--- End Debug ---");
+
+      Swal.close(); // Close loading modal
+      updateRekapitulasiBlock(filteredData); // Pass the frontend-filtered data to the summary block
     }
+
 
     // ======================== FORM KAS WARGA ========================
     function bukaFormKas(jenis) {
