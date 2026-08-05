@@ -9609,11 +9609,11 @@
             var isKematian = (item.kategori || '').toLowerCase().includes('kematian');
 
             if (item.jenis === 'Pemasukan') {
-              if (isKematian) dataBulanan[mIdx].p_kematian += item.jumlah;
-              else dataBulanan[mIdx].p_kas += item.jumlah;
+              if (isKematian) dataBulanan[mIdx].p_kematian += parseNominalValue(item.jumlah);
+              else dataBulanan[mIdx].p_kas += parseNominalValue(item.jumlah);
             } else {
-              if (isKematian) dataBulanan[mIdx].g_kematian += item.jumlah;
-              else dataBulanan[mIdx].g_kas += item.jumlah;
+              if (isKematian) dataBulanan[mIdx].g_kematian += parseNominalValue(item.jumlah);
+              else dataBulanan[mIdx].g_kas += parseNominalValue(item.jumlah);
             }
             if (item.deskripsi) dataBulanan[mIdx].keterangan.push(item.deskripsi);
           }
@@ -9702,10 +9702,10 @@
           var tahunData = parseInt(tgl[0]);
           if (tahunData === tahun) {
             var bln = parseInt(tgl[1]) - 1;
-            if (item.jenis === 'Pemasukan') {
-              pemasukanPerBulan[bln] += item.jumlah;
+            if (String(item.jenis).toLowerCase() === 'pemasukan') {
+              pemasukanPerBulan[bln] += parseNominalValue(item.jumlah);
             } else {
-              pengeluaranPerBulan[bln] += item.jumlah;
+              pengeluaranPerBulan[bln] += parseNominalValue(item.jumlah);
             }
           }
         }
@@ -9841,7 +9841,7 @@
       var renderItem = function (item, color) {
         var tgl = item.tanggal.split('-');
         var tglFormat = tgl[2] + '/' + tgl[1];
-        return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border-color);">'
+        return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border-color);">' // Perbaikan: Penutup div yang hilang
           + '  <div style="max-width:70%;">'
           + '    <div style="font-size:13px; font-weight:600; color:var(--text-main);">' + (item.deskripsi || 'Tanpa deskripsi') + '</div>'
           + '    <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">'
@@ -9884,8 +9884,6 @@
         }
       });
     }
-
-    // CSS tambahan untuk modal profesional (di dalam JS/Style tag manual tidak perlu jika sudah ada)
 
     // ======================== REKAP PERIODE ========================
     function toggleLaporanMode() {
@@ -9950,13 +9948,12 @@
         }
         var listData = res.data || [];
         var katEl = document.getElementById('filterKategoriTransaksi');
-        var katFilter = katEl ? katEl.value : 'all';
-        renderRekapKasWarga(listData, katFilter);
+        renderRekapKasWarga(listData, katEl ? katEl.value : 'all');
         updateRekapitulasiBlock(listData);
       }).getKasWargaByDateRange(startDate, endDate);
     }
 
-    // ======================== FORM KAS ========================
+    // ======================== FORM KAS WARGA ========================
     function bukaFormKas(jenis) {
       document.getElementById('judulFormKas').innerText = 'Tambah ' + jenis;
       document.getElementById('kasId').value = '';
