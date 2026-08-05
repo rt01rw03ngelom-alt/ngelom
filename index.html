@@ -6821,7 +6821,7 @@
     function ktMuatDataKas() {
       var totalEl = document.getElementById('ktTotalKas');
       if (totalEl) {
-        if (document.getElementById('ktKasView').style.display === 'block') { // Only show skeleton if on this view
+        if (document.getElementById('ktKasView').style.display === 'block') {
           totalEl.classList.add('skeleton-text');
           totalEl.innerText = 'Rp 0.000.000';
         }
@@ -6832,7 +6832,6 @@
           ktAllKasData = res.data || [];
           document.getElementById('ktTotalKas').innerText = 'Rp ' + (res.totalSaldo || 0).toLocaleString('id-ID');
 
-          // 10X THINK: Gunakan Rekap Table tunggal untuk data lebih bersih
           renderRekapKasKT(ktAllKasData);
           filterKtTabelTransaksi(); // Inisialisasi filter default
           ktMuatGrafikKas();
@@ -6844,10 +6843,7 @@
       var tbodyP = document.getElementById('ktTbodyPemasukan');
       var tbodyG = document.getElementById('ktTbodyPengeluaran');
 
-      console.log('[KT KAS] renderTabelKasKT Debug:', { P: tbodyP, G: tbodyG });
-
       if (!tbodyP || !tbodyG) {
-        console.warn('[KT KAS] renderTabelKasKT: Elemen tabel terpisah tidak ditemukan. Mengalihkan ke rekap tunggal.');
         renderRekapKasKT(data);
         return;
       }
@@ -6855,7 +6851,6 @@
       tbodyP.innerHTML = '';
       tbodyG.innerHTML = '';
       // Gunakan pengecekan role yang lebih stabil untuk KT
-      var role = (currentUser.role || "").toLowerCase();
       var canEdit = role === 'admin' || role.includes('karang taruna');
 
       data.forEach(function (item) {
@@ -8094,9 +8089,6 @@
     }
 
     /**
-     * 10X THINK: Implementasi renderRekapKasKT dengan Saldo Berjalan
-     */
-    /**
      * 10XTHINK: Render tabel rekap transaksi Karang Taruna dengan tombol Edit & Hapus
      * - Menampilkan saldo berjalan (running balance)
      * - Hanya menampilkan tombol aksi jika user punya izin kt_kas_crud
@@ -8116,7 +8108,7 @@
 
       var runningSaldo = 0;
       var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-
+      
       // Permission guard (untuk menampilkan tombol aksi Edit/Hapus)
       var canEdit = hasPermission('kt_kas_crud');
 
@@ -9291,11 +9283,10 @@
 
     // ======================== KAS & GRAFIK ========================
     function parseNominalValue(val) {
-      if (val === null || val === undefined || val === '') return 0;
-      var cleaned = String(val).replace(/[^0-9.-]+/g, '');
-      if (!cleaned || cleaned === '-' || cleaned === '.') return 0;
-      var parsed = parseFloat(cleaned);
-      return isFinite(parsed) ? parsed : 0;
+      // Perbaikan: Parsing lebih aman untuk format Rupiah
+      if (val === null || val === undefined) return 0;
+      const cleaned = String(val).replace(/[^0-9]/g, '');
+      return parseInt(cleaned, 10) || 0;
     }
 
     function hitungTotalKasKategori(data) {
@@ -9303,30 +9294,34 @@
       var totalPengeluaranKas = 0;
       var totalPemasukanKematian = 0;
       var totalPengeluaranKematian = 0;
+      
+      // Perbaikan: Definisikan kategori yang valid untuk setiap jenis kas
+      const kasUmumCategories = ['kas', 'kas rt', 'kas warga', 'pkl', 'lain-lain', 'konsumsi ronda', 'sumbangan', 'ambulans'];
 
       for (var i = 0; i < data.length; i++) {
         var item = data[i] || {};
         var kat = String(item.kategori || '').toLowerCase().trim();
-        var isKematian = kat.includes('kematian');
         var nominal = parseNominalValue(item.jumlah);
         var jenis = String(item.jenis || '').toLowerCase();
 
-        if (isKematian) {
+        // Logika Baru: Pisahkan secara eksplisit berdasarkan kategori
+        if (kat === 'kematian') {
           if (jenis === 'pemasukan') totalPemasukanKematian += nominal;
           else totalPengeluaranKematian += nominal;
-        } else {
+        } else if (kasUmumCategories.includes(kat) || kat === '') { // Anggap kategori kosong sebagai kas umum
           if (jenis === 'pemasukan') totalPemasukanKas += nominal;
           else totalPengeluaranKas += nominal;
         }
+        // Kategori lain diabaikan
       }
 
       return {
-        totalPemasukanKas: Number(totalPemasukanKas.toFixed(2)),
-        totalPengeluaranKas: Number(totalPengeluaranKas.toFixed(2)),
-        totalPemasukanKematian: Number(totalPemasukanKematian.toFixed(2)),
-        totalPengeluaranKematian: Number(totalPengeluaranKematian.toFixed(2)),
-        saldoKasAkhir: Number((totalPemasukanKas - totalPengeluaranKas).toFixed(2)),
-        saldoKematianAkhir: Number((totalPemasukanKematian - totalPengeluaranKematian).toFixed(2))
+        totalPemasukanKas: totalPemasukanKas,
+        totalPengeluaranKas: totalPengeluaranKas,
+        totalPemasukanKematian: totalPemasukanKematian,
+        totalPengeluaranKematian: totalPengeluaranKematian,
+        saldoKasAkhir: totalPemasukanKas - totalPengeluaranKas,
+        saldoKematianAkhir: totalPemasukanKematian - totalPengeluaranKematian
       };
     }
 
@@ -9697,11 +9692,11 @@
       }).getSettingCetak();
     }
 
-    function renderGrafikKas(tahun) {
+    function renderGrafikKas(tahun) { // Perbaikan: Fungsi renderGrafikKas
       var pemasukanPerBulan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var pengeluaranPerBulan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      for (var i = 0; i < allKasData.length; i++) {
-        var item = allKasData[i];
+      (allKasData || []).forEach(function(item) {
+        if (!item || !item.tanggal) return;
         var tgl = item.tanggal.split('-');
         if (tgl.length === 3) {
           var tahunData = parseInt(tgl[0]);
@@ -9714,7 +9709,7 @@
             }
           }
         }
-      }
+      });
       var labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
       if (kasChart) {
         kasChart.destroy();
@@ -9799,8 +9794,8 @@
 
     function tampilkanDetailBulan(index, bulan, tahunGrafik) {
       var transaksi = [];
-      for (var i = 0; i < allKasData.length; i++) {
-        var t = allKasData[i];
+      (allKasData || []).forEach(function(t) {
+        if (!t || !t.tanggal) return;
         var parts = t.tanggal.split('-');
         if (parts.length === 3) {
           var thn = parseInt(parts[0]);
@@ -9809,7 +9804,7 @@
             transaksi.push(t);
           }
         }
-      }
+      });
       if (transaksi.length === 0) {
         Swal.fire('Info', 'Tidak ada transaksi pada ' + bulan + ' ' + tahunGrafik, 'info');
         return;
@@ -9820,13 +9815,14 @@
       var totalOut = 0;
 
       for (var k = 0; k < transaksi.length; k++) {
-        var jns = (transaksi[k].jenis || '').toLowerCase().trim();
+        var item = transaksi[k];
+        var jns = (item.jenis || '').toLowerCase().trim();
         if (jns === 'pemasukan') {
-          pList.push(transaksi[k]);
-          totalIn += transaksi[k].jumlah;
+          pList.push(item);
+          totalIn += parseNominalValue(item.jumlah);
         } else if (jns === 'pengeluaran') {
-          gList.push(transaksi[k]);
-          totalOut += transaksi[k].jumlah;
+          gList.push(item);
+          totalOut += parseNominalValue(item.jumlah);
         }
       }
 
@@ -9851,7 +9847,7 @@
           + '    <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">'
           + '      <span style="font-size:10px; background:var(--bg-app); padding:2px 6px; border-radius:4px; color:var(--text-muted); font-weight:600;">' + tglFormat + '</span>'
           + '      <span style="font-size:10px; background:' + color + '15; padding:2px 6px; border-radius:4px; color:' + color + '; font-weight:600;">' + (item.kategori || 'Umum') + '</span>'
-          + '    </div>'
+          + '    </div>' // Perbaikan: Penutup div yang hilang
           + '  </div>'
           + '  <div style="font-size:14px; font-weight:700; color:' + color + ';">' + (color === '#10b981' ? '+' : '-') + ' ' + item.jumlah.toLocaleString('id-ID') + '</div>'
           + '</div>';
