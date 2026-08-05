@@ -8737,17 +8737,61 @@ function bukaJadwal() {
     }).updateStatusPengaduan(id, statusBaru);
   }
 
+  // ======================== HELPER PARSER & FORMATTER ========================
+  /**
+   * Parse data String/Number/null/undefined/NaN menjadi Number murni.
+   * Membersihkan karakter non-digit seperti "Rp", titik ribuan, atau koma desimal.
+   */
+  function parseNominal(val) {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === 'number') return isNaN(val) || !isFinite(val) ? 0 : val;
+    
+    var str = String(val).trim();
+    if (!str) return 0;
+
+    var cleaned = str.replace(/[^0-9,-.]/g, '');
+    if (!cleaned) return 0;
+
+    if (cleaned.indexOf('.') !== -1 && cleaned.indexOf(',') !== -1) {
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if ((cleaned.match(/\./g) || []).length > 1) {
+      cleaned = cleaned.replace(/\./g, '');
+    } else if (cleaned.indexOf(',') !== -1) {
+      cleaned = cleaned.replace(',', '.');
+    } else if (cleaned.indexOf('.') !== -1) {
+      var parts = cleaned.split('.');
+      if (parts[1] && parts[1].length === 3) {
+        cleaned = cleaned.replace(/\./g, '');
+      }
+    }
+
+    var num = parseFloat(cleaned);
+    return isNaN(num) || !isFinite(num) ? 0 : num;
+  }
+
+  /**
+   * Format nominal angka ke standar Rupiah Indonesia (contoh: Rp 1.500.000)
+   */
+  function formatRupiah(nominal) {
+    var num = parseNominal(nominal);
+    var isNegative = num < 0;
+    var absVal = Math.abs(Math.round(num));
+    return (isNegative ? '-Rp ' : 'Rp ') + absVal.toLocaleString('id-ID');
+  }
+
   // ======================== KAS & GRAFIK ========================
   function hitungTotalSaldo(data) {
     var totalPemasukan = 0;
     var totalPengeluaran = 0;
-    for (var i = 0; i < data.length; i++) {
-      var kat = (data[i].kategori || '').toLowerCase().trim();
+    var list = Array.isArray(data) ? data : [];
+    for (var i = 0; i < list.length; i++) {
+      var kat = (list[i].kategori || '').toLowerCase().trim();
       if (!kat.includes('kematian')) {
-        if (data[i].jenis === 'Pemasukan') {
-          totalPemasukan += data[i].jumlah;
+        var nominal = parseNominal(list[i].jumlah);
+        if (list[i].jenis === 'Pemasukan') {
+          totalPemasukan += nominal;
         } else {
-          totalPengeluaran += data[i].jumlah;
+          totalPengeluaran += nominal;
         }
       }
     }
@@ -8757,13 +8801,15 @@ function bukaJadwal() {
   function hitungTotalKematian(data) {
     var totalPemasukan = 0;
     var totalPengeluaran = 0;
-    for (var i = 0; i < data.length; i++) {
-      var kat = (data[i].kategori || '').toLowerCase().trim();
+    var list = Array.isArray(data) ? data : [];
+    for (var i = 0; i < list.length; i++) {
+      var kat = (list[i].kategori || '').toLowerCase().trim();
       if (kat.includes('kematian')) {
-        if (data[i].jenis === 'Pemasukan') {
-          totalPemasukan += data[i].jumlah;
+        var nominal = parseNominal(list[i].jumlah);
+        if (list[i].jenis === 'Pemasukan') {
+          totalPemasukan += nominal;
         } else {
-          totalPengeluaran += data[i].jumlah;
+          totalPengeluaran += nominal;
         }
       }
     }
@@ -8779,7 +8825,7 @@ function bukaJadwal() {
         var item = data[i];
         var kat = (item.kategori || '').toLowerCase().trim();
         var isKematian = kat.includes('kematian');
-        var nominal = Number(item.jumlah) || 0;
+        var nominal = parseNominal(item.jumlah);
 
         if (isKematian) {
           if (item.jenis === 'Pemasukan') pKematian += nominal;
@@ -8796,66 +8842,61 @@ function bukaJadwal() {
 
     // Card 1: Kas Umum RT
     var elKuPemasukan = document.getElementById('rekapKasUmumPemasukan');
-    if (elKuPemasukan) elKuPemasukan.innerText = 'Rp ' + Math.round(pKas).toLocaleString('id-ID');
+    if (elKuPemasukan) elKuPemasukan.innerText = formatRupiah(pKas);
     var elKuPengeluaran = document.getElementById('rekapKasUmumPengeluaran');
-    if (elKuPengeluaran) elKuPengeluaran.innerText = 'Rp ' + Math.round(gKas).toLocaleString('id-ID');
+    if (elKuPengeluaran) elKuPengeluaran.innerText = formatRupiah(gKas);
     var elKuSaldo = document.getElementById('rekapKasUmumSaldo');
-    if (elKuSaldo) elKuSaldo.innerText = 'Rp ' + Math.round(sKas).toLocaleString('id-ID');
+    if (elKuSaldo) elKuSaldo.innerText = formatRupiah(sKas);
 
     // Card 2: Kas Kematian
     var elKmPemasukan = document.getElementById('rekapKasKematianPemasukan');
-    if (elKmPemasukan) elKmPemasukan.innerText = 'Rp ' + Math.round(pKematian).toLocaleString('id-ID');
+    if (elKmPemasukan) elKmPemasukan.innerText = formatRupiah(pKematian);
     var elKmPengeluaran = document.getElementById('rekapKasKematianPengeluaran');
-    if (elKmPengeluaran) elKmPengeluaran.innerText = 'Rp ' + Math.round(gKematian).toLocaleString('id-ID');
+    if (elKmPengeluaran) elKmPengeluaran.innerText = formatRupiah(gKematian);
     var elKmSaldo = document.getElementById('rekapKasKematianSaldo');
-    if (elKmSaldo) elKmSaldo.innerText = 'Rp ' + Math.round(sKematian).toLocaleString('id-ID');
+    if (elKmSaldo) elKmSaldo.innerText = formatRupiah(sKematian);
 
     // Legacy fallback IDs
     var elTotP = document.getElementById('rekapTotalPemasukan');
-    if (elTotP) elTotP.innerText = 'Rp ' + Math.round(pKas + pKematian).toLocaleString('id-ID');
+    if (elTotP) elTotP.innerText = formatRupiah(pKas + pKematian);
     var elTotG = document.getElementById('rekapTotalPengeluaran');
-    if (elTotG) elTotG.innerText = 'Rp ' + Math.round(gKas + gKematian).toLocaleString('id-ID');
+    if (elTotG) elTotG.innerText = formatRupiah(gKas + gKematian);
     var elTotS = document.getElementById('rekapSelisih');
-    if (elTotS) elTotS.innerText = 'Rp ' + Math.round(sKas + sKematian).toLocaleString('id-ID');
+    if (elTotS) elTotS.innerText = formatRupiah(sKas + sKematian);
   }
 
   function updateRingkasanUI(backendTotals) {
-    // Prefer pakai total dari backend (lebih akurat dari sisi kategori/akumulasi)
-    // backendTotals totalSaldo/totalUangKematian bisa saja string.
     var totalSaldo = hitungTotalSaldo(allKasData);
     var totalKematian = hitungTotalKematian(allKasData);
 
     if (backendTotals) {
       if (backendTotals.totalSaldo !== null && backendTotals.totalSaldo !== undefined) {
-        var parsedSaldo = parseFloat(backendTotals.totalSaldo);
+        var parsedSaldo = parseNominal(backendTotals.totalSaldo);
         if (isFinite(parsedSaldo)) totalSaldo = parsedSaldo;
       }
       if (backendTotals.totalUangKematian !== null && backendTotals.totalUangKematian !== undefined) {
-        var parsedKematian = parseFloat(backendTotals.totalUangKematian);
+        var parsedKematian = parseNominal(backendTotals.totalUangKematian);
         if (isFinite(parsedKematian)) totalKematian = parsedKematian;
       }
     }
 
-    // Selalu update elemen di dalam layar laporan Kas (kasView)
     var totalKasEl2 = document.getElementById('totalKasIuran');
-    if (totalKasEl2) totalKasEl2.innerText = totalSaldo.toLocaleString('id-ID');
+    if (totalKasEl2) totalKasEl2.innerText = Math.round(totalSaldo).toLocaleString('id-ID');
     var totalKematianEl2 = document.getElementById('totalKonsumsiRondaIuran');
-    if (totalKematianEl2) totalKematianEl2.innerText = totalKematian.toLocaleString('id-ID');
+    if (totalKematianEl2) totalKematianEl2.innerText = Math.round(totalKematian).toLocaleString('id-ID');
 
-    // Hanya update elemen di Beranda (dashboardView) jika tab yang aktif adalah 'warga'
     if (currentTab === 'warga') {
       var totalKasEl1 = document.getElementById('totalKasIuranValue');
-      if (totalKasEl1) totalKasEl1.innerText = totalSaldo.toLocaleString('id-ID');
+      if (totalKasEl1) totalKasEl1.innerText = Math.round(totalSaldo).toLocaleString('id-ID');
       var totalKematianEl1 = document.getElementById('totalKonsumsiRondaIuranValue');
-      if (totalKematianEl1) totalKematianEl1.innerText = totalKematian.toLocaleString('id-ID');
+      if (totalKematianEl1) totalKematianEl1.innerText = Math.round(totalKematian).toLocaleString('id-ID');
     }
   }
 
   var kasBackendTotalsGlobal = null;
 
   function muatDataKas(callback) {
-    const currentViewToken = window.__activeViewToken; // Capture current token
-    // Aktifkan skeleton pada semua elemen saldo RT
+    const currentViewToken = window.__activeViewToken;
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
       const el = document.getElementById(id);
@@ -8867,7 +8908,7 @@ function bukaJadwal() {
 
     google.script.run.withSuccessHandler(function(res) {
       targets.forEach(id => {
-        if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
+        if (currentViewToken !== window.__activeViewToken) return;
         const el = document.getElementById(id);
         if (el) el.classList.remove('skeleton-text');
       });
@@ -8889,14 +8930,14 @@ function bukaJadwal() {
       filterTabelTransaksi();
       muatRekapPeriode();
       updateRingkasanUI(backendTotals);
-      if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
+      if (currentViewToken !== window.__activeViewToken) return;
       var selectedYear = parseInt(document.getElementById('tahunKasSelect').value);
       renderGrafikKas(selectedYear);
       if (callback) {
         callback();
       }
     }).withFailureHandler(function(err) {
-      Swal.close(); // Close loading modal
+      Swal.close();
       showError('Gagal memuat data kas: ' + err.message);
     }).getKasWarga();
   }
@@ -8916,108 +8957,220 @@ function bukaJadwal() {
       return itemThn === tahun && itemBln === bulan;
     });
 
-    // Panggil render dengan data yang sudah difilter
-    renderRekapKasWarga(filtered, katFilter);
+    renderTabelKasWarga(filtered, katFilter);
   }
 
-function renderRekapKasWarga(data, kategoriFilter = 'kas') {
-  const currentViewToken = window.__activeViewToken; // Capture current token
-  var container = document.getElementById('tbodyRekapKasWarga');
-  if (!container) {
-    console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
-    return;
+  /**
+   * Ketentuan 1, 2 & 3: Kalkulasi Laporan Kas Warga
+   * - Parsing String ke Number (pembersihan Rp, titik, koma, NaN, null, undefined)
+   * - Pengurutan Kronologis berdasarkan Tanggal (Ascending)
+   * - Kumulatif Saldo Berjalan (Running Balance): Saldo Baris-N = Saldo Baris-(N-1) + Pemasukan - Pengeluaran
+   * - Total Pemasukan, Total Pengeluaran, & Total Saldo Akhir
+   */
+  function hitungRekapKasWarga(data) {
+    if (!Array.isArray(data)) {
+      return { data: [], totalPemasukan: 0, totalPengeluaran: 0, totalSaldoAkhir: 0 };
+    }
+
+    // 1. Urutkan data secara kronologis (dari tanggal terlama/terkecil ke terbaru)
+    var sorted = [...data].sort(function(a, b) {
+      var tA = a && a.tanggal ? new Date(a.tanggal).getTime() : 0;
+      var tB = b && b.tanggal ? new Date(b.tanggal).getTime() : 0;
+      if (isNaN(tA) || isNaN(tB) || tA === tB) {
+        return String(a && a.tanggal || '').localeCompare(String(b && b.tanggal || ''));
+      }
+      return tA - tB;
+    });
+
+    var totalPemasukan = 0;
+    var totalPengeluaran = 0;
+    var runningSaldo = 0;
+
+    // 2. Hitung Pemasukan, Pengeluaran & Saldo Berjalan kumulatif per baris
+    var processedData = sorted.map(function(item) {
+      var isPemasukan = (item.jenis === 'Pemasukan');
+      var rawNominal = parseNominal(item.jumlah);
+
+      var pemasukan = parseNominal(
+        item.pemasukan !== undefined ? item.pemasukan : (isPemasukan ? rawNominal : 0)
+      );
+      var pengeluaran = parseNominal(
+        item.pengeluaran !== undefined ? item.pengeluaran : (!isPemasukan ? rawNominal : 0)
+      );
+
+      // Saldo Baris-N = Saldo Baris-(N-1) + Pemasukan - Pengeluaran
+      runningSaldo += (pemasukan - pengeluaran);
+      totalPemasukan += pemasukan;
+      totalPengeluaran += pengeluaran;
+
+      return {
+        id: item.id,
+        tanggal: item.tanggal || '-',
+        kategori: item.kategori || '',
+        deskripsi: item.deskripsi || '-',
+        jenis: item.jenis || (pemasukan > 0 ? 'Pemasukan' : 'Pengeluaran'),
+        pemasukan: pemasukan,
+        pengeluaran: pengeluaran,
+        saldo: runningSaldo,
+        rawItem: item
+      };
+    });
+
+    var totalSaldoAkhir = totalPemasukan - totalPengeluaran;
+
+    return {
+      data: processedData,
+      totalPemasukan: totalPemasukan,
+      totalPengeluaran: totalPengeluaran,
+      totalSaldoAkhir: totalSaldoAkhir
+    };
   }
-  container.innerHTML = '';
-  if (currentViewToken !== window.__activeViewToken) return; // Guard against stale callbacks
 
-  // Filter data berdasarkan kategori yang diinginkan ('kas', 'kematian', atau 'all')
-  var filteredData = data.filter(function(item) {
-    if (kategoriFilter === 'all') return true;
-    var kat = (item.kategori || '').toLowerCase().trim();
-    if (kategoriFilter === 'kematian') return kat.includes('kematian');
-    // Default ke 'kas' (semua selain kematian)
-    return !kat.includes('kematian');
-  });
+  /**
+   * Ketentuan 4: Render Tabel & Sinkronisasi UI Laporan Kas Warga
+   */
+  function renderTabelKasWarga(data, kategoriFilter = 'kas') {
+    const currentViewToken = window.__activeViewToken;
+    var container = document.getElementById('tbodyRekapKasWarga');
+    if (!container) {
+      console.error('[Kas Warga] Container tbodyRekapKasWarga tidak ditemukan');
+      return;
+    }
+    container.innerHTML = '';
+    if (currentViewToken !== window.__activeViewToken) return;
 
-  if (!filteredData || filteredData.length === 0) {
-    container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
-    return;
-  }
+    var rawList = Array.isArray(data) ? data : [];
 
-  // Urutkan berdasarkan tanggal ascending untuk saldo berjalan
-  var sorted = [...filteredData].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    // Filter kategori ('kas', 'kematian', atau 'all')
+    var filteredData = rawList.filter(function(item) {
+      if (kategoriFilter === 'all') return true;
+      var kat = (item.kategori || '').toLowerCase().trim();
+      if (kategoriFilter === 'kematian') return kat.includes('kematian');
+      return !kat.includes('kematian');
+    });
 
-  var runningSaldo = 0;
-  var isAdmin = hasPermission('rt_kas_crud');
+    if (filteredData.length === 0) {
+      container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Tidak ada transaksi pada periode ini.</td></tr>';
+      return;
+    }
 
-  sorted.forEach(function(item) {
-    var isPemasukan = (item.jenis === 'Pemasukan');
-    var nominal = item.jumlah || 0;
+    // Kalkulasi rekapitulasi data kas
+    var rekap = hitungRekapKasWarga(filteredData);
+    var isAdmin = typeof hasPermission === 'function' && hasPermission('rt_kas_crud');
 
-    runningSaldo += isPemasukan ? nominal : -nominal;
+    // Render baris transaksi
+    rekap.data.forEach(function(item) {
+      var tr = document.createElement('tr');
 
-    var tr = document.createElement('tr');
+      var tdTanggal = document.createElement('td');
+      tdTanggal.innerText = item.tanggal;
+      tr.appendChild(tdTanggal);
 
-    // Tanggal
-    var tdTanggal = document.createElement('td');
-    tdTanggal.innerText = item.tanggal || '-';
-    tr.appendChild(tdTanggal);
-    // Kategori
-    var tdKategori = document.createElement('td');
-    tdKategori.innerHTML = item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-';
-    tr.appendChild(tdKategori);
-    // Deskripsi
-    var tdDeskripsi = document.createElement('td');
-    tdDeskripsi.innerText = item.deskripsi || '-';
-    tr.appendChild(tdDeskripsi);
-    // Pemasukan
-    var tdPemasukan = document.createElement('td');
-    tdPemasukan.style.color = '#10b981';
-    tdPemasukan.style.fontWeight = '700';
-    tdPemasukan.innerText = isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
-    tr.appendChild(tdPemasukan);
-    // Pengeluaran
-    var tdPengeluaran = document.createElement('td');
-    tdPengeluaran.style.color = '#ef4444';
-    tdPengeluaran.style.fontWeight = '700';
-    tdPengeluaran.innerText = !isPemasukan ? 'Rp ' + nominal.toLocaleString('id-ID') : '-';
-    tr.appendChild(tdPengeluaran);
-    // Saldo
-    var tdSaldo = document.createElement('td');
-    tdSaldo.style.fontWeight = '800';
-    tdSaldo.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
-    tdSaldo.innerText = 'Rp ' + runningSaldo.toLocaleString('id-ID');
-    tr.appendChild(tdSaldo);
+      var tdKategori = document.createElement('td');
+      tdKategori.innerHTML = item.kategori ? `<span class="kategori-badge">${item.kategori}</span>` : '-';
+      tr.appendChild(tdKategori);
 
-    var tdAksi = document.createElement('td');
-    tdAksi.style.textAlign = 'center';
-    tdAksi.style.whiteSpace = 'nowrap';
-    if (isAdmin) {
-      var editBtn = document.createElement('button');
-      editBtn.className = 'btn-small';
-      editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
-      editBtn.onclick = (function(it) {
-        return function() {
+      var tdDeskripsi = document.createElement('td');
+      tdDeskripsi.innerText = item.deskripsi;
+      tr.appendChild(tdDeskripsi);
+
+      var tdPemasukan = document.createElement('td');
+      tdPemasukan.style.color = '#10b981';
+      tdPemasukan.style.fontWeight = '700';
+      tdPemasukan.style.textAlign = 'right';
+      tdPemasukan.innerText = item.pemasukan > 0 ? formatRupiah(item.pemasukan) : '-';
+      tr.appendChild(tdPemasukan);
+
+      var tdPengeluaran = document.createElement('td');
+      tdPengeluaran.style.color = '#ef4444';
+      tdPengeluaran.style.fontWeight = '700';
+      tdPengeluaran.style.textAlign = 'right';
+      tdPengeluaran.innerText = item.pengeluaran > 0 ? formatRupiah(item.pengeluaran) : '-';
+      tr.appendChild(tdPengeluaran);
+
+      var tdSaldo = document.createElement('td');
+      tdSaldo.style.fontWeight = '800';
+      tdSaldo.style.textAlign = 'right';
+      tdSaldo.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
+      tdSaldo.innerText = formatRupiah(item.saldo);
+      tr.appendChild(tdSaldo);
+
+      var tdAksi = document.createElement('td');
+      tdAksi.style.textAlign = 'center';
+      tdAksi.style.whiteSpace = 'nowrap';
+      if (isAdmin) {
+        var it = item.rawItem || item;
+        var editBtn = document.createElement('button');
+        editBtn.className = 'btn-small';
+        editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
+        editBtn.onclick = function() {
           editKas(it.id, it.tanggal, it.kategori, it.deskripsi, it.jenis, it.jumlah);
         };
-      })(item);
-      tdAksi.appendChild(editBtn);
+        tdAksi.appendChild(editBtn);
 
-      var delBtn = document.createElement('button');
-      delBtn.className = 'btn-small danger';
-      delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
-      delBtn.onclick = (function(id) {
-        return function() { hapusKas(id); };
-      })(item.id);
-      tdAksi.appendChild(delBtn);
-    } else {
-      tdAksi.innerText = '-';
+        var delBtn = document.createElement('button');
+        delBtn.className = 'btn-small danger';
+        delBtn.style.marginLeft = '4px';
+        delBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">delete</i>';
+        delBtn.onclick = function() { hapusKas(it.id); };
+        tdAksi.appendChild(delBtn);
+      } else {
+        tdAksi.innerText = '-';
+      }
+      tr.appendChild(tdAksi);
+
+      container.appendChild(tr);
+    });
+
+    // Render baris Total Rekapitulasi pada tabel
+    var trTotal = document.createElement('tr');
+    trTotal.style.fontWeight = '800';
+    trTotal.style.background = 'var(--bg-card-header, #f8fafc)';
+    trTotal.style.borderTop = '2px solid var(--border-color, #e2e8f0)';
+
+    var tdLabel = document.createElement('td');
+    tdLabel.colSpan = 3;
+    tdLabel.innerText = 'TOTAL REKAPITULASI';
+    tdLabel.style.textAlign = 'right';
+    trTotal.appendChild(tdLabel);
+
+    var tdTotPemasukan = document.createElement('td');
+    tdTotPemasukan.style.color = '#10b981';
+    tdTotPemasukan.style.textAlign = 'right';
+    tdTotPemasukan.innerText = formatRupiah(rekap.totalPemasukan);
+    trTotal.appendChild(tdTotPemasukan);
+
+    var tdTotPengeluaran = document.createElement('td');
+    tdTotPengeluaran.style.color = '#ef4444';
+    tdTotPengeluaran.style.textAlign = 'right';
+    tdTotPengeluaran.innerText = formatRupiah(rekap.totalPengeluaran);
+    trTotal.appendChild(tdTotPengeluaran);
+
+    var tdTotSaldo = document.createElement('td');
+    tdTotSaldo.style.color = 'var(--text-main, #1e293b)';
+    tdTotSaldo.style.textAlign = 'right';
+    tdTotSaldo.style.background = 'rgba(var(--primary-color-rgb), 0.1)';
+    tdTotSaldo.innerText = formatRupiah(rekap.totalSaldoAkhir);
+    trTotal.appendChild(tdTotSaldo);
+
+    var tdEmptyAksi = document.createElement('td');
+    tdEmptyAksi.innerText = '-';
+    tdEmptyAksi.style.textAlign = 'center';
+    trTotal.appendChild(tdEmptyAksi);
+
+    container.appendChild(trTotal);
+
+    // Update Ringkasan Saldo Dashboard (#totalKasIuranValue)
+    var totalKasEl1 = document.getElementById('totalKasIuranValue');
+    if (totalKasEl1) {
+      totalKasEl1.innerText = Math.round(rekap.totalSaldoAkhir).toLocaleString('id-ID');
     }
-    tr.appendChild(tdAksi);
+  }
 
-    container.appendChild(tr);
-  });
-}
+  // Alias fungsi agar kompatibel dengan pemanggilan existing renderRekapKasWarga
+  function renderRekapKasWarga(data, kategoriFilter = 'kas') {
+    renderTabelKasWarga(data, kategoriFilter);
+  }
 
   function muatGrafikKas() {
     var tahun = parseInt(document.getElementById('tahunKasSelect').value);
