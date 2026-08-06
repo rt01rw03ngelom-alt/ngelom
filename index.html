@@ -3339,17 +3339,96 @@
       <button class="btn-secondary" onclick="tutupForm('formKas','')">Batal</button>
     </div>
 
-    <div class="rekapitulasi" id="rekapitulasiBox">
-      <p><strong>Periode: <span id="periodeText">Tahun 2026</span></strong></p>
-      <p>Total Pemasukan: <strong id="rekapTotalPemasukan">Rp 0</strong></p>
-      <p>Total Pengeluaran: <strong id="rekapTotalPengeluaran">Rp 0</strong></p>
-      <p id="rekapLabelSelisih">Total Uang: <strong id="rekapSelisih">Rp 0</strong></p>
+    <!-- SEKSI REKAPITULASI KAS (KAS UMUM & KAS KEMATIAN) -->
+    <div id="rekapitulasiSection" style="margin-bottom: 1.5rem;">
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+          <i class="material-icons" style="font-size: 18px; color: var(--primary-color);">equalizer</i>
+          Ringkasan Rekapitulasi Kas
+        </h4>
+        <span style="font-size: 12px; font-weight: 600; background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(var(--primary-color-rgb), 0.2);">
+          Periode: <span id="periodeText">Tahun 2026</span>
+        </span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        <!-- Card 1: Kas Umum RT -->
+        <div id="rekapKasUmumCard" class="card-item" style="margin-bottom:0; border-left: 4px solid var(--primary-color); background: var(--bg-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(var(--primary-color-rgb), 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary-color);">
+              <i class="material-icons" style="font-size: 20px;">account_balance_wallet</i>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Kas Umum RT</h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Pemasukan, Pengeluaran &amp; Saldo</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pemasukan</span>
+              <strong id="rekapKasUmumPemasukan" style="color: #10b981; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pengeluaran</span>
+              <strong id="rekapKasUmumPengeluaran" style="color: #ef4444; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
+              <span style="font-weight: 700; color: var(--text-main);">Saldo Akhir Kas Umum</span>
+              <strong id="rekapKasUmumSaldo" style="color: var(--primary-color); font-weight: 800; font-size: 1.1rem;">Rp 0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Kas Kematian -->
+        <div id="rekapKasKematianCard" class="card-item" style="margin-bottom:0; border-left: 4px solid #ec4899; background: var(--bg-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(236, 72, 153, 0.1); display: flex; align-items: center; justify-content: center; color: #ec4899;">
+              <i class="material-icons" style="font-size: 20px;">local_florist</i>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Kas Kematian</h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Pemasukan, Pengeluaran &amp; Saldo</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pemasukan</span>
+              <strong id="rekapKasKematianPemasukan" style="color: #10b981; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pengeluaran</span>
+              <strong id="rekapKasKematianPengeluaran" style="color: #ef4444; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
+              <span style="font-weight: 700; color: var(--text-main);">Saldo Akhir Kas Kematian</span>
+              <strong id="rekapKasKematianSaldo" style="color: #ec4899; font-weight: 800; font-size: 1.1rem;">Rp 0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden container untuk backwards-compatibility ID lama -->
+      <div id="rekapitulasiBox" style="display:none;">
+        <span id="rekapTotalPemasukan">Rp 0</span>
+        <span id="rekapTotalPengeluaran">Rp 0</span>
+        <span id="rekapSelisih">Rp 0</span>
+      </div>
     </div>
 
     <div class="filter-table">
       <div class="filter-group">
+        <label>Kategori Kas</label>
+        <select id="filterKategoriTransaksi" onchange="filterTabelTransaksi()">
+          <option value="all">Semua Transaksi</option>
+          <option value="kas">Kas Umum RT</option>
+          <option value="kematian">Kas Kematian</option>
+        </select>
+      </div>
+      <div class="filter-group">
         <label>Filter Tabel Bulan</label>
-        <select id="filterBulanTransaksi">
+        <select id="filterBulanTransaksi" onchange="filterTabelTransaksi()">
           <option value="0">Semua Bulan</option>
           <option value="1">Januari</option>
           <option value="2">Februari</option>
@@ -3367,7 +3446,7 @@
       </div>
       <div class="filter-group">
         <label>Tahun</label>
-        <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;">
+        <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;" onchange="filterTabelTransaksi()">
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
@@ -8663,23 +8742,81 @@ function bukaJadwal() {
     var totalPemasukan = 0;
     var totalPengeluaran = 0;
     for (var i = 0; i < data.length; i++) {
-      if (data[i].jenis === 'Pemasukan') {
-        totalPemasukan += data[i].jumlah;
-      } else {
-        totalPengeluaran += data[i].jumlah;
+      var kat = (data[i].kategori || '').toLowerCase().trim();
+      if (!kat.includes('kematian')) {
+        if (data[i].jenis === 'Pemasukan') {
+          totalPemasukan += data[i].jumlah;
+        } else {
+          totalPengeluaran += data[i].jumlah;
+        }
       }
     }
     return Number((totalPemasukan - totalPengeluaran).toFixed(2));
   }
 
   function hitungTotalKematian(data) {
-    var total = 0;
+    var totalPemasukan = 0;
+    var totalPengeluaran = 0;
     for (var i = 0; i < data.length; i++) {
-      if (data[i].jenis === 'Pemasukan' && data[i].kategori === 'Kematian') {
-        total += data[i].jumlah;
+      var kat = (data[i].kategori || '').toLowerCase().trim();
+      if (kat.includes('kematian')) {
+        if (data[i].jenis === 'Pemasukan') {
+          totalPemasukan += data[i].jumlah;
+        } else {
+          totalPengeluaran += data[i].jumlah;
+        }
       }
     }
-    return Number(total.toFixed(2));
+    return Number((totalPemasukan - totalPengeluaran).toFixed(2));
+  }
+
+  function updateRekapitulasiBlock(data) {
+    var pKas = 0, gKas = 0;
+    var pKematian = 0, gKematian = 0;
+
+    if (data && data.length) {
+      for (var i = 0; i < data.length; i++) {
+        var item = data[i];
+        var kat = (item.kategori || '').toLowerCase().trim();
+        var isKematian = kat.includes('kematian');
+        var nominal = Number(item.jumlah) || 0;
+
+        if (isKematian) {
+          if (item.jenis === 'Pemasukan') pKematian += nominal;
+          else gKematian += nominal;
+        } else {
+          if (item.jenis === 'Pemasukan') pKas += nominal;
+          else gKas += nominal;
+        }
+      }
+    }
+
+    var sKas = pKas - gKas;
+    var sKematian = pKematian - gKematian;
+
+    // Card 1: Kas Umum RT
+    var elKuPemasukan = document.getElementById('rekapKasUmumPemasukan');
+    if (elKuPemasukan) elKuPemasukan.innerText = 'Rp ' + Math.round(pKas).toLocaleString('id-ID');
+    var elKuPengeluaran = document.getElementById('rekapKasUmumPengeluaran');
+    if (elKuPengeluaran) elKuPengeluaran.innerText = 'Rp ' + Math.round(gKas).toLocaleString('id-ID');
+    var elKuSaldo = document.getElementById('rekapKasUmumSaldo');
+    if (elKuSaldo) elKuSaldo.innerText = 'Rp ' + Math.round(sKas).toLocaleString('id-ID');
+
+    // Card 2: Kas Kematian
+    var elKmPemasukan = document.getElementById('rekapKasKematianPemasukan');
+    if (elKmPemasukan) elKmPemasukan.innerText = 'Rp ' + Math.round(pKematian).toLocaleString('id-ID');
+    var elKmPengeluaran = document.getElementById('rekapKasKematianPengeluaran');
+    if (elKmPengeluaran) elKmPengeluaran.innerText = 'Rp ' + Math.round(gKematian).toLocaleString('id-ID');
+    var elKmSaldo = document.getElementById('rekapKasKematianSaldo');
+    if (elKmSaldo) elKmSaldo.innerText = 'Rp ' + Math.round(sKematian).toLocaleString('id-ID');
+
+    // Legacy fallback IDs
+    var elTotP = document.getElementById('rekapTotalPemasukan');
+    if (elTotP) elTotP.innerText = 'Rp ' + Math.round(pKas + pKematian).toLocaleString('id-ID');
+    var elTotG = document.getElementById('rekapTotalPengeluaran');
+    if (elTotG) elTotG.innerText = 'Rp ' + Math.round(gKas + gKematian).toLocaleString('id-ID');
+    var elTotS = document.getElementById('rekapSelisih');
+    if (elTotS) elTotS.innerText = 'Rp ' + Math.round(sKas + sKematian).toLocaleString('id-ID');
   }
 
   function updateRingkasanUI(backendTotals) {
@@ -8767,6 +8904,8 @@ function bukaJadwal() {
   function filterTabelTransaksi() {
     var bulan = parseInt(document.getElementById('filterBulanTransaksi').value);
     var tahun = parseInt(document.getElementById('filterTahunTransaksi').value);
+    var katEl = document.getElementById('filterKategoriTransaksi');
+    var katFilter = katEl ? katEl.value : 'all';
 
     var filtered = allKasData.filter(function(item) {
       var p = item.tanggal.split('-');
@@ -8777,8 +8916,8 @@ function bukaJadwal() {
       return itemThn === tahun && itemBln === bulan;
     });
 
-  // Panggil render dengan data yang sudah difilter
-  renderRekapKasWarga(filtered, 'all'); // 'all' untuk menampilkan semua kategori
+    // Panggil render dengan data yang sudah difilter
+    renderRekapKasWarga(filtered, katFilter);
   }
 
 function renderRekapKasWarga(data, kategoriFilter = 'kas') {
@@ -9254,19 +9393,11 @@ function renderRekapKasWarga(data, kategoriFilter = 'kas') {
         showError(res.pesan);
         return;
       }
-      renderRekapKasWarga(res.data || []);
-      var totalPemasukan = 0;
-      var totalPengeluaran = 0;
-      if (res.data && res.data.length) {
-        for (var i = 0; i < res.data.length; i++) {
-          if (res.data[i].jenis === 'Pemasukan') totalPemasukan += res.data[i].jumlah;
-          else totalPengeluaran += res.data[i].jumlah;
-        }
-      }
-      document.getElementById('rekapTotalPemasukan').innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
-      document.getElementById('rekapTotalPengeluaran').innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      document.getElementById('rekapSelisih').innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
-      // (label sudah diubah di HTML menjadi "Total Uang:")
+      var listData = res.data || [];
+      var katEl = document.getElementById('filterKategoriTransaksi');
+      var katFilter = katEl ? katEl.value : 'all';
+      renderRekapKasWarga(listData, katFilter);
+      updateRekapitulasiBlock(listData);
     }).getKasWargaByDateRange(startDate, endDate);
   }
 
