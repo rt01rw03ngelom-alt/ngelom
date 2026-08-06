@@ -8786,11 +8786,17 @@ function bukaJadwal() {
     return Number((totalPemasukan - totalPengeluaran).toFixed(2));
   }
 
-  function updateRekapitulasiBlock(data) {
+function updateRekapitulasiBlock(data, computedTotals) {
     var pKas = 0, gKas = 0;
     var pKematian = 0, gKematian = 0;
 
-    if (data && data.length) {
+    // Jika sudah ada total hasil agregasi 12 bulan (mode tahunan), gunakan langsung.
+    if (computedTotals) {
+      pKas = computedTotals.pKas || 0;
+      gKas = computedTotals.gKas || 0;
+      pKematian = computedTotals.pKematian || 0;
+      gKematian = computedTotals.gKematian || 0;
+    } else if (data && data.length) {
       for (var i = 0; i < data.length; i++) {
         var item = data[i];
         var kat = (item.kategori || '').toLowerCase().trim();
@@ -9092,9 +9098,10 @@ function renderRekapKasWarga(data) {
       }
     });
 
-    var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
+var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
+    // Selalu tampilkan 12 bulan (Jan s/d Des). Bulan tanpa transaksi diisi 0,
+    // TIDAK di-skip, agar laporan tahunan selalu lengkap & total sinkron.
     var tableRows = dataBulanan.map(b => {
-      if (b.p_kas === 0 && b.p_kematian === 0 && b.g_kas === 0 && b.g_kematian === 0) return '';
       total.p_kas += b.p_kas; total.p_kematian += b.p_kematian;
       total.g_kas += b.g_kas; total.g_kematian += b.g_kematian;
       return `<tr>
@@ -9387,17 +9394,19 @@ function renderRekapKasWarga(data) {
     var startDate = '';
     var endDate = '';
     var periodeText = '';
-    if (mode === 'tahunan') {
+if (mode === 'tahunan') {
       var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
       periodeText = 'Tahun ' + tahun;
-      startDate = new Date(tahun, 0, 1).toISOString().slice(0,10);
-      endDate = new Date(tahun, 11, 31).toISOString().slice(0,10);
+      // JANGAN pakai .toISOString() (menggeser ke UTC/GMT+0). 
+      // Bangun string manual agar rentang penuh 01-01 s/d 12-31 (00:00:00 - 23:59:59).
+      startDate = tahun + '-01-01';
+      endDate = tahun + '-12-31';
     } else if (mode === 'bulan') {
       var bulan = parseInt(document.getElementById('bulanLaporan').value);
       var tahunBulan = parseInt(document.getElementById('tahunLaporanBulan').value);
       var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
-      startDate = new Date(tahunBulan, bulan-1, 1).toISOString().slice(0,10);
+      startDate = tahunBulan + '-' + (bulan < 10 ? '0' + bulan : bulan) + '-01';
       endDate = new Date(tahunBulan, bulan, 0).toISOString().slice(0,10);
     } else {
       startDate = document.getElementById('startDate').value;
@@ -9412,7 +9421,7 @@ function renderRekapKasWarga(data) {
     fetchKasByDateRange(startDate, endDate);
   }
 
-  function fetchKasByDateRange(startDate, endDate) {
+function fetchKasByDateRange(startDate, endDate) {
     showLoading('Memuat data kas...');
     google.script.run.withSuccessHandler(function(res) {
       Swal.close();
@@ -9422,22 +9431,75 @@ function renderRekapKasWarga(data) {
       }
 var listData = res.data || [];
       renderRekapKasWarga(listData);
-      updateRekapitulasiBlock(listData);
+
+      // Agregasi total untuk mode tahunaan (12 bulan) agar presisi & konsisten
+      // dengan laporan cetak (cetakLaporanKas).
+      var isAnnual = (document.getElementById('laporanMode').value === 'tahunan');
+      var computedTotals = null;
+
+      if (isAnnual) {
+        var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
+        var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        // Array 12 bulan (Jan s/d Des), diisi 0 agar laporan tahunan selalu lengkap.
+        var dataBulanan = Array.from({ length: 12 }, function(_, i) {
+          return {
+            namaBulan: bulanIndo[i],
+            p_kas: 0, p_kematian: 0,
+            g_kas: 0, g_kematian: 0
+          };
+        });
+
+        listData.forEach(function(item) {
+          var d = (item.tanggal || '').split('-');
+          if (parseInt(d[0], 10) !== tahun) return;
+          var mIdx = parseInt(d[1], 10) - 1;
+          if (mIdx < 0 || mIdx > 11) return;
+          var kat = (item.kategori || '').toLowerCase().trim();
+          var nominal = Number(item.jumlah) || 0;
+          var isKematian = kat.includes('kematian');
+          if (item.jenis === 'Pemasukan') {
+            if (isKematian) dataBulanan[mIdx].p_kematian += nominal;
+            else dataBulanan[mIdx].p_kas += nominal;
+          } else {
+            if (isKematian) dataBulanan[mIdx].g_kematian += nominal;
+            else dataBulanan[mIdx].g_kas += nominal;
+          }
+        });
+
+        var total = { pKas: 0, gKas: 0, pKematian: 0, gKematian: 0 };
+        dataBulanan.forEach(function(b) {
+          total.pKas += b.p_kas;
+          total.gKas += b.g_kas;
+          total.pKematian += b.p_kematian;
+          total.gKematian += b.g_kematian;
+        });
+        computedTotals = total;
+      }
+
+      // Update kartu rekap (pakai total agregasi tahunan jika tersedia)
+      updateRekapitulasiBlock(listData, computedTotals);
 
       // Update kartu Total Saldo Kas & Total Uang Kematian agar sama dengan periode terpilih
       var elKasTop = document.getElementById('totalKasIuran');
       var elKematianTop = document.getElementById('totalKonsumsiRondaIuran');
 
       var pKas = 0, gKas = 0, pKematian = 0, gKematian = 0;
-      listData.forEach(function(item) {
-        var kat = (item.kategori || '').toLowerCase().trim();
-        var nominal = Number(item.jumlah) || 0;
-        if (kat.includes('kematian')) {
-          if (item.jenis === 'Pemasukan') pKematian += nominal; else gKematian += nominal;
-        } else {
-          if (item.jenis === 'Pemasukan') pKas += nominal; else gKas += nominal;
-        }
-      });
+      if (computedTotals) {
+        pKas = computedTotals.pKas;
+        gKas = computedTotals.gKas;
+        pKematian = computedTotals.pKematian;
+        gKematian = computedTotals.gKematian;
+      } else {
+        listData.forEach(function(item) {
+          var kat = (item.kategori || '').toLowerCase().trim();
+          var nominal = Number(item.jumlah) || 0;
+          if (kat.includes('kematian')) {
+            if (item.jenis === 'Pemasukan') pKematian += nominal; else gKematian += nominal;
+          } else {
+            if (item.jenis === 'Pemasukan') pKas += nominal; else gKas += nominal;
+          }
+        });
+      }
       if (elKasTop) elKasTop.innerText = 'Rp ' + Math.round(pKas - gKas).toLocaleString('id-ID');
       if (elKematianTop) elKematianTop.innerText = 'Rp ' + Math.round(pKematian - gKematian).toLocaleString('id-ID');
     }).getKasWargaByDateRange(startDate, endDate);
