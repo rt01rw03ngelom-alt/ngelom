@@ -3415,6 +3415,9 @@
         <span id="rekapTotalPengeluaran">Rp 0</span>
         <span id="rekapSelisih">Rp 0</span>
       </div>
+      <div style="margin-top:10px;">
+        <button class="btn-small" onclick="debugExportKas()" title="Debug: export kas ke console">Debug: Export Kas Data</button>
+      </div>
     </div>
 
     <div class="filter-table">
@@ -6307,11 +6310,12 @@
     var canEdit = role === 'admin' || role.includes('karang taruna');
     
     data.forEach(function(item) {
-      var isOut = item.jenis === 'Pengeluaran';
+      var isOut = String(item.jenis || '').toLowerCase() === 'pengeluaran';
       var tr = document.createElement('tr');
+      var nominalVal = Number(item.nominal) || Number(item.jumlah) || 0;
       tr.innerHTML = '<td>' + item.tanggal + '</td>'
                    + '<td>' + item.keterangan + '</td>'
-                   + '<td style="color:' + (isOut ? '#ef4444' : '#10b981') + '; font-weight:700;">Rp ' + item.nominal.toLocaleString('id-ID') + '</td>';
+                   + '<td style="color:' + (isOut ? '#ef4444' : '#10b981') + '; font-weight:700;">Rp ' + nominalVal.toLocaleString('id-ID') + '</td>';
       
       var tdAksi = document.createElement('td');
       if (canEdit) {
@@ -6323,7 +6327,7 @@
       } else { tdAksi.innerText = '-'; }
       
       tr.appendChild(tdAksi);
-      if (item.jenis === 'Pemasukan') tbodyP.appendChild(tr);
+      if (String(item.jenis || '').toLowerCase() === 'pemasukan') tbodyP.appendChild(tr);
       else tbodyG.appendChild(tr);
     });
   }
@@ -6499,12 +6503,13 @@
     }));
 
     ktAllKasData.forEach(item => {
-      var d = String(item.tanggal || '').split('-');
-      if (d.length === 3 && d[0] == tahun) {
-        var mIdx = parseInt(d[1], 10) - 1;
+      var d = parseTanggal(item.tanggal || item.tgl || item.date || '');
+      if (!d) return;
+      if (d.year === parseInt(tahun,10)) {
+        var mIdx = d.month - 1;
         if (mIdx >= 0 && mIdx < 12) {
-          var amount = Number(item.nominal) || 0;
-          if (item.jenis === 'Pemasukan') dataBulanan[mIdx].pemasukan += amount;
+          var amount = Number(item.nominal) || Number(item.jumlah) || 0;
+          if (String(item.jenis || '').toLowerCase() === 'pemasukan') dataBulanan[mIdx].pemasukan += amount;
           else dataBulanan[mIdx].pengeluaran += amount;
           if (item.keterangan) dataBulanan[mIdx].keterangan.push(item.keterangan);
         } else {
@@ -7574,20 +7579,23 @@ function bukaJadwal() {
     }
 
     var runningSaldo = 0;
-    var sorted = [...data].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    var sorted = [...data].sort((a, b) => {
+      var da = parseTanggal(a.tanggal || a.tgl || a.date || '');
+      var db = parseTanggal(b.tanggal || b.tgl || b.date || '');
+      if (!da || !db) return 0;
+      if (da.year !== db.year) return da.year - db.year;
+      if (da.month !== db.month) return da.month - db.month;
+      return da.day - db.day;
+    });
 
     // Permission guard (untuk menampilkan tombol aksi Edit/Hapus)
     var canEdit = hasPermission('kt_kas_crud');
 
     sorted.forEach(function(item) {
-      var isIn = (item.jenis === 'Pemasukan');
-      var nominal = item.nominal || 0;
+      var isIn = String(item.jenis || '').toLowerCase() === 'pemasukan';
+      var nominal = Number(item.nominal) || Number(item.jumlah) || 0;
 
-      if (isIn) {
-        runningSaldo += nominal;
-      } else {
-        runningSaldo -= nominal;
-      }
+      if (isIn) runningSaldo += nominal; else runningSaldo -= nominal;
 
       var tr = document.createElement('tr');
 
@@ -7659,10 +7667,10 @@ function bukaJadwal() {
     var tahun = parseInt(document.getElementById('ktFilterTahunTransaksi').value);
     
     var filtered = ktAllKasData.filter(function(item) {
-      var p = item.tanggal.split('-');
-      if (p.length !== 3) return false;
-      var itemThn = parseInt(p[0]);
-      var itemBln = parseInt(p[1]);
+      var d = parseTanggal(item.tanggal || item.tgl || item.date || '');
+      if (!d) return false;
+      var itemThn = d.year;
+      var itemBln = d.month;
       if (bulan === 0) return itemThn === tahun;
       return itemThn === tahun && itemBln === bulan;
     });
@@ -8820,14 +8828,15 @@ function bukaJadwal() {
         var item = data[i];
         var kat = (item.kategori || '').toLowerCase().trim();
         var isKematian = kat.includes('kematian');
-        var nominal = Number(item.jumlah) || 0;
+        var nominal = Number(item.jumlah) || Number(item.nominal) || 0;
+        var jenisNorm = String(item.jenis || '').toLowerCase().trim();
         console.log('[Kas Warga] item', i, 'tanggal=', item.tanggal, 'jenis=', item.jenis, 'kategori=', item.kategori, 'jumlah=', nominal);
 
         if (isKematian) {
-          if (item.jenis === 'Pemasukan') pKematian += nominal;
+          if (jenisNorm === 'pemasukan') pKematian += nominal;
           else gKematian += nominal;
         } else {
-          if (item.jenis === 'Pemasukan') pKas += nominal;
+          if (jenisNorm === 'pemasukan') pKas += nominal;
           else gKas += nominal;
         }
       }
@@ -9469,12 +9478,44 @@ function renderRekapKasWarga(data, kategoriFilter = 'kas') {
         return;
       }
       var listData = res.data || [];
-      console.log('[Kas Warga] fetchKasByDateRange: received', listData.length, 'items, start=', startDate, 'end=', endDate, 'sample=', listData.slice(0,3));
+      // Normalize amounts and tanggal fields for downstream processing
+      var norm = listData.map(function(it){
+        it.jumlah = Number(it.jumlah) || Number(it.nominal) || 0;
+        it.tanggal = it.tanggal || it.tgl || it.date || '';
+        return it;
+      });
+      console.log('[Kas Warga] fetchKasByDateRange: received', listData.length, 'items, start=', startDate, 'end=', endDate, 'sample=', norm.slice(0,3));
       var katEl = document.getElementById('filterKategoriTransaksi');
       var katFilter = katEl ? katEl.value : 'all';
-      renderRekapKasWarga(listData, katFilter);
-      updateRekapitulasiBlock(listData);
+      renderRekapKasWarga(norm, katFilter);
+      updateRekapitulasiBlock(norm);
     }).getKasWargaByDateRange(startDate, endDate);
+  }
+
+  function debugExportKas() {
+    try {
+      console.log('[Kas Debug] allKasData length=', (allKasData || []).length);
+      console.log('[Kas Debug] allKasData sample=', (allKasData || []).slice(0,10));
+      // Also trigger re-fetch for current periode to inspect server response
+      var mode = document.getElementById('laporanMode').value;
+      var startDate = '';
+      var endDate = '';
+      if (mode === 'tahunan') {
+        var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
+        startDate = new Date(tahun,0,1).toISOString().slice(0,10);
+        endDate = new Date(tahun,11,31).toISOString().slice(0,10);
+      } else if (mode === 'bulan') {
+        var bulan = parseInt(document.getElementById('bulanLaporan').value);
+        var tahunBulan = parseInt(document.getElementById('tahunLaporanBulan').value);
+        startDate = new Date(tahunBulan, bulan-1, 1).toISOString().slice(0,10);
+        endDate = new Date(tahunBulan, bulan, 0).toISOString().slice(0,10);
+      } else {
+        startDate = document.getElementById('startDate').value;
+        endDate = document.getElementById('endDate').value;
+      }
+      console.log('[Kas Debug] triggering fetchKasByDateRange for', startDate, endDate);
+      fetchKasByDateRange(startDate, endDate);
+    } catch (e) { console.error('[Kas Debug] error', e); }
   }
 
   // ======================== FORM KAS ========================
