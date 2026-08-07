@@ -2714,49 +2714,6 @@ const APP_VERSION = '1.3.0';
       </div>
     </div>
 
-    <!-- Ringkasan Rekapitulasi Kas Karang Taruna (Desain identik dgn Menu Warga) -->
-    <div id="ktRekapitulasiSection" style="margin-bottom: 1.5rem;">
-      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-          <i class="material-icons" style="font-size: 18px; color: var(--kt-blue);">equalizer</i>
-          Ringkasan Rekapitulasi Kas
-        </h4>
-        <span style="font-size: 12px; font-weight: 600; background: rgba(56, 189, 248, 0.1); color: var(--kt-blue); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.25);">
-          Periode: <span id="ktRekapPeriodeBadge">Tahun 2026</span>
-        </span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-        <!-- Card: Kas Karang Taruna -->
-        <div id="ktRekapKasCard" class="card-item" style="margin-bottom:0; border-left: 4px solid var(--kt-blue); background: var(--bg-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);">
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; justify-content: center; color: var(--kt-blue);">
-              <i class="material-icons" style="font-size: 20px;">account_balance_wallet</i>
-            </div>
-            <div>
-              <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Kas Karang Taruna</h3>
-              <span style="font-size: 11px; color: var(--text-muted);">Pemasukan, Pengeluaran &amp; Saldo</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-              <span style="color: var(--text-muted);">Total Pemasukan</span>
-              <strong id="ktRekapPemasukan" style="color: #10b981; font-weight: 700;">Rp 0</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-              <span style="color: var(--text-muted);">Total Pengeluaran</span>
-              <strong id="ktRekapPengeluaran" style="color: #ef4444; font-weight: 700;">Rp 0</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
-              <span style="font-weight: 700; color: var(--text-main);">Saldo Akhir Kas Karang Taruna</span>
-              <strong id="ktRekapSaldoAkhir" style="color: var(--kt-blue); font-weight: 800; font-size: 1.1rem;">Rp 0</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="chart-container">
       <canvas id="ktKasChart" width="400" height="200"></canvas>
       <div style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
@@ -2867,6 +2824,49 @@ const APP_VERSION = '1.3.0';
       <div class="filter-group">
         <label>&nbsp;</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
+      </div>
+    </div>
+
+    <!-- Ringkasan Rekapitulasi Kas Karang Taruna (Desain identik dgn Menu Warga) -->
+    <div id="ktRekapitulasiSection" style="margin-bottom: 1.5rem;">
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+          <i class="material-icons" style="font-size: 18px; color: var(--kt-blue);">equalizer</i>
+          Ringkasan Rekapitulasi Kas
+        </h4>
+        <span style="font-size: 12px; font-weight: 600; background: rgba(56, 189, 248, 0.1); color: var(--kt-blue); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          Periode: <span id="ktRekapPeriodeBadge">Tahun 2026</span>
+        </span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        <!-- Card: Kas Karang Taruna -->
+        <div id="ktRekapKasCard" class="card-item" style="margin-bottom:0; border-left: 4px solid var(--kt-blue); background: var(--bg-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; justify-content: center; color: var(--kt-blue);">
+              <i class="material-icons" style="font-size: 20px;">account_balance_wallet</i>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Kas Karang Taruna</h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Pemasukan, Pengeluaran &amp; Saldo</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pemasukan</span>
+              <strong id="ktRekapPemasukan" style="color: #10b981; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pengeluaran</span>
+              <strong id="ktRekapPengeluaran" style="color: #ef4444; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
+              <span style="font-weight: 700; color: var(--text-main);">Saldo Akhir Kas Karang Taruna</span>
+              <strong id="ktRekapSaldoAkhir" style="color: var(--kt-blue); font-weight: 800; font-size: 1.1rem;">Rp 0</strong>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
