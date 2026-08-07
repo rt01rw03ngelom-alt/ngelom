@@ -2714,6 +2714,49 @@ const APP_VERSION = '1.3.0';
       </div>
     </div>
 
+    <!-- Ringkasan Rekapitulasi Kas Karang Taruna (Desain identik dgn Menu Warga) -->
+    <div id="ktRekapitulasiSection" style="margin-bottom: 1.5rem;">
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+          <i class="material-icons" style="font-size: 18px; color: var(--kt-blue);">equalizer</i>
+          Ringkasan Rekapitulasi Kas
+        </h4>
+        <span style="font-size: 12px; font-weight: 600; background: rgba(56, 189, 248, 0.1); color: var(--kt-blue); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          Periode: <span id="ktRekapPeriodeBadge">Tahun 2026</span>
+        </span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        <!-- Card: Kas Karang Taruna -->
+        <div id="ktRekapKasCard" class="card-item" style="margin-bottom:0; border-left: 4px solid var(--kt-blue); background: var(--bg-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; justify-content: center; color: var(--kt-blue);">
+              <i class="material-icons" style="font-size: 20px;">account_balance_wallet</i>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Kas Karang Taruna</h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Pemasukan, Pengeluaran &amp; Saldo</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pemasukan</span>
+              <strong id="ktRekapPemasukan" style="color: #10b981; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span style="color: var(--text-muted);">Total Pengeluaran</span>
+              <strong id="ktRekapPengeluaran" style="color: #ef4444; font-weight: 700;">Rp 0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
+              <span style="font-weight: 700; color: var(--text-main);">Saldo Akhir Kas Karang Taruna</span>
+              <strong id="ktRekapSaldoAkhir" style="color: var(--kt-blue); font-weight: 800; font-size: 1.1rem;">Rp 0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="chart-container">
       <canvas id="ktKasChart" width="400" height="200"></canvas>
       <div style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
@@ -2739,13 +2782,13 @@ const APP_VERSION = '1.3.0';
       <div id="ktLaporanTahunanMode" style="display:flex; flex-direction:row; gap:0.5rem; align-items:flex-end;">
         <div>
           <label>Tahun</label>
-          <input type="number" id="ktTahunLaporanTahunan" value="2026" style="width:100px;">
+          <input type="number" id="ktTahunLaporanTahunan" value="2026" style="width:100px;" onchange="muatKtRekapPeriode()">
         </div>
       </div>
       <div id="ktLaporanBulanMode" style="display:none; flex-direction:row; gap:0.5rem; align-items:flex-end;">
         <div>
           <label>Bulan</label>
-          <select id="ktBulanLaporan">
+          <select id="ktBulanLaporan" onchange="muatKtRekapPeriode()">
             <option value="1">Januari</option>
             <option value="2">Februari</option>
             <option value="3">Maret</option>
@@ -2762,17 +2805,17 @@ const APP_VERSION = '1.3.0';
         </div>
         <div>
           <label>Tahun</label>
-          <input type="number" id="ktTahunLaporanBulan" value="2026" style="width:90px;">
+          <input type="number" id="ktTahunLaporanBulan" value="2026" style="width:90px;" onchange="muatKtRekapPeriode()">
         </div>
       </div>
       <div id="ktLaporanCustomMode" style="display:none; flex-direction:row; gap:0.5rem; align-items:flex-end;">
         <div>
           <label>Dari</label>
-          <input type="date" id="ktStartDate">
+          <input type="date" id="ktStartDate" onchange="muatKtRekapPeriode()">
         </div>
         <div>
           <label>Sampai</label>
-          <input type="date" id="ktEndDate">
+          <input type="date" id="ktEndDate" onchange="muatKtRekapPeriode()">
         </div>
       </div>
       <div class="filter-group">
@@ -6398,6 +6441,11 @@ const APP_VERSION = '1.3.0';
     // Note: Update periode text jika element ada
     var periodeEl = document.getElementById('ktPeriodeText');
     if (periodeEl) periodeEl.innerText = periodeText;
+
+    // 10XTHINK: Update badge periode pada Ringkasan Rekapitulasi Kas KT
+    var badgeEl = document.getElementById('ktRekapPeriodeBadge');
+    if (badgeEl) badgeEl.innerText = periodeText;
+
     fetchKtKasByDateRange(startDate, endDate);
   }
 
@@ -6422,17 +6470,26 @@ const APP_VERSION = '1.3.0';
           if (res.data[i].jenis === 'Pemasukan') {
             totalPemasukan += res.data[i].nominal;
           } else {
-            totalPemasukan -= res.data[i].nominal;
+            totalPengeluaran += res.data[i].nominal;
           }
         }
       }
-      // Note: Update summary elements jika ada
+      // Note: Update summary elements jika ada (legacy hidden box)
       var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
       var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
       var elSelisih = document.getElementById('ktRekapSelisih');
       if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
       if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan + totalPengeluaran).toLocaleString('id-ID');
+      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
+
+      // 10XTHINK: Perbarui Ringkasan Rekapitulasi Kas Karang Taruna
+      // menggunakan data hasil filter (res.data) — bukan cache/hardcode.
+      renderKasSummary(res.data || [], {
+        pemasukanId: 'ktRekapPemasukan',
+        pengeluaranId: 'ktRekapPengeluaran',
+        saldoId: 'ktRekapSaldoAkhir',
+        amountField: 'nominal'
+      });
     }).withFailureHandler(function(err) {
       Swal.close();
       showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
@@ -8786,6 +8843,60 @@ function bukaJadwal() {
     return Number((totalPemasukan - totalPengeluaran).toFixed(2));
   }
 
+  /**
+   * 10XTHINK: Fungsi reusable untuk merender Ringkasan Rekapitulasi Kas.
+   * Menghitung Total Pemasukan, Total Pengeluaran, dan Saldo Akhir
+   * (Saldo Akhir = Total Pemasukan - Total Pengeluaran) dari data transaksi
+   * yang sedang tampil (hasil filter), lalu memperbarui elemen DOM terkait.
+   *
+   * @param {Array}  data   - Array transaksi hasil filter (data tampil).
+   * @param {Object} config - Konfigurasi elemen & opsi:
+   *   - pemasukanId    {string}   id elemen Total Pemasukan
+   *   - pengeluaranId  {string}   id elemen Total Pengeluaran
+   *   - saldoId        {string}   id elemen Saldo Akhir
+   *   - amountField    {string}   nama field nominal ('jumlah' atau 'nominal')
+   *   - jenisField     {string}   nama field jenis transaksi (default 'jenis')
+   *   - pemasukanValue {string}   nilai jenis pemasukan (default 'Pemasukan')
+   *   - filterItem     {Function} opsional; return true hanya utk item yg dihitung
+   *   - computedTotals {Object}   opsional; { pemasukan, pengeluaran } hasil agregasi
+   * @returns {{pemasukan: number, pengeluaran: number, saldo: number}}
+   */
+  function renderKasSummary(data, config) {
+    if (!config) return { pemasukan: 0, pengeluaran: 0, saldo: 0 };
+    var amountField = config.amountField || 'nominal';
+    var jenisField = config.jenisField || 'jenis';
+    var pemasukanValue = config.pemasukanValue || 'Pemasukan';
+    var filterItem = config.filterItem || null;
+
+    var totalPemasukan = 0;
+    var totalPengeluaran = 0;
+
+    if (config.computedTotals) {
+      totalPemasukan = Number(config.computedTotals.pemasukan) || 0;
+      totalPengeluaran = Number(config.computedTotals.pengeluaran) || 0;
+    } else if (data && data.length) {
+      for (var i = 0; i < data.length; i++) {
+        var item = data[i];
+        if (filterItem && !filterItem(item)) continue;
+        var nominal = Number(item[amountField]) || 0;
+        if (String(item[jenisField]) === pemasukanValue) totalPemasukan += nominal;
+        else totalPengeluaran += nominal;
+      }
+    }
+
+    var saldoAkhir = totalPemasukan - totalPengeluaran;
+    var fmt = function(v) { return 'Rp ' + Math.round(v).toLocaleString('id-ID'); };
+
+    var elP = config.pemasukanId ? document.getElementById(config.pemasukanId) : null;
+    var elG = config.pengeluaranId ? document.getElementById(config.pengeluaranId) : null;
+    var elS = config.saldoId ? document.getElementById(config.saldoId) : null;
+    if (elP) elP.innerText = fmt(totalPemasukan);
+    if (elG) elG.innerText = fmt(totalPengeluaran);
+    if (elS) elS.innerText = fmt(saldoAkhir);
+
+    return { pemasukan: totalPemasukan, pengeluaran: totalPengeluaran, saldo: saldoAkhir };
+  }
+
 function updateRekapitulasiBlock(data, computedTotals) {
     var pKas = 0, gKas = 0;
     var pKematian = 0, gKematian = 0;
@@ -8813,24 +8924,39 @@ function updateRekapitulasiBlock(data, computedTotals) {
       }
     }
 
+    // 10XTHINK: Refactor memakai fungsi reusable renderKasSummary().
+    // Card 1: Kas Umum RT (semua transaksi non-kematian)
+    renderKasSummary(data, {
+      pemasukanId: 'rekapKasUmumPemasukan',
+      pengeluaranId: 'rekapKasUmumPengeluaran',
+      saldoId: 'rekapKasUmumSaldo',
+      amountField: 'jumlah',
+      filterItem: function(item) {
+        return !String(item.kategori || '').toLowerCase().trim().includes('kematian');
+      },
+      computedTotals: computedTotals ? {
+        pemasukan: computedTotals.pKas || 0,
+        pengeluaran: computedTotals.gKas || 0
+      } : null
+    });
+
+    // Card 2: Kas Kematian (hanya transaksi kematian)
+    renderKasSummary(data, {
+      pemasukanId: 'rekapKasKematianPemasukan',
+      pengeluaranId: 'rekapKasKematianPengeluaran',
+      saldoId: 'rekapKasKematianSaldo',
+      amountField: 'jumlah',
+      filterItem: function(item) {
+        return String(item.kategori || '').toLowerCase().trim().includes('kematian');
+      },
+      computedTotals: computedTotals ? {
+        pemasukan: computedTotals.pKematian || 0,
+        pengeluaran: computedTotals.gKematian || 0
+      } : null
+    });
+
     var sKas = pKas - gKas;
     var sKematian = pKematian - gKematian;
-
-    // Card 1: Kas Umum RT
-    var elKuPemasukan = document.getElementById('rekapKasUmumPemasukan');
-    if (elKuPemasukan) elKuPemasukan.innerText = 'Rp ' + Math.round(pKas).toLocaleString('id-ID');
-    var elKuPengeluaran = document.getElementById('rekapKasUmumPengeluaran');
-    if (elKuPengeluaran) elKuPengeluaran.innerText = 'Rp ' + Math.round(gKas).toLocaleString('id-ID');
-    var elKuSaldo = document.getElementById('rekapKasUmumSaldo');
-    if (elKuSaldo) elKuSaldo.innerText = 'Rp ' + Math.round(sKas).toLocaleString('id-ID');
-
-    // Card 2: Kas Kematian
-    var elKmPemasukan = document.getElementById('rekapKasKematianPemasukan');
-    if (elKmPemasukan) elKmPemasukan.innerText = 'Rp ' + Math.round(pKematian).toLocaleString('id-ID');
-    var elKmPengeluaran = document.getElementById('rekapKasKematianPengeluaran');
-    if (elKmPengeluaran) elKmPengeluaran.innerText = 'Rp ' + Math.round(gKematian).toLocaleString('id-ID');
-    var elKmSaldo = document.getElementById('rekapKasKematianSaldo');
-    if (elKmSaldo) elKmSaldo.innerText = 'Rp ' + Math.round(sKematian).toLocaleString('id-ID');
 
     // Legacy fallback IDs
     var elTotP = document.getElementById('rekapTotalPemasukan');
