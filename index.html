@@ -3275,7 +3275,7 @@ const APP_VERSION = '1.3.0';
           <i class="material-icons">payments</i>
         </div>
 <div class="summary-info">
-          <h3>Total Saldo Kas (Periode)</h3>
+          <h3>Total Saldo Kas (Semua Tahun)</h3>
           <h2 id="totalKasIuran">Rp 0</h2>
         </div>
       </div>
@@ -3284,7 +3284,7 @@ const APP_VERSION = '1.3.0';
           <i class="material-icons">local_florist</i>
         </div>
         <div class="summary-info">
-          <h3>Total Uang Kematian (Periode)</h3>
+          <h3>Total Uang Kematian (Semua Tahun)</h3>
           <h2 id="totalKonsumsiRondaIuran">Rp 0</h2>
         </div>
       </div>
@@ -6056,8 +6056,8 @@ const APP_VERSION = '1.3.0';
         }
       }).ktGetKas();
     } else if (tabName === 'warga') {
-      if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
-      if (label2) label2.innerText = 'Total Uang Kematian';
+if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
+      if (label2) label2.innerText = 'Total Uang Kematian (Semua Tahun)';
       card2.style.display = 'flex';
       var rb = document.getElementById('rondaTodayBanner');
       if (rb) { rb.style.display = 'flex'; muatRondaHariIni(false); }
@@ -8840,7 +8840,54 @@ function bukaJadwal() {
         }
       }
     }
-    return Number((totalPemasukan - totalPengeluaran).toFixed(2));
+return Number((totalPemasukan - totalPengeluaran).toFixed(2));
+  }
+
+  /**
+   * 10XTHINK: Hitung TOTAL SALDO KAS UMUM untuk SEMUA TAHUN dari data master (allKasData).
+   * Kas umum = seluruh transaksi SELAIN kategori 'kematian'.
+   * Rumus: (Total Pemasukan Kas Umum) - (Total Pengeluaran Kas Umum).
+   * Fungsi ini TIDAK dipengaruhi filter tahun/bulan karena memakai seluruh data.
+   */
+  function hitungSaldoKasSemuaTahun(data) {
+    var pemasukan = 0;
+    var pengeluaran = 0;
+    (data || []).forEach(function(item) {
+      var kategori = String(item.kategori || '').toLowerCase().trim();
+      // Kas umum = semua transaksi selain kematian
+      if (kategori.includes('kematian')) return;
+      var nominal = Number(item.jumlah) || 0;
+      var jenis = String(item.jenis || '').toLowerCase().trim();
+      if (jenis === 'pemasukan') {
+        pemasukan += nominal;
+      } else if (jenis === 'pengeluaran') {
+        pengeluaran += nominal;
+      }
+    });
+    return pemasukan - pengeluaran;
+  }
+
+  /**
+   * 10XTHINK: Hitung TOTAL UANG KEMATIAN untuk SEMUA TAHUN dari data master (allKasData).
+   * Hanya transaksi dengan kategori yang mengandung 'kematian'.
+   * Rumus: (Total Pemasukan Kematian) - (Total Pengeluaran Kematian).
+   * Fungsi ini TIDAK dipengaruhi filter tahun/bulan karena memakai seluruh data.
+   */
+  function hitungSaldoKematianSemuaTahun(data) {
+    var pemasukan = 0;
+    var pengeluaran = 0;
+    (data || []).forEach(function(item) {
+      var kategori = String(item.kategori || '').toLowerCase().trim();
+      if (!kategori.includes('kematian')) return;
+      var nominal = Number(item.jumlah) || 0;
+      var jenis = String(item.jenis || '').toLowerCase().trim();
+      if (jenis === 'pemasukan') {
+        pemasukan += nominal;
+      } else if (jenis === 'pengeluaran') {
+        pengeluaran += nominal;
+      }
+    });
+    return pemasukan - pengeluaran;
   }
 
   /**
@@ -8967,28 +9014,19 @@ function updateRekapitulasiBlock(data, computedTotals) {
     if (elTotS) elTotS.innerText = 'Rp ' + Math.round(sKas + sKematian).toLocaleString('id-ID');
   }
 
-  function updateRingkasanUI(backendTotals) {
-    // Prefer pakai total dari backend (lebih akurat dari sisi kategori/akumulasi)
-    // backendTotals totalSaldo/totalUangKematian bisa saja string.
-    var totalSaldo = hitungTotalSaldo(allKasData);
-    var totalKematian = hitungTotalKematian(allKasData);
-
-    if (backendTotals) {
-      if (backendTotals.totalSaldo !== null && backendTotals.totalSaldo !== undefined) {
-        var parsedSaldo = parseFloat(backendTotals.totalSaldo);
-        if (isFinite(parsedSaldo)) totalSaldo = parsedSaldo;
-      }
-      if (backendTotals.totalUangKematian !== null && backendTotals.totalUangKematian !== undefined) {
-        var parsedKematian = parseFloat(backendTotals.totalUangKematian);
-        if (isFinite(parsedKematian)) totalKematian = parsedKematian;
-      }
-    }
+function updateRingkasanUI(backendTotals) {
+    // 10XTHINK: Dua kartu utama (Total Saldo Kas & Total Uang Kematian) SELALU
+    // dihitung dari seluruh data master `allKasData` (SEMUA TAHUN), tanpa filter
+    // tahun/bulan. backendTotals TIDAK lagi dipakai sebagai sumber utama untuk
+    // dua kartu ini agar nilainya tidak tertimpa total periode/tahun.
+    var totalSaldo = hitungSaldoKasSemuaTahun(allKasData);
+    var totalKematian = hitungSaldoKematianSemuaTahun(allKasData);
 
     // Selalu update elemen di dalam layar laporan Kas (kasView)
     var totalKasEl2 = document.getElementById('totalKasIuran');
-    if (totalKasEl2) totalKasEl2.innerText = totalSaldo.toLocaleString('id-ID');
+    if (totalKasEl2) totalKasEl2.innerText = 'Rp ' + Math.round(totalSaldo).toLocaleString('id-ID');
     var totalKematianEl2 = document.getElementById('totalKonsumsiRondaIuran');
-    if (totalKematianEl2) totalKematianEl2.innerText = totalKematian.toLocaleString('id-ID');
+    if (totalKematianEl2) totalKematianEl2.innerText = 'Rp ' + Math.round(totalKematian).toLocaleString('id-ID');
 
     // Hanya update elemen di Beranda (dashboardView) jika tab yang aktif adalah 'warga'
     if (currentTab === 'warga') {
@@ -9020,9 +9058,13 @@ function updateRekapitulasiBlock(data, computedTotals) {
         if (el) el.classList.remove('skeleton-text');
       });
 
-      var backendTotals = null;
+var backendTotals = null;
       if (res && res.status === 'success') {
         allKasData = res.data || [];
+        // 10XTHINK DEBUG: pastikan allKasData berisi SELURUH transaksi dari semua tahun.
+        console.log('[SEMUA TAHUN] jumlah seluruh transaksi:', allKasData.length);
+        console.log('[SEMUA TAHUN] saldo kas umum:', hitungSaldoKasSemuaTahun(allKasData));
+        console.log('[SEMUA TAHUN] saldo kematian:', hitungSaldoKematianSemuaTahun(allKasData));
         var ts = res.totalSaldo;
         var tk = res.totalUangKematian;
         backendTotals = {
@@ -9602,32 +9644,13 @@ var listData = res.data || [];
         computedTotals = total;
       }
 
-      // Update kartu rekap (pakai total agregasi tahunan jika tersedia)
+// Update kartu rekap (pakai total agregasi tahunan jika tersedia)
       updateRekapitulasiBlock(listData, computedTotals);
 
-      // Update kartu Total Saldo Kas & Total Uang Kematian agar sama dengan periode terpilih
-      var elKasTop = document.getElementById('totalKasIuran');
-      var elKematianTop = document.getElementById('totalKonsumsiRondaIuran');
-
-      var pKas = 0, gKas = 0, pKematian = 0, gKematian = 0;
-      if (computedTotals) {
-        pKas = computedTotals.pKas;
-        gKas = computedTotals.gKas;
-        pKematian = computedTotals.pKematian;
-        gKematian = computedTotals.gKematian;
-      } else {
-        listData.forEach(function(item) {
-          var kat = (item.kategori || '').toLowerCase().trim();
-          var nominal = Number(item.jumlah) || 0;
-          if (kat.includes('kematian')) {
-            if (item.jenis === 'Pemasukan') pKematian += nominal; else gKematian += nominal;
-          } else {
-            if (item.jenis === 'Pemasukan') pKas += nominal; else gKas += nominal;
-          }
-        });
-      }
-      if (elKasTop) elKasTop.innerText = 'Rp ' + Math.round(pKas - gKas).toLocaleString('id-ID');
-      if (elKematianTop) elKematianTop.innerText = 'Rp ' + Math.round(pKematian - gKematian).toLocaleString('id-ID');
+      // 10XTHINK: Dua kartu atas (Total Saldo Kas & Total Uang Kematian) TIDAK lagi
+      // dihitung dari data hasil filter periode (tahun/bulan). Selalu gunakan
+      // updateRingkasanUI() yang menghitung akumulasi SEMUA TAHUN dari allKasData.
+      updateRingkasanUI(kasBackendTotalsGlobal);
     }).getKasWargaByDateRange(startDate, endDate);
   }
 
