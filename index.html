@@ -2801,15 +2801,11 @@ const APP_VERSION = '1.3.0';
         <div>
           <label>Sampai</label>
           <input type="date" id="ktEndDate" onchange="muatKtRekapPeriode()">
-        </button>
+        </div>
       </div>
-      <div class="filter-group">
+<div class="filter-group">
         <label>&nbsp;</label>
         <button class="btn-small success btn-rekap" onclick="muatKtRekapPeriode()">Rekap</button>
-        <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasKarangTarunaWhatsApp()" title="Bagikan rekap laporan kas Karang Taruna ke WhatsApp">
-          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i>
-          Bagikan
-        </button>
       </div>
     </div>
 
@@ -2900,8 +2896,7 @@ const APP_VERSION = '1.3.0';
         <label>&nbsp;</label>
         <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
         <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasKarangTarunaWhatsApp()" title="Bagikan rekap laporan kas Karang Taruna ke WhatsApp">
-          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i>
-          Bagikan
+          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i> Bagikan
         </button>
       </div>
     </div>
@@ -3388,6 +3383,10 @@ const APP_VERSION = '1.3.0';
           <input type="date" id="endDate">
         </div>
       </div>
+<div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-small success btn-rekap" onclick="muatRekapPeriode()">Rekap</button>
+      </div>
     </div>
 
     <div id="actionButtonsKas" class="action-buttons" style="margin-bottom:1rem;"></div>
@@ -3517,11 +3516,10 @@ const APP_VERSION = '1.3.0';
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
-        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>        <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasWargaWhatsApp()" title="Bagikan rekap laporan kas ke WhatsApp">
-          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i>
-          Bagikan
+        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
+        <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasWargaWhatsApp()" title="Bagikan rekap laporan kas ke WhatsApp">
+          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i> Bagikan
         </button>
-
       </div>
     </div>
 
@@ -7839,27 +7837,25 @@ renderRekapKasKT(filtered);
     pesan += 'Saldo Akhir Kas Karang Taruna\n' + formatRp(totalP - totalG) + '\n';
 
     // Buka WhatsApp (S, R) — tidak auto-kirim
+    // 10XTHINK: Tambahkan bagian "TOTAL SALDO KAS KARANG TARUNA" (I, J, K, L, M, N, O)
+    // Hitung dari data master `ktAllKasData` untuk semua tahun.
+    var totalSaldoKtSemuaTahun = 0;
+    (ktAllKasData || []).forEach(function(item) {
+      var nominal = Number(item.nominal) || 0;
+      if (item.jenis === 'Pemasukan') totalSaldoKtSemuaTahun += nominal;
+      else totalSaldoKtSemuaTahun -= nominal;
+    });
+
+    pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
+    pesan += '💰 TOTAL SALDO KAS KARANG TARUNA\n';
+    pesan += '━━━━━━━━━━━━━━━━━━━━\n\n';
+
+    pesan += '💳 Total Saldo Kas Karang Taruna (Semua Tahun)\n';
+    pesan += formatRp(totalSaldoKtSemuaTahun) + '\n';
+
+
     var url = 'https://wa.me/?text=' + encodeURIComponent(pesan);
     window.open(url, '_blank');
-  }
-  
-  /**
-   * 10XTHINK: Hitung TOTAL SALDO KAS KARANG TARUNA untuk SEMUA TAHUN.
-   * Menggunakan data master `ktAllKasData` agar tidak terpengaruh filter.
-   */
-  function hitungSaldoKtSemuaTahun(data) {
-    var pemasukan = 0;
-    var pengeluaran = 0;
-    (data || []).forEach(function(item) {
-      var nominal = Number(item.nominal) || 0;
-      var jenis = String(item.jenis || '').toLowerCase().trim();
-      if (jenis === 'pemasukan') {
-        pemasukan += nominal;
-      } else if (jenis === 'pengeluaran') {
-        pengeluaran += nominal;
-      }
-    });
-    return pemasukan - pengeluaran;
   }
 
   function autoSetTempatJaga() {
@@ -9348,22 +9344,30 @@ renderRekapKasWarga(filtered);
     pesan += 'Saldo Akhir Kas Kematian\n' + formatRp(totKematian.p - totKematian.g) + '\n';
 
     // Buka WhatsApp (S, R) — tidak auto-kirim
-    // 10XTHINK: Tambahkan bagian TOTAL SALDO SEMUA TAHUN
-    var totalKasSemuaTahun = hitungSaldoKasSemuaTahun(allKasData);
-    var totalKematianSemuaTahun = hitungSaldoKematianSemuaTahun(allKasData);
+    // 10XTHINK: Tambahkan bagian "TOTAL SALDO SEMUA TAHUN" (E, F, G, H, I, J, K, L, M, N, O)
+    // Gunakan fungsi helper yang sudah ada untuk menghitung dari data master `allKasData`.
+    var totalSaldoKasSemuaTahun = hitungSaldoKasSemuaTahun(allKasData);
+    var totalSaldoKematianSemuaTahun = hitungSaldoKematianSemuaTahun(allKasData);
 
     pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
     pesan += '💰 TOTAL SALDO SEMUA TAHUN\n';
     pesan += '━━━━━━━━━━━━━━━━━━━━\n\n';
-    pesan += '💳 Total Saldo Kas (Semua Tahun)\n';
-    pesan += formatRp(totalKasSemuaTahun) + '\n\n';
-    pesan += '🌸 Total Uang Kematian (Semua Tahun)\n';
-    pesan += formatRp(totalKematianSemuaTahun) + '\n';
 
+    pesan += '💳 Total Saldo Kas (Semua Tahun)\n';
+    pesan += formatRp(totalSaldoKasSemuaTahun) + '\n\n';
+
+    pesan += '🌸 Total Uang Kematian (Semua Tahun)\n';
+    pesan += formatRp(totalSaldoKematianSemuaTahun) + '\n';
+
+    // Footer (P)
     pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
     pesan += 'Portal RT01-RW03\n';
     pesan += 'Desa Ngelom\n';
     pesan += '━━━━━━━━━━━━━━━━━━━━';
+
+
+
+
     var url = 'https://wa.me/?text=' + encodeURIComponent(pesan);
     window.open(url, '_blank');
   }
@@ -9913,136 +9917,6 @@ var listData = res.data || [];
       // updateRingkasanUI() yang menghitung akumulasi SEMUA TAHUN dari allKasData.
       updateRingkasanUI(kasBackendTotalsGlobal);
     }).getKasWargaByDateRange(startDate, endDate);
-  }
-
-  /**
-   * 10XTHINK: Bagikan Laporan Kas Warga ke WhatsApp.
-   * Menggunakan FILTER AKTIF (Filter Tabel Bulan + Tahun) yang sama dengan tabel,
-   * serta data aktual dari allKasData. Tidak ada hardcode / data dummy.
-   */
-  function bagikanLaporanKasWargaWhatsApp() {
-    var bulan = parseInt(document.getElementById('filterBulanTransaksi').value);
-    var tahun = parseInt(document.getElementById('filterTahunTransaksi').value);
-    var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-
-    // Periode sesuai filter (K)
-    var periodeLabel = (bulan === 0)
-      ? 'Tahun ' + tahun
-      : (bulanNama[bulan-1] || '') + ' ' + tahun;
-
-    // Filter data persis seperti filterTabelTransaksi() (O)
-    var filtered = allKasData.filter(function(item) {
-      var p = item.tanggal.split('-');
-      if (p.length !== 3) return false;
-      var itemThn = parseInt(p[0]);
-      var itemBln = parseInt(p[1]);
-      if (bulan === 0) return itemThn === tahun;
-      return itemThn === tahun && itemBln === bulan;
-    });
-
-    // Pisahkan Kas Umum (non-kematian) & Kas Kematian (F, G)
-    var listUmum = [];
-    var listKematian = [];
-    filtered.forEach(function(item) {
-      var kat = (item.kategori || '').toLowerCase().trim();
-      if (kat.includes('kematian')) listKematian.push(item);
-      else listUmum.push(item);
-    });
-
-    function formatRp(n) {
-      return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
-    }
-    // Format tanggal DD-MM-YYYY (F)
-    function fmtTanggal(tgl) {
-      if (!tgl) return '-';
-      var p = String(tgl).split('-');
-      if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0];
-      return tgl;
-    }
-    // Susun baris transaksi dengan saldo berjalan (M) identik dengan tabel
-    function buildSection(list) {
-      var rows = '';
-      var running = 0;
-      var sorted = list.slice().sort(function(a, b) { return String(a.tanggal).localeCompare(String(b.tanggal)); });
-      sorted.forEach(function(item) {
-        var isIn = item.jenis === 'Pemasukan';
-        var nominal = Number(item.jumlah) || 0;
-        running += isIn ? nominal : -nominal;
-        rows += '📅 ' + fmtTanggal(item.tanggal) + '\n';
-        rows += 'Kategori    : ' + (item.kategori || '-') + '\n';
-        rows += 'Deskripsi   : ' + (item.deskripsi || '-') + '\n';
-        rows += 'Pemasukan   : ' + (isIn ? formatRp(nominal) : '-') + '\n';
-        rows += 'Pengeluaran : ' + (!isIn ? formatRp(nominal) : '-') + '\n';
-        rows += 'Saldo       : ' + formatRp(running) + '\n\n';
-      });
-      return { rows: rows, totalP: 0, totalG: 0 };
-    }
-
-    // Hitung total pemasukan & pengeluaran per dana (I)
-    function hitungTotals(list) {
-      var p = 0, g = 0;
-      list.forEach(function(item) {
-        var nom = Number(item.jumlah) || 0;
-        if (item.jenis === 'Pemasukan') p += nom; else g += nom;
-      });
-      return { p: p, g: g };
-    }
-
-    var pesan = '';
-    pesan += '📋 REKAP TRANSAKSI KAS WARGA (UMUM)\n';
-    pesan += 'Periode: ' + periodeLabel + '\n\n';
-    if (listUmum.length) {
-      pesan += buildSection(listUmum).rows;
-    } else {
-      pesan += 'Tidak ada transaksi Kas Umum pada periode ini.\n\n';
-    }
-
-    pesan += '🌸 REKAP TRANSAKSI KAS WARGA (KEMATIAN)\n';
-    if (listKematian.length) {
-      pesan += buildSection(listKematian).rows;
-    } else {
-      pesan += 'Tidak ada transaksi Kas Kematian pada periode ini.\n\n';
-    }
-
-    // Ringkasan Rekapitulasi (H, J)
-    var totUmum = hitungTotals(listUmum);
-    var totKematian = hitungTotals(listKematian);
-    pesan += '━━━━━━━━━━━━━━━━━━━━\n';
-    pesan += '📊 RINGKASAN REKAPITULASI KAS\n';
-    pesan += '━━━━━━━━━━━━━━━━━━━━\n';
-    pesan += 'Periode: ' + periodeLabel + '\n\n';
-
-    pesan += '💳 KAS UMUM RT\n';
-    pesan += 'Pemasukan, Pengeluaran & Saldo\n';
-    pesan += 'Total Pemasukan\n' + formatRp(totUmum.p) + '\n\n';
-    pesan += 'Total Pengeluaran\n' + formatRp(totUmum.g) + '\n\n';
-    pesan += 'Saldo Akhir Kas Umum\n' + formatRp(totUmum.p - totUmum.g) + '\n\n';
-
-    pesan += '🌸 KAS KEMATIAN\n';
-    pesan += 'Pemasukan, Pengeluaran & Saldo\n';
-    pesan += 'Total Pemasukan\n' + formatRp(totKematian.p) + '\n\n';
-    pesan += 'Total Pengeluaran\n' + formatRp(totKematian.g) + '\n\n';
-    pesan += 'Saldo Akhir Kas Kematian\n' + formatRp(totKematian.p - totKematian.g) + '\n';
-
-    // Buka WhatsApp (S, R) — tidak auto-kirim
-    // 10XTHINK: Tambahkan bagian TOTAL SALDO SEMUA TAHUN
-    var totalKasSemuaTahun = hitungSaldoKasSemuaTahun(allKasData);
-    var totalKematianSemuaTahun = hitungSaldoKematianSemuaTahun(allKasData);
-
-    pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
-    pesan += '💰 TOTAL SALDO SEMUA TAHUN\n';
-    pesan += '━━━━━━━━━━━━━━━━━━━━\n\n';
-    pesan += '💳 Total Saldo Kas (Semua Tahun)\n';
-    pesan += formatRp(totalKasSemuaTahun) + '\n\n';
-    pesan += '🌸 Total Uang Kematian (Semua Tahun)\n';
-    pesan += formatRp(totalKematianSemuaTahun) + '\n';
-
-    pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
-    pesan += 'Portal RT01-RW03\n';
-    pesan += 'Desa Ngelom\n';
-    pesan += '━━━━━━━━━━━━━━━━━━━━';
-    var url = 'https://wa.me/?text=' + encodeURIComponent(pesan);
-    window.open(url, '_blank');
   }
 
   // ======================== FORM KAS ========================
@@ -10999,7 +10873,7 @@ var listData = res.data || [];
     document.getElementById('lightboxOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
-  
+
   function renderLightboxMedia() {
     var src = lightboxImages[lightboxCurrentIndex];
     var imgEl = document.getElementById('lightboxImg');
@@ -11326,7 +11200,7 @@ var listData = res.data || [];
     history.pushState({view: 'pkkKirimLaporanView', tab: 'pkk'}, '', '#pkkKirimLaporan');
     // default view; tombol simpan via pkkSubmitLaporan
   }
-  
+
   function pkkSubmitLaporan() {
     var judul = document.getElementById('pkkJudulLaporan').value;
     var deskripsi = document.getElementById('pkkDeskripsiLaporan').value;
@@ -11388,7 +11262,7 @@ var listData = res.data || [];
     history.pushState({view: 'pkkHistoriView', tab: 'pkk', onLoad: 'pkkMuatDataHistori'}, '', '#pkkHistori');
     pkkMuatDataHistori();
   }
-  
+
   function pkkMuatDataHistori() {
     var list = document.getElementById('pkkListHistori');
     const currentViewToken = window.__activeViewToken; // Capture current token
