@@ -6455,14 +6455,17 @@ if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
     var startDate = '';
     var endDate = '';
     var periodeText = '';
+    var params = { mode: mode };
+
     if (mode === 'tahunan') {
-      var tahun = parseInt(document.getElementById('ktTahunLaporanTahunan').value);
+      var tahun = parseInt(document.getElementById('ktTahunLaporanTahunan').value, 10);
       periodeText = 'Tahun ' + tahun;
       startDate = tahun + '-01-01';
       endDate = tahun + '-12-31';
+      params.tahun = tahun;
     } else if (mode === 'bulan') {
-      var bulan = parseInt(document.getElementById('ktBulanLaporan').value);
-      var tahunBulan = parseInt(document.getElementById('ktTahunLaporanBulan').value);
+      var bulan = parseInt(document.getElementById('ktBulanLaporan').value, 10);
+      var tahunBulan = parseInt(document.getElementById('ktTahunLaporanBulan').value, 10);
       var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
       var mm = (bulan < 10 ? '0' + bulan : bulan);
@@ -6470,6 +6473,8 @@ if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
       var dd = (lastDayNum < 10 ? '0' + lastDayNum : lastDayNum);
       startDate = tahunBulan + '-' + mm + '-01';
       endDate = tahunBulan + '-' + mm + '-' + dd;
+      params.tahun = tahunBulan;
+      params.bulan = bulan;
     } else {
       startDate = document.getElementById('ktStartDate').value;
       endDate = document.getElementById('ktEndDate').value;
@@ -6478,69 +6483,57 @@ if (label1) label1.innerText = 'Total Saldo Kas (Semua Tahun)';
       }
       var s = startDate.split('-'); var e = endDate.split('-');
       periodeText = s[2]+'/'+s[1] + ' - ' + e[2]+'/'+e[1];
+      params.startDate = startDate;
+      params.endDate = endDate;
     }
-    // Note: Update periode text jika element ada
+
     var periodeEl = document.getElementById('ktPeriodeText');
     if (periodeEl) periodeEl.innerText = periodeText;
 
-    // 10XTHINK: Update badge periode pada Ringkasan Rekapitulasi Kas KT
     var badgeEl = document.getElementById('ktRekapPeriodeBadge');
     if (badgeEl) badgeEl.innerText = periodeText;
 
-    fetchKtKasByDateRange(startDate, endDate);
+    if (ktAllKasData && ktAllKasData.length > 0) {
+      var filtered = filterKasByDateMode(ktAllKasData, mode, params);
+      processAndRenderKasKT(filtered);
+    } else {
+      ktMuatDataKas(function() {
+        var filtered = filterKasByDateMode(ktAllKasData, mode, params);
+        processAndRenderKasKT(filtered);
+      });
+    }
+  }
+
+  function processAndRenderKasKT(listData) {
+    renderRekapKasKT(listData);
+    var totalPemasukan = 0;
+    var totalPengeluaran = 0;
+    if (listData && listData.length) {
+      for (var i = 0; i < listData.length; i++) {
+        if (listData[i].jenis === 'Pemasukan') {
+          totalPemasukan += (Number(listData[i].nominal) || 0);
+        } else {
+          totalPengeluaran += (Number(listData[i].nominal) || 0);
+        }
+      }
+    }
+    var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
+    var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
+    var elSelisih = document.getElementById('ktRekapSelisih');
+    if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
+    if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
+    if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
+
+    renderKasSummary(listData || [], {
+      pemasukanId: 'ktRekapPemasukan',
+      pengeluaranId: 'ktRekapPengeluaran',
+      saldoId: 'ktRekapSaldoAkhir',
+      amountField: 'nominal'
+    });
   }
 
   function fetchKtKasByDateRange(startDate, endDate) {
-    function processAndRender(listData) {
-      renderRekapKasKT(listData);
-      var totalPemasukan = 0;
-      var totalPengeluaran = 0;
-      if (listData && listData.length) {
-        for (var i = 0; i < listData.length; i++) {
-          if (listData[i].jenis === 'Pemasukan') {
-            totalPemasukan += listData[i].nominal;
-          } else {
-            totalPengeluaran += listData[i].nominal;
-          }
-        }
-      }
-      var elPemasukan = document.getElementById('ktRekapTotalPemasukan');
-      var elPengeluaran = document.getElementById('ktRekapTotalPengeluaran');
-      var elSelisih = document.getElementById('ktRekapSelisih');
-      if (elPemasukan) elPemasukan.innerText = 'Rp ' + Math.round(totalPemasukan).toLocaleString('id-ID');
-      if (elPengeluaran) elPengeluaran.innerText = 'Rp ' + Math.round(totalPengeluaran).toLocaleString('id-ID');
-      if (elSelisih) elSelisih.innerText = 'Rp ' + Math.round(totalPemasukan - totalPengeluaran).toLocaleString('id-ID');
-
-      renderKasSummary(listData || [], {
-        pemasukanId: 'ktRekapPemasukan',
-        pengeluaranId: 'ktRekapPengeluaran',
-        saldoId: 'ktRekapSaldoAkhir',
-        amountField: 'nominal'
-      });
-    }
-
-    if (ktAllKasData && ktAllKasData.length > 0) {
-      var filtered = ktAllKasData.filter(function(item) {
-        if (!item.tanggal) return false;
-        return item.tanggal >= startDate && item.tanggal <= endDate;
-      });
-      processAndRender(filtered);
-      return;
-    }
-
-    showLoading('Memuat data kas Karang Taruna...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
-      if (!res || res.status === 'error') {
-        showError('⚠️ Gagal Memuat Data Kas Karang Taruna');
-        return;
-      }
-      processAndRender(res.data || []);
-    }).withFailureHandler(function(err) {
-      Swal.close();
-      showError('⚠️ Gagal Memuat Data Kas Karang Taruna - Koneksi error');
-      console.error('RAW RESPONSE (failure handler):', err);
-    }).ktGetKasByDateRange(startDate, endDate);
+    muatKtRekapPeriode();
   }
 
   function ktBukaFormKas(jenis) {
@@ -8960,6 +8953,49 @@ renderRekapKasKT(filtered);
   }
 
   // ======================== KAS & GRAFIK ========================
+  function parseItemDate(tgl) {
+    if (!tgl) return null;
+    var s = String(tgl).trim().split('T')[0].split(' ')[0];
+    var p = s.split('-');
+    if (p.length !== 3) {
+      p = s.split('/');
+      if (p.length !== 3) return null;
+      if (p[0].length === 4) {
+        // YYYY/MM/DD
+      } else {
+        // DD/MM/YYYY
+        p = [p[2], p[1], p[0]];
+      }
+    }
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10);
+    var d = parseInt(p[2], 10);
+    if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+    var mm = (m < 10 ? '0' + m : m);
+    var dd = (d < 10 ? '0' + d : d);
+    return {
+      year: y,
+      month: m,
+      day: d,
+      isoDate: y + '-' + mm + '-' + dd
+    };
+  }
+
+  function filterKasByDateMode(dataList, mode, params) {
+    return (dataList || []).filter(function(item) {
+      var dt = parseItemDate(item.tanggal);
+      if (!dt) return false;
+      if (mode === 'tahunan') {
+        return dt.year === params.tahun;
+      } else if (mode === 'bulan') {
+        return dt.year === params.tahun && dt.month === params.bulan;
+      } else if (mode === 'custom') {
+        return dt.isoDate >= params.startDate && dt.isoDate <= params.endDate;
+      }
+      return true;
+    });
+  }
+
   function hitungTotalSaldo(data) {
     var totalPemasukan = 0;
     var totalPengeluaran = 0;
@@ -9845,14 +9881,17 @@ var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
     var startDate = '';
     var endDate = '';
     var periodeText = '';
+    var params = { mode: mode };
+
     if (mode === 'tahunan') {
-      var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
+      var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value, 10);
       periodeText = 'Tahun ' + tahun;
       startDate = tahun + '-01-01';
       endDate = tahun + '-12-31';
+      params.tahun = tahun;
     } else if (mode === 'bulan') {
-      var bulan = parseInt(document.getElementById('bulanLaporan').value);
-      var tahunBulan = parseInt(document.getElementById('tahunLaporanBulan').value);
+      var bulan = parseInt(document.getElementById('bulanLaporan').value, 10);
+      var tahunBulan = parseInt(document.getElementById('tahunLaporanBulan').value, 10);
       var bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       periodeText = bulanNama[bulan-1] + ' ' + tahunBulan;
       var mm = (bulan < 10 ? '0' + bulan : bulan);
@@ -9860,6 +9899,8 @@ var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
       var dd = (lastDayNum < 10 ? '0' + lastDayNum : lastDayNum);
       startDate = tahunBulan + '-' + mm + '-01';
       endDate = tahunBulan + '-' + mm + '-' + dd;
+      params.tahun = tahunBulan;
+      params.bulan = bulan;
     } else {
       startDate = document.getElementById('startDate').value;
       endDate = document.getElementById('endDate').value;
@@ -9868,81 +9909,74 @@ var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
       }
       var s = startDate.split('-'); var e = endDate.split('-');
       periodeText = s[2]+'/'+s[1] + ' - ' + e[2]+'/'+e[1];
+      params.startDate = startDate;
+      params.endDate = endDate;
     }
     document.getElementById('periodeText').innerText = periodeText;
-    fetchKasByDateRange(startDate, endDate);
+
+    if (allKasData && allKasData.length > 0) {
+      var filtered = filterKasByDateMode(allKasData, mode, params);
+      processAndRenderKasWarga(filtered);
+    } else {
+      muatDataKas(function() {
+        var filtered = filterKasByDateMode(allKasData, mode, params);
+        processAndRenderKasWarga(filtered);
+      });
+    }
+  }
+
+  function processAndRenderKasWarga(listData) {
+    renderRekapKasWarga(listData);
+
+    // Agregasi total untuk mode tahunan (12 bulan) agar presisi & konsisten
+    var isAnnual = (document.getElementById('laporanMode').value === 'tahunan');
+    var computedTotals = null;
+
+    if (isAnnual) {
+      var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value, 10);
+      var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      var dataBulanan = Array.from({ length: 12 }, function(_, i) {
+        return {
+          namaBulan: bulanIndo[i],
+          p_kas: 0, p_kematian: 0,
+          g_kas: 0, g_kematian: 0
+        };
+      });
+
+      listData.forEach(function(item) {
+        var dt = parseItemDate(item.tanggal);
+        if (!dt || dt.year !== tahun) return;
+        var mIdx = dt.month - 1;
+        if (mIdx < 0 || mIdx > 11) return;
+        var kat = (item.kategori || '').toLowerCase().trim();
+        var nominal = Number(item.jumlah) || 0;
+        var isKematian = kat.includes('kematian');
+        if (item.jenis === 'Pemasukan') {
+          if (isKematian) dataBulanan[mIdx].p_kematian += nominal;
+          else dataBulanan[mIdx].p_kas += nominal;
+        } else {
+          if (isKematian) dataBulanan[mIdx].g_kematian += nominal;
+          else dataBulanan[mIdx].g_kas += nominal;
+        }
+      });
+
+      var total = { pKas: 0, gKas: 0, pKematian: 0, gKematian: 0 };
+      dataBulanan.forEach(function(b) {
+        total.pKas += b.p_kas;
+        total.gKas += b.g_kas;
+        total.pKematian += b.p_kematian;
+        total.gKematian += b.g_kematian;
+      });
+      computedTotals = total;
+    }
+
+    // Update kartu rekap
+    updateRekapitulasiBlock(listData, computedTotals);
+    updateRingkasanUI(kasBackendTotalsGlobal);
   }
 
   function fetchKasByDateRange(startDate, endDate) {
-    function processAndRender(listData) {
-      renderRekapKasWarga(listData);
-
-      // Agregasi total untuk mode tahunan (12 bulan) agar presisi & konsisten
-      var isAnnual = (document.getElementById('laporanMode').value === 'tahunan');
-      var computedTotals = null;
-
-      if (isAnnual) {
-        var tahun = parseInt(document.getElementById('tahunLaporanTahunan').value);
-        var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        var dataBulanan = Array.from({ length: 12 }, function(_, i) {
-          return {
-            namaBulan: bulanIndo[i],
-            p_kas: 0, p_kematian: 0,
-            g_kas: 0, g_kematian: 0
-          };
-        });
-
-        listData.forEach(function(item) {
-          var d = (item.tanggal || '').split('-');
-          if (parseInt(d[0], 10) !== tahun) return;
-          var mIdx = parseInt(d[1], 10) - 1;
-          if (mIdx < 0 || mIdx > 11) return;
-          var kat = (item.kategori || '').toLowerCase().trim();
-          var nominal = Number(item.jumlah) || 0;
-          var isKematian = kat.includes('kematian');
-          if (item.jenis === 'Pemasukan') {
-            if (isKematian) dataBulanan[mIdx].p_kematian += nominal;
-            else dataBulanan[mIdx].p_kas += nominal;
-          } else {
-            if (isKematian) dataBulanan[mIdx].g_kematian += nominal;
-            else dataBulanan[mIdx].g_kas += nominal;
-          }
-        });
-
-        var total = { pKas: 0, gKas: 0, pKematian: 0, gKematian: 0 };
-        dataBulanan.forEach(function(b) {
-          total.pKas += b.p_kas;
-          total.gKas += b.g_kas;
-          total.pKematian += b.p_kematian;
-          total.gKematian += b.g_kematian;
-        });
-        computedTotals = total;
-      }
-
-      // Update kartu rekap
-      updateRekapitulasiBlock(listData, computedTotals);
-      updateRingkasanUI(kasBackendTotalsGlobal);
-    }
-
-    if (allKasData && allKasData.length > 0) {
-      var filtered = allKasData.filter(function(item) {
-        if (!item.tanggal) return false;
-        return item.tanggal >= startDate && item.tanggal <= endDate;
-      });
-      processAndRender(filtered);
-      return;
-    }
-
-    showLoading('Memuat data kas...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
-      if (res.status === 'error') {
-        showError(res.pesan);
-        return;
-      }
-      var listData = res.data || [];
-      processAndRender(listData);
-    }).getKasWargaByDateRange(startDate, endDate);
+    muatRekapPeriode();
   }
 
   // ======================== FORM KAS ========================
