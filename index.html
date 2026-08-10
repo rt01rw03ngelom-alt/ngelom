@@ -1931,24 +1931,13 @@ const APP_VERSION = '1.3.0';
       vertical-align: middle;
       margin-right: 4px;
     }
-/* Responsive: pastikan tombol tidak overflow & tetap ramah sentuh di mobile */
+    /* Responsive: pastikan tombol tidak overflow & tetap ramah sentuh di mobile */
     @media (max-width: 640px) {
       .btn-wa-share {
         padding: 0 14px !important;
         font-size: 12px !important;
         min-height: 44px;
       }
-    }
-
-    /* 10XTHINK: Area tombol aksi di dalam Card Filter Tabel Bulan */
-    .filter-action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-    }
-    .filter-action-buttons .btn-small {
-      margin: 0 !important;
     }
 
     .filter-group {
@@ -2812,11 +2801,7 @@ const APP_VERSION = '1.3.0';
         <div>
           <label>Sampai</label>
           <input type="date" id="ktEndDate" onchange="muatKtRekapPeriode()">
-        </div>
-      </div>
-<div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-small success btn-rekap" onclick="muatKtRekapPeriode()">Rekap</button>
+        </button>
       </div>
     </div>
 
@@ -2905,12 +2890,11 @@ const APP_VERSION = '1.3.0';
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
-        <div class="filter-action-buttons">
-          <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
-          <button class="btn-small btn-wa-share" onclick="bagikanLaporanKasKarangTarunaWhatsApp()" title="Bagikan rekap laporan kas Karang Taruna ke WhatsApp">
-            <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i> Bagikan ke WhatsApp
-          </button>
-        </div>
+        <button class="btn-small" onclick="filterKtTabelTransaksi()">Terapkan Filter</button>
+        <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasKarangTarunaWhatsApp()" title="Bagikan rekap laporan kas Karang Taruna ke WhatsApp">
+          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i>
+          Bagikan
+        </button>
       </div>
     </div>
 
@@ -3396,15 +3380,6 @@ const APP_VERSION = '1.3.0';
           <input type="date" id="endDate">
         </div>
       </div>
-<div class="filter-group">
-        <label>&nbsp;</label>
-        <div class="filter-action-buttons">
-          <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
-          <button class="btn-small btn-wa-share" onclick="bagikanLaporanKasWargaWhatsApp()" title="Bagikan rekap laporan kas ke WhatsApp">
-            <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i> Bagikan ke WhatsApp
-          </button>
-        </div>
-      </div>
     </div>
 
     <div id="actionButtonsKas" class="action-buttons" style="margin-bottom:1rem;"></div>
@@ -3528,18 +3503,17 @@ const APP_VERSION = '1.3.0';
           <option value="12">Desember</option>
         </select>
       </div>
-<div class="filter-group">
+      <div class="filter-group">
         <label>Tahun</label>
         <input type="number" id="filterTahunTransaksi" value="2026" style="width:100px;" onchange="filterTabelTransaksi()">
       </div>
       <div class="filter-group">
         <label>&nbsp;</label>
-        <div class="filter-action-buttons">
-          <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>
-          <button class="btn-small btn-wa-share" onclick="bagikanLaporanKasWargaWhatsApp()" title="Bagikan rekap laporan kas ke WhatsApp">
-            <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i> Bagikan ke WhatsApp
-          </button>
-        </div>
+        <button class="btn-small" onclick="filterTabelTransaksi()">Terapkan Filter</button>        <button class="btn-small btn-rekap btn-wa-share" onclick="bagikanLaporanKasWargaWhatsApp()" title="Bagikan rekap laporan kas ke WhatsApp">
+          <i class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:4px;">whatsapp</i>
+          Bagikan
+        </button>
+
       </div>
     </div>
 
@@ -7856,27 +7830,28 @@ renderRekapKasKT(filtered);
     pesan += 'Total Pengeluaran\n' + formatRp(totalG) + '\n\n';
     pesan += 'Saldo Akhir Kas Karang Taruna\n' + formatRp(totalP - totalG) + '\n';
 
-    // Tambahkan Total Saldo Semua Tahun
-    var totalSaldoKtSemuaTahun = 0;
-    if (window.ktAllKasData && window.ktAllKasData.length > 0) {
-      window.ktAllKasData.forEach(function(item) {
-        var nominal = Number(item.nominal) || 0;
-        if (item.jenis === 'Pemasukan') {
-            totalSaldoKtSemuaTahun += nominal;
-        } else {
-            totalSaldoKtSemuaTahun -= nominal;
-        }
-      });
-    }
-    pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
-    pesan += '💰 TOTAL SALDO KAS KARANG TARUNA\n';
-    pesan += '━━━━━━━━━━━━━━━━━━━━\n\n';
-    pesan += '💳 Total Saldo Kas Karang Taruna (Semua Tahun)\n';
-    pesan += formatRp(totalSaldoKtSemuaTahun) + '\n';
-
     // Buka WhatsApp (S, R) — tidak auto-kirim
     var url = 'https://wa.me/?text=' + encodeURIComponent(pesan);
     window.open(url, '_blank');
+  }
+  
+  /**
+   * 10XTHINK: Hitung TOTAL SALDO KAS KARANG TARUNA untuk SEMUA TAHUN.
+   * Menggunakan data master `ktAllKasData` agar tidak terpengaruh filter.
+   */
+  function hitungSaldoKtSemuaTahun(data) {
+    var pemasukan = 0;
+    var pengeluaran = 0;
+    (data || []).forEach(function(item) {
+      var nominal = Number(item.nominal) || 0;
+      var jenis = String(item.jenis || '').toLowerCase().trim();
+      if (jenis === 'pemasukan') {
+        pemasukan += nominal;
+      } else if (jenis === 'pengeluaran') {
+        pengeluaran += nominal;
+      }
+    });
+    return pemasukan - pengeluaran;
   }
 
   function autoSetTempatJaga() {
@@ -9364,24 +9339,23 @@ renderRekapKasWarga(filtered);
     pesan += 'Total Pengeluaran\n' + formatRp(totKematian.g) + '\n\n';
     pesan += 'Saldo Akhir Kas Kematian\n' + formatRp(totKematian.p - totKematian.g) + '\n';
 
-    // Tambahkan Total Saldo Semua Tahun
-    var totalSaldoKasAllTime = hitungSaldoKasSemuaTahun(allKasData);
-    var totalSaldoKematianAllTime = hitungSaldoKematianSemuaTahun(allKasData);
+    // Buka WhatsApp (S, R) — tidak auto-kirim
+    // 10XTHINK: Tambahkan bagian TOTAL SALDO SEMUA TAHUN
+    var totalKasSemuaTahun = hitungSaldoKasSemuaTahun(allKasData);
+    var totalKematianSemuaTahun = hitungSaldoKematianSemuaTahun(allKasData);
 
     pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
     pesan += '💰 TOTAL SALDO SEMUA TAHUN\n';
     pesan += '━━━━━━━━━━━━━━━━━━━━\n\n';
     pesan += '💳 Total Saldo Kas (Semua Tahun)\n';
-    pesan += formatRp(totalSaldoKasAllTime) + '\n\n';
+    pesan += formatRp(totalKasSemuaTahun) + '\n\n';
     pesan += '🌸 Total Uang Kematian (Semua Tahun)\n';
-    pesan += formatRp(totalSaldoKematianAllTime) + '\n';
+    pesan += formatRp(totalKematianSemuaTahun) + '\n';
 
     pesan += '\n━━━━━━━━━━━━━━━━━━━━\n';
     pesan += 'Portal RT01-RW03\n';
     pesan += 'Desa Ngelom\n';
     pesan += '━━━━━━━━━━━━━━━━━━━━';
-
-    // Buka WhatsApp (S, R) — tidak auto-kirim
     var url = 'https://wa.me/?text=' + encodeURIComponent(pesan);
     window.open(url, '_blank');
   }
