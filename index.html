@@ -12511,6 +12511,15 @@
         .getDaftarPengumuman(currentToken);
     }
 
+    function getDriveDownloadUrl(url) {
+      if (!url) return '#';
+      var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return 'https://drive.google.com/uc?export=download&id=' + match[1];
+      }
+      return url;
+    }
+
     function renderCardPengumuman(dataList) {
       var container = document.getElementById('containerListPengumuman');
       if (!container) return;
@@ -12535,9 +12544,16 @@
           var isImg = urlLow.endsWith('.jpg') || urlLow.endsWith('.jpeg') || urlLow.endsWith('.png') || urlLow.endsWith('.webp') || urlLow.includes('drive.google.com') || urlLow.includes('export=view');
 
           if (isPdf) {
-            lampiranBadge = `<a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); padding:4px 8px; border-radius:6px; text-decoration:none; margin-top:6px;">
-              <i class="material-icons" style="font-size:14px;">picture_as_pdf</i> 📄 Lihat Dokumen PDF
-            </a>`;
+            var downloadUrl = getDriveDownloadUrl(item.lampiran);
+            lampiranBadge = `
+              <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:6px;">
+                <a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); padding:4px 8px; border-radius:6px; text-decoration:none;">
+                  <i class="material-icons" style="font-size:14px;">picture_as_pdf</i> 📄 Buka PDF
+                </a>
+                <a href="${downloadUrl}" download target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--primary-color); background:rgba(var(--primary-color-rgb),0.08); border:1px solid rgba(var(--primary-color-rgb),0.2); padding:4px 8px; border-radius:6px; text-decoration:none;">
+                  <i class="material-icons" style="font-size:14px;">file_download</i> 📥 Unduh PDF
+                </a>
+              </div>`;
           } else if (isImg) {
             lampiranBadge = `<a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--primary-color); background:rgba(var(--primary-color-rgb),0.08); border:1px solid rgba(var(--primary-color-rgb),0.2); padding:4px 8px; border-radius:6px; text-decoration:none; margin-top:6px;">
               <i class="material-icons" style="font-size:14px;">image</i> 🖼️ Lampiran Foto
@@ -12789,12 +12805,18 @@
         var isImg = urlLow.endsWith('.jpg') || urlLow.endsWith('.jpeg') || urlLow.endsWith('.png') || urlLow.endsWith('.webp') || urlLow.includes('drive.google.com') || urlLow.includes('export=view');
 
         if (isPdf) {
+          var downloadUrl = getDriveDownloadUrl(item.lampiran);
           lampiranHtml = `
             <div style="margin-top:14px; padding:12px; background:rgba(239,68,68,0.06); border-radius:10px; border:1px solid rgba(239,68,68,0.2);">
-              <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Dokumen Lampiran (PDF):</div>
-              <a href="${item.lampiran}" target="_blank" class="btn-primary" style="background:#ef4444; color:#fff; word-break:break-all; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;">
-                <i class="material-icons" style="font-size:18px;">picture_as_pdf</i> 📄 Buka Dokumen PDF (Tab Baru)
-              </a>
+              <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">Dokumen Lampiran (PDF):</div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="${item.lampiran}" target="_blank" class="btn-primary" style="background:#ef4444; color:#fff; word-break:break-all; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;">
+                  <i class="material-icons" style="font-size:18px;">picture_as_pdf</i> 📄 Buka PDF
+                </a>
+                <a href="${downloadUrl}" download target="_blank" class="btn-small" style="background:var(--primary-color); color:#fff; word-break:break-all; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;">
+                  <i class="material-icons" style="font-size:18px;">file_download</i> 📥 Unduh PDF
+                </a>
+              </div>
             </div>`;
         } else if (isImg) {
           lampiranHtml = `
