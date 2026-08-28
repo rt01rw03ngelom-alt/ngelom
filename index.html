@@ -2321,8 +2321,142 @@ const APP_VERSION = '1.3.0';
       border-right-color: var(--border-color);
     }
 
-    .iuran-table td {
-      vertical-align: middle !important;
+    /* ================= PENGUMUMAN STYLES ================= */
+    .pgm-card {
+      background: var(--bg-surface, #ffffff);
+      border: 1px solid var(--border-color, #e5e7eb);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    .pgm-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+    .pgm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .pgm-badge-sangat-penting {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .pgm-badge-penting {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .pgm-badge-normal {
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563eb;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .pgm-status-published {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+    .pgm-status-draft {
+      background: rgba(107, 114, 128, 0.15);
+      color: #4b5563;
+    }
+    .pgm-status-expired {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+    .pgm-status-archived {
+      background: rgba(156, 163, 175, 0.15);
+      color: #6b7280;
+    }
+    .pgm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .pgm-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .pgm-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .pgm-modal-card {
+      background: var(--bg-surface, #ffffff);
+      color: var(--text-color, #1f2937);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 550px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      position: relative;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    }
+    .pgm-modal-overlay.active .pgm-modal-card {
+      transform: scale(1);
+    }
+    .pgm-modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.05);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-color, #374151);
+      transition: background 0.2s ease;
+    }
+    .pgm-modal-close:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    .pgm-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted, #6b7280);
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    .pgm-img-preview {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin: 10px 0;
     }
   </style>
 </head>
@@ -3681,9 +3815,200 @@ const APP_VERSION = '1.3.0';
 <button id="btnTambahGaleri" class="fab" onclick="bukaFormGaleri()" style="display:flex !important;">
         <i class="material-icons">add</i>
       </button>
+  <!-- ================= LAYAR INFORMASI & PENGUMUMAN WARGA ================= -->
+  <div id="pengumumanWargaView" class="screen" style="display:none;">
+    <div class="page-header">
+      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
+      <div>
+        <h3 style="margin:0;">📢 Informasi & Pengumuman</h3>
+        <p class="muted" style="margin:2px 0 0 0; font-size:12px;">Informasi terbaru resmi dari Pengurus RT</p>
+      </div>
+    </div>
+
+    <!-- Filter & Bar Pencarian -->
+    <div class="filter-bar" style="margin-bottom:1rem; gap:10px; flex-wrap:wrap; background:rgba(var(--primary-color-rgb), 0.04); border:1px solid var(--border-color); padding:10px; border-radius:10px;">
+      <div style="flex:1; min-width:180px;">
+        <input type="text" id="searchPengumumanWarga" placeholder="🔍 Cari pengumuman..." oninput="filterPengumumanWarga()" style="margin:0; height:40px; font-size:13px;">
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <select id="filterKategoriWarga" onchange="filterPengumumanWarga()" style="margin:0; height:40px; font-size:13px;">
+          <option value="all">📁 Semua Kategori</option>
+          <option value="Umum">Umum</option>
+          <option value="Iuran">Iuran</option>
+          <option value="Keamanan">Keamanan</option>
+          <option value="Kegiatan">Kegiatan</option>
+          <option value="Darurat">Darurat</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <select id="filterPrioritasWarga" onchange="filterPengumumanWarga()" style="margin:0; height:40px; font-size:13px;">
+          <option value="all">⚡ Semua Prioritas</option>
+          <option value="Sangat Penting">🔴 Sangat Penting</option>
+          <option value="Penting">🟠 Penting</option>
+          <option value="Normal">🔵 Normal</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Container Katalog Pengumuman -->
+    <div id="listPengumumanWargaContainer" class="pgm-grid"></div>
+  </div>
+
+  <!-- ================= LAYAR MANAJEMEN PENGUMUMAN (ADMIN & PENGURUS RT) ================= -->
+  <div id="manajemenPengumumanView" class="screen" style="display:none;">
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
+        <div>
+          <h3 style="margin:0;">📢 Manajemen Pengumuman</h3>
+          <p class="muted" style="margin:2px 0 0 0; font-size:12px;">Kelola informasi yang ditampilkan kepada warga</p>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="bukaFormPengumuman()" style="display:flex; align-items:center; gap:6px; font-size:13px; padding:8px 14px;">
+        <i class="material-icons" style="font-size:18px;">add</i> Buat Pengumuman
+      </button>
+    </div>
+
+    <!-- Filter & Search Bar Admin -->
+    <div class="filter-bar" style="margin-bottom:1rem; gap:10px; flex-wrap:wrap; background:rgba(var(--primary-color-rgb), 0.04); border:1px solid var(--border-color); padding:10px; border-radius:10px;">
+      <div style="flex:1; min-width:180px;">
+        <input type="text" id="searchPengumumanAdmin" placeholder="🔍 Cari judul/isi..." oninput="filterPengumumanAdmin()" style="margin:0; height:40px; font-size:13px;">
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <select id="filterStatusAdmin" onchange="filterPengumumanAdmin()" style="margin:0; height:40px; font-size:13px;">
+          <option value="all">📊 Semua Status</option>
+          <option value="PUBLISHED">🟢 PUBLISHED</option>
+          <option value="DRAFT">⚪ DRAFT</option>
+          <option value="EXPIRED">🔴 EXPIRED</option>
+          <option value="ARCHIVED">📦 ARCHIVED</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <select id="filterPrioritasAdmin" onchange="filterPengumumanAdmin()" style="margin:0; height:40px; font-size:13px;">
+          <option value="all">⚡ Semua Prioritas</option>
+          <option value="Sangat Penting">🔴 Sangat Penting</option>
+          <option value="Penting">🟠 Penting</option>
+          <option value="Normal">🔵 Normal</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Container Table / Card Admin -->
+    <div id="listPengumumanAdminContainer"></div>
+  </div>
+
+  <!-- ================= MODAL DETAIL PENGUMUMAN ================= -->
+  <div id="modalDetailPengumuman" class="pgm-modal-overlay">
+    <div class="pgm-modal-card">
+      <button class="pgm-modal-close" onclick="tutupModalDetailPengumuman()"><i class="material-icons">close</i></button>
+      <div id="modalDetailBadgeContainer" style="margin-bottom:8px;"></div>
+      <h3 id="modalDetailJudul" style="margin:0 0 8px 0; font-size:1.25rem; font-weight:700; color:var(--text-color);"></h3>
+      <div class="pgm-meta" id="modalDetailMeta"></div>
+      <div id="modalDetailGambarContainer"></div>
+      <div id="modalDetailIsi" style="line-height:1.6; font-size:14px; color:var(--text-color); margin:12px 0; white-space:pre-wrap;"></div>
+      <div id="modalDetailLampiranContainer" style="margin-top:14px;"></div>
+      <div style="margin-top:20px; text-align:right;">
+        <button class="btn-secondary" onclick="tutupModalDetailPengumuman()">Tutup</button>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- ================= MODAL FORM PENGUMUMAN (CREATE / EDIT) ================= -->
+  <div id="modalFormPengumuman" class="pgm-modal-overlay">
+    <div class="pgm-modal-card" style="max-width:600px;">
+      <button class="pgm-modal-close" onclick="tutupModalFormPengumuman()"><i class="material-icons">close</i></button>
+      <h3 id="judulModalFormPengumuman" style="margin:0 0 16px 0; font-size:1.2rem; font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Buat Pengumuman Baru</h3>
+      
+      <form id="formPengumumanSubmit" onsubmit="simpanFormPengumuman(event)">
+        <input type="hidden" id="pgmFormId">
+        
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">JUDUL PENGUMUMAN *</label>
+          <input type="text" id="pgmFormJudul" required placeholder="Contoh: Perpanjangan Masa Pembayaran Iuran Warga" style="margin:0; height:42px;">
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:150px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">KATEGORI</label>
+            <select id="pgmFormKategori" style="margin:0; height:42px;">
+              <option value="Umum">Umum</option>
+              <option value="Iuran">Iuran</option>
+              <option value="Keamanan">Keamanan</option>
+              <option value="Kegiatan">Kegiatan</option>
+              <option value="Darurat">Darurat</option>
+            </select>
+          </div>
+          <div style="flex:1; min-width:150px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">PRIORITAS</label>
+            <select id="pgmFormPrioritas" style="margin:0; height:42px;">
+              <option value="Normal">Normal</option>
+              <option value="Penting">Penting</option>
+              <option value="Sangat Penting">Sangat Penting</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:150px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">TANGGAL MULAI</label>
+            <input type="date" id="pgmFormTanggalMulai" style="margin:0; height:42px;">
+          </div>
+          <div style="flex:1; min-width:150px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">TANGGAL BERAKHIR</label>
+            <input type="date" id="pgmFormTanggalBerakhir" style="margin:0; height:42px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">ISI PENGUMUMAN *</label>
+          <textarea id="pgmFormIsi" required rows="5" placeholder="Tuliskan detail informasi pengumuman..." style="width:100%; border-radius:8px; border:1px solid var(--border-color); padding:10px; font-family:inherit; font-size:13px; background:var(--bg-surface); color:var(--text-color);"></textarea>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">GAMBAR (OPSIONAL)</label>
+          <input type="file" id="pgmFormGambarFile" accept="image/*" style="margin:0 0 6px 0;">
+          <div id="pgmFormGambarPreview"></div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">LAMPIRAN PDF (OPSIONAL)</label>
+          <input type="file" id="pgmFormLampiranFile" accept="application/pdf" style="margin:0 0 6px 0;">
+          <div id="pgmFormLampiranPreview"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border-color); padding-top:14px;">
+          <button type="button" class="btn-secondary" onclick="tutupModalFormPengumuman()">Batal</button>
+          <button type="button" class="btn-secondary" onclick="submitPengumumanDenganStatus('DRAFT')" style="background:#6b7280; color:white;">Simpan Draft</button>
+          <button type="button" class="btn-primary" onclick="submitPengumumanDenganStatus('PUBLISHED')">Publikasikan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING MODAL POPUP WARGA ================= -->
+  <div id="popupPengumumanModal" class="pgm-modal-overlay">
+    <div class="pgm-modal-card" style="max-width:500px; border-top: 5px solid var(--primary-color);">
+      <button class="pgm-modal-close" onclick="tutupPopupPengumuman(false)"><i class="material-icons">close</i></button>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+        <span style="font-size:24px;">📢</span>
+        <h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--primary-color);">INFORMASI WARGA</h4>
+      </div>
+      <div id="popupBadgesContainer" style="margin-bottom:8px;"></div>
+      <h3 id="popupJudul" style="margin:0 0 10px 0; font-size:1.2rem; font-weight:700;"></h3>
+      <div id="popupGambarContainer"></div>
+      <p id="popupPreviewIsi" style="font-size:13.5px; line-height:1.6; color:var(--text-color); margin:10px 0; max-height:150px; overflow-y:auto;"></p>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--border-color); padding-top:12px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; color:var(--text-muted);">
+          <input type="checkbox" id="chkDontShowAgain" style="margin:0;"> Jangan tampilkan lagi
+        </label>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" onclick="bukaDetailDariPopup()" style="font-size:12px; padding:6px 12px;">Lihat Selengkapnya</button>
+          <button class="btn-secondary" onclick="tutupPopupPengumuman(true)" style="font-size:12px; padding:6px 12px;">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
@@ -4025,15 +4350,17 @@ const APP_VERSION = '1.3.0';
     { key: 'kt_kas', label: 'Melihat Kas KT' },
     { key: 'kt_kas_crud', label: 'Kelola Kas KT' },
     { key: 'kt_galeri', label: 'Melihat Galeri KT' },
-    { key: 'kt_galeri_crud', label: 'Kelola Galeri KT' }
+    { key: 'kt_galeri_crud', label: 'Kelola Galeri KT' },
+    { key: 'rt_pengumuman', label: 'Melihat Informasi & Pengumuman' },
+    { key: 'rt_pengumuman_crud', label: 'Kelola Manajemen Pengumuman' }
   ];
 
   // Pemetaan Hak Akses Otomatis berdasarkan Role
   const roleDefaultPermissions = {
-    'warga': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
-    'pengurus rt': ['rt_jadwal', 'rt_jadwal_crud', 'rt_ronda', 'rt_ronda_crud', 'rt_kontak', 'rt_kontak_crud', 'rt_pengaduan_kirim', 'rt_pengaduan_admin', 'rt_pengaduan_admin_crud', 'rt_kas', 'rt_kas_crud', 'rt_galeri', 'rt_galeri_crud', 'rt_iuran_manage', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
-    'pengurus pkk': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'pkk_jadwal', 'pkk_jadwal_crud', 'pkk_kader', 'pkk_kader_crud', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_laporan_admin', 'pkk_galeri', 'pkk_galeri_crud', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
-    'pengurus karang taruna': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_jadwal_crud', 'kt_kader', 'kt_kader_crud', 'kt_kas', 'kt_kas_crud', 'kt_galeri', 'kt_galeri_crud'],
+    'warga': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'rt_pengumuman', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
+    'pengurus rt': ['rt_jadwal', 'rt_jadwal_crud', 'rt_ronda', 'rt_ronda_crud', 'rt_kontak', 'rt_kontak_crud', 'rt_pengaduan_kirim', 'rt_pengaduan_admin', 'rt_pengaduan_admin_crud', 'rt_kas', 'rt_kas_crud', 'rt_galeri', 'rt_galeri_crud', 'rt_iuran_manage', 'rt_pengumuman', 'rt_pengumuman_crud', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
+    'pengurus pkk': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'rt_pengumuman', 'pkk_jadwal', 'pkk_jadwal_crud', 'pkk_kader', 'pkk_kader_crud', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_laporan_admin', 'pkk_galeri', 'pkk_galeri_crud', 'kt_jadwal', 'kt_kader', 'kt_kas', 'kt_galeri'],
+    'pengurus karang taruna': ['rt_jadwal', 'rt_ronda', 'rt_kontak', 'rt_pengaduan_kirim', 'rt_kas', 'rt_galeri', 'rt_pengumuman', 'pkk_jadwal', 'pkk_kader', 'pkk_laporan_kirim', 'pkk_laporan_histori', 'pkk_galeri', 'kt_jadwal', 'kt_jadwal_crud', 'kt_kader', 'kt_kader_crud', 'kt_kas', 'kt_kas_crud', 'kt_galeri', 'kt_galeri_crud'],
     'admin': availablePermissions.map(p => p.key)
   };
 
@@ -5455,6 +5782,7 @@ const APP_VERSION = '1.3.0';
             startNotifikasiPolling();
             updateAdminContactLink();
             showSuccess('Selamat datang kembali, ' + currentUser.nama + '!');
+            setTimeout(cekDanTampilkanPopupPengumuman, 1200);
           } else {
             localStorage.removeItem('sessionToken');
             location.reload(); // Sesi tidak valid, kembali ke tampilan awal
@@ -5602,6 +5930,7 @@ const APP_VERSION = '1.3.0';
           currentTab = 'warga';
           kembaliKeDashboard();
           showSuccess('Selamat datang, ' + currentUser.nama + '!');
+          setTimeout(cekDanTampilkanPopupPengumuman, 1200);
         } else {
           showError(res.pesan);
         }
@@ -6038,10 +6367,12 @@ const APP_VERSION = '1.3.0';
       { title: "Jadwal Ronda", icon: "security", roles: ["admin", "pengurus rt", "warga"], action: "bukaRonda", perm: "rt_ronda" },
       { title: "Kelola User", icon: "manage_accounts", roles: ["admin"], action: "bukaKelolaUser", perm: "rt_user" },
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
-      { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
       { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
       { title: "Manajemen Iuran Warga", icon: "payments", roles: ["admin", "pengurus rt", "warga"], action: "bukaManajemenIuranWarga", perm: "rt_kas" },
+      { title: "Informasi & Pengumuman", icon: "campaign", roles: ["admin", "pengurus rt", "warga"], action: "bukaPengumumanWarga", perm: "rt_pengumuman" },
+      { title: "Manajemen Pengumuman", icon: "rate_review", roles: ["admin", "pengurus rt"], action: "bukaManajemenPengumuman", perm: "rt_pengumuman_crud" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
+      { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
       { title: "Pengaduan Saya", icon: "history", roles: ["admin", "pengurus rt", "warga"], action: "bukaHistori", perm: "rt_pengaduan_kirim" },
       { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" },
     ],
@@ -11668,6 +11999,693 @@ var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
   }
 
 
+
+// ==========================================
+// MODUL INFORMASI & PENGUMUMAN WARGA (FRONTEND)
+// ==========================================
+
+var rawPengumumanWargaGlobal = [];
+var rawPengumumanAdminGlobal = [];
+var currentPopupPengumumanGlobal = null;
+
+function bukaPengumumanWarga() {
+  sembunyikanSemuaLayar();
+  var view = document.getElementById('pengumumanWargaView');
+  if (view) view.style.display = 'block';
+  muatPengumumanWarga();
+}
+
+function muatPengumumanWarga() {
+  var container = document.getElementById('listPengumumanWargaContainer');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="grid-column: 1/-1; text-align:center; padding: 2rem;">
+      <div class="spinner" style="margin: 0 auto 10px;"></div>
+      <p class="muted">Memuat informasi pengumuman...</p>
+    </div>
+  `;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.status === 'success') {
+        rawPengumumanWargaGlobal = res.data || [];
+        filterPengumumanWarga();
+      } else {
+        container.innerHTML = `
+          <div style="grid-column: 1/-1; text-align:center; padding: 2rem; background: rgba(239, 68, 68, 0.05); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+            <i class="material-icons" style="font-size: 48px; color: #ef4444;">error_outline</i>
+            <h4 style="margin: 10px 0 5px;">Gagal Memuat Pengumuman</h4>
+            <p class="muted" style="font-size: 13px;">${escapeHtml(res.pesan || 'Terjadi kesalahan sistem.')}</p>
+          </div>
+        `;
+      }
+    })
+    .withFailureHandler(function(err) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding: 2rem; background: rgba(239, 68, 68, 0.05); border-radius: 12px;">
+          <i class="material-icons" style="font-size: 48px; color: #ef4444;">wifi_off</i>
+          <h4 style="margin: 10px 0 5px;">Gangguan Koneksi</h4>
+          <p class="muted" style="font-size: 13px;">Gagal terhubung ke server. Silakan coba lagi.</p>
+        </div>
+      `;
+    })
+    .getPengumumanAktif();
+}
+
+function filterPengumumanWarga() {
+  var searchVal = (document.getElementById('searchPengumumanWarga')?.value || '').toLowerCase().trim();
+  var katVal = document.getElementById('filterKategoriWarga')?.value || 'all';
+  var prioVal = document.getElementById('filterPrioritasWarga')?.value || 'all';
+
+  var filtered = rawPengumumanWargaGlobal.filter(function(item) {
+    var matchSearch = !searchVal || item.judul.toLowerCase().includes(searchVal) || item.isi.toLowerCase().includes(searchVal);
+    var matchKat = katVal === 'all' || item.kategori === katVal;
+    var matchPrio = prioVal === 'all' || item.prioritas === prioVal;
+    return matchSearch && matchKat && matchPrio;
+  });
+
+  renderListPengumumanWarga(filtered);
+}
+
+function renderListPengumumanWarga(data) {
+  var container = document.getElementById('listPengumumanWargaContainer');
+  if (!container) return;
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align:center; padding: 3rem 1rem; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-color);">
+        <span style="font-size: 56px; display:block; margin-bottom: 10px;">📢</span>
+        <h4 style="margin: 0 0 6px 0; font-weight:700; color: var(--text-color);">Belum Ada Pengumuman</h4>
+        <p class="muted" style="margin: 0; font-size: 13px;">Saat ini belum ada informasi atau pengumuman terbaru untuk warga.</p>
+      </div>
+    `;
+    return;
+  }
+
+  var html = '';
+  data.forEach(function(item) {
+    var badgePrioClass = 'pgm-badge-normal';
+    var iconPrio = 'info';
+    if (item.prioritas === 'Sangat Penting') {
+      badgePrioClass = 'pgm-badge-sangat-penting';
+      iconPrio = 'warning';
+    } else if (item.prioritas === 'Penting') {
+      badgePrioClass = 'pgm-badge-penting';
+      iconPrio = 'priority_high';
+    }
+
+    var previewText = item.isi.length > 140 ? item.isi.substring(0, 140) + '...' : item.isi;
+    var tglFormatted = formatTanggalIndo(item.tanggalMulai || item.tanggalDibuat);
+
+    html += `
+      <div class="pgm-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
+          <span class="pgm-badge ${badgePrioClass}">
+            <i class="material-icons" style="font-size: 14px;">${iconPrio}</i> ${escapeHtml(item.prioritas)}
+          </span>
+          <span style="font-size: 11px; font-weight:600; padding: 2px 8px; border-radius: 4px; background: rgba(var(--primary-color-rgb), 0.08); color: var(--primary-color);">
+            ${escapeHtml(item.kategori || 'Umum')}
+          </span>
+        </div>
+        
+        <h4 style="margin: 6px 0; font-size: 1.05rem; font-weight: 700; color: var(--text-color); line-height: 1.4;">
+          ${escapeHtml(item.judul)}
+        </h4>
+        
+        <div class="pgm-meta">
+          <span><i class="material-icons" style="font-size:14px; vertical-align:middle;">event</i> ${tglFormatted}</span>
+          ${item.dibuatOleh ? `<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ${escapeHtml(item.dibuatOleh)}</span>` : ''}
+        </div>
+
+        ${item.gambar ? `<img src="${escapeHtml(item.gambar)}" class="pgm-img-preview" alt="Foto Pengumuman">` : ''}
+
+        <p style="font-size: 13px; line-height: 1.5; color: var(--text-color); margin: 8px 0 14px 0; white-space: pre-wrap;">${escapeHtml(previewText)}</p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border-color); padding-top: 10px;">
+          ${item.lampiran ? `<a href="${escapeHtml(item.lampiran)}" target="_blank" style="font-size: 12px; color: var(--primary-color); font-weight: 600; display:flex; align-items:center; gap:4px;"><i class="material-icons" style="font-size:16px;">picture_as_pdf</i> PDF Lampiran</a>` : '<span></span>'}
+          <button class="btn-primary" onclick="bukaDetailPengumuman('${escapeHtml(item.id)}')" style="font-size: 12px; padding: 6px 12px; font-weight:600;">
+            Baca Selengkapnya
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function bukaDetailPengumuman(id) {
+  var item = rawPengumumanWargaGlobal.find(p => p.id === id) || rawPengumumanAdminGlobal.find(p => p.id === id);
+  if (!item) {
+    showLoading();
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res.status === 'success' && res.data) {
+          tampilkanDetailModalPengumumanObj(res.data);
+        } else {
+          showError('Gagal memuat detail pengumuman.');
+        }
+      })
+      .withFailureHandler(function() {
+        hideLoading();
+        showError('Gagal terhubung ke server.');
+      })
+      .getPengumumanById(id);
+  } else {
+    tampilkanDetailModalPengumumanObj(item);
+  }
+}
+
+function tampilkanDetailModalPengumumanObj(item) {
+  var badgePrioClass = 'pgm-badge-normal';
+  if (item.prioritas === 'Sangat Penting') badgePrioClass = 'pgm-badge-sangat-penting';
+  else if (item.prioritas === 'Penting') badgePrioClass = 'pgm-badge-penting';
+
+  document.getElementById('modalDetailBadgeContainer').innerHTML = `
+    <span class="pgm-badge ${badgePrioClass}">${escapeHtml(item.prioritas)}</span>
+    <span style="font-size:11px; font-weight:600; padding:3px 8px; border-radius:4px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color); margin-left:6px;">
+      ${escapeHtml(item.kategori || 'Umum')}
+    </span>
+  `;
+
+  document.getElementById('modalDetailJudul').innerText = item.judul;
+  
+  var metaHtml = `<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">event</i> Dipublikasi: ${formatTanggalIndo(item.tanggalMulai || item.tanggalDibuat)}</span>`;
+  if (item.tanggalBerakhir) {
+    metaHtml += `<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">timer</i> Berlaku s.d: ${formatTanggalIndo(item.tanggalBerakhir)}</span>`;
+  }
+  if (item.dibuatOleh) {
+    metaHtml += `<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> Oleh: ${escapeHtml(item.dibuatOleh)}</span>`;
+  }
+  document.getElementById('modalDetailMeta').innerHTML = metaHtml;
+
+  var gbrContainer = document.getElementById('modalDetailGambarContainer');
+  if (item.gambar) {
+    gbrContainer.innerHTML = `<img src="${escapeHtml(item.gambar)}" class="pgm-img-preview" alt="Gambar Pengumuman" onclick="window.open('${escapeHtml(item.gambar)}', '_blank')">`;
+  } else {
+    gbrContainer.innerHTML = '';
+  }
+
+  document.getElementById('modalDetailIsi').innerText = item.isi;
+
+  var lmpContainer = document.getElementById('modalDetailLampiranContainer');
+  if (item.lampiran) {
+    lmpContainer.innerHTML = `
+      <div style="padding:10px 14px; background:rgba(var(--primary-color-rgb),0.05); border:1px solid var(--border-color); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-color);"><i class="material-icons" style="font-size:18px; color:var(--primary-color); vertical-align:middle;">picture_as_pdf</i> Lampiran PDF Resmi</span>
+        <a href="${escapeHtml(item.lampiran)}" target="_blank" class="btn-primary" style="font-size:12px; padding:6px 12px; text-decoration:none;">Buka PDF</a>
+      </div>
+    `;
+  } else {
+    lmpContainer.innerHTML = '';
+  }
+
+  var modal = document.getElementById('modalDetailPengumuman');
+  if (modal) modal.classList.add('active');
+}
+
+function tutupModalDetailPengumuman() {
+  var modal = document.getElementById('modalDetailPengumuman');
+  if (modal) modal.classList.remove('active');
+}
+
+// ================= MANAJEMEN PENGUMUMAN (ADMIN/PENGURUS) =================
+
+function bukaManajemenPengumuman() {
+  if (!currentUser || (currentUser.role !== 'admin' && !currentUser.role.includes('pengurus'))) {
+    showError('Akses ditolak. Halaman manajemen pengumuman hanya untuk Admin dan Pengurus RT.');
+    return;
+  }
+  sembunyikanSemuaLayar();
+  var view = document.getElementById('manajemenPengumumanView');
+  if (view) view.style.display = 'block';
+  muatManajemenPengumuman();
+}
+
+function muatManajemenPengumuman() {
+  var container = document.getElementById('listPengumumanAdminContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align:center; padding: 2rem;">
+      <div class="spinner" style="margin: 0 auto 10px;"></div>
+      <p class="muted">Memuat data manajemen pengumuman...</p>
+    </div>
+  `;
+
+  var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.status === 'success') {
+        rawPengumumanAdminGlobal = res.data || [];
+        filterPengumumanAdmin();
+      } else {
+        container.innerHTML = `<p class="muted" style="text-align:center; padding:1rem;">${escapeHtml(res.pesan || 'Gagal memuat data.')}</p>`;
+      }
+    })
+    .withFailureHandler(function(err) {
+      container.innerHTML = `<p class="muted" style="text-align:center; padding:1rem;">Gagal terhubung ke server.</p>`;
+    })
+    .getDaftarPengumuman(token);
+}
+
+function filterPengumumanAdmin() {
+  var searchVal = (document.getElementById('searchPengumumanAdmin')?.value || '').toLowerCase().trim();
+  var statusVal = document.getElementById('filterStatusAdmin')?.value || 'all';
+  var prioVal = document.getElementById('filterPrioritasAdmin')?.value || 'all';
+
+  var filtered = rawPengumumanAdminGlobal.filter(function(item) {
+    var matchSearch = !searchVal || item.judul.toLowerCase().includes(searchVal) || item.isi.toLowerCase().includes(searchVal);
+    var matchStatus = statusVal === 'all' || item.status === statusVal;
+    var matchPrio = prioVal === 'all' || item.prioritas === prioVal;
+    return matchSearch && matchStatus && matchPrio;
+  });
+
+  renderListPengumumanAdmin(filtered);
+}
+
+function renderListPengumumanAdmin(data) {
+  var container = document.getElementById('listPengumumanAdminContainer');
+  if (!container) return;
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 3rem 1rem; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-color);">
+        <span style="font-size: 48px; display:block; margin-bottom: 8px;">📋</span>
+        <h4 style="margin:0 0 6px 0; font-weight:700;">Tidak Ada Pengumuman Ditemukan</h4>
+        <p class="muted" style="margin:0; font-size:13px;">Klik "+ Buat Pengumuman" untuk membuat pengumuman baru.</p>
+      </div>
+    `;
+    return;
+  }
+
+  var html = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:rgba(var(--primary-color-rgb),0.06); text-align:left; border-bottom:2px solid var(--border-color);">
+            <th style="padding:10px;">Judul</th>
+            <th style="padding:10px;">Kategori</th>
+            <th style="padding:10px;">Prioritas</th>
+            <th style="padding:10px;">Periode Tayang</th>
+            <th style="padding:10px;">Status</th>
+            <th style="padding:10px;">Dibuat Oleh</th>
+            <th style="padding:10px; text-align:center;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  data.forEach(function(item) {
+    var badgePrioClass = 'pgm-badge-normal';
+    if (item.prioritas === 'Sangat Penting') badgePrioClass = 'pgm-badge-sangat-penting';
+    else if (item.prioritas === 'Penting') badgePrioClass = 'pgm-badge-penting';
+
+    var statusClass = 'pgm-status-draft';
+    if (item.status === 'PUBLISHED') statusClass = 'pgm-status-published';
+    else if (item.status === 'EXPIRED') statusClass = 'pgm-status-expired';
+    else if (item.status === 'ARCHIVED') statusClass = 'pgm-status-archived';
+
+    var periodeStr = '-';
+    if (item.tanggalMulai || item.tanggalBerakhir) {
+      periodeStr = (item.tanggalMulai ? formatTanggalIndo(item.tanggalMulai) : 'Awal') + ' s.d ' + (item.tanggalBerakhir ? formatTanggalIndo(item.tanggalBerakhir) : 'Selesai');
+    }
+
+    html += `
+      <tr style="border-bottom:1px solid var(--border-color);">
+        <td style="padding:10px; font-weight:600; min-width:180px;">
+          ${escapeHtml(item.judul)}
+        </td>
+        <td style="padding:10px;">
+          <span style="padding:2px 8px; border-radius:4px; background:rgba(var(--primary-color-rgb), 0.08); font-size:11px; font-weight:600;">
+            ${escapeHtml(item.kategori || 'Umum')}
+          </span>
+        </td>
+        <td style="padding:10px;">
+          <span class="pgm-badge ${badgePrioClass}" style="font-size:10px; padding:2px 6px;">
+            ${escapeHtml(item.prioritas)}
+          </span>
+        </td>
+        <td style="padding:10px; font-size:12px; color:var(--text-muted);">
+          ${periodeStr}
+        </td>
+        <td style="padding:10px;">
+          <span class="pgm-badge ${statusClass}" style="font-size:10px; padding:2px 8px;">
+            ${escapeHtml(item.status)}
+          </span>
+        </td>
+        <td style="padding:10px; font-size:12px;">
+          ${escapeHtml(item.dibuatOleh || '-')}<br>
+          <span class="muted" style="font-size:11px;">${formatTanggalIndo(item.tanggalDibuat)}</span>
+        </td>
+        <td style="padding:10px; text-align:center; min-width:160px;">
+          <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn-small" onclick="bukaDetailPengumuman('${escapeHtml(item.id)}')" title="Preview" style="padding:4px 8px;"><i class="material-icons" style="font-size:14px;">visibility</i></button>
+            <button class="btn-small" onclick="editPengumuman('${escapeHtml(item.id)}')" title="Edit" style="padding:4px 8px;"><i class="material-icons" style="font-size:14px;">edit</i></button>
+            ${item.status !== 'PUBLISHED' ? `<button class="btn-small" onclick="publishPengumumanUI('${escapeHtml(item.id)}')" title="Publish" style="padding:4px 8px; background:#10b981; color:white;"><i class="material-icons" style="font-size:14px;">publish</i></button>` : ''}
+            ${item.status === 'PUBLISHED' ? `<button class="btn-small" onclick="arsipkanPengumumanUI('${escapeHtml(item.id)}')" title="Nonaktifkan/Arsipkan" style="padding:4px 8px; background:#f59e0b; color:white;"><i class="material-icons" style="font-size:14px;">archive</i></button>` : ''}
+            <button class="btn-small danger" onclick="hapusPengumumanUI('${escapeHtml(item.id)}')" title="Hapus" style="padding:4px 8px;"><i class="material-icons" style="font-size:14px;">delete</i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+// FORM BUAT / EDIT PENGUMUMAN
+
+function bukaFormPengumuman(id) {
+  document.getElementById('formPengumumanSubmit')?.reset();
+  document.getElementById('pgmFormId').value = '';
+  document.getElementById('pgmFormGambarPreview').innerHTML = '';
+  document.getElementById('pgmFormLampiranPreview').innerHTML = '';
+  document.getElementById('judulModalFormPengumuman').innerText = 'Buat Pengumuman Baru';
+
+  if (id) {
+    var item = rawPengumumanAdminGlobal.find(p => p.id === id);
+    if (item) {
+      document.getElementById('pgmFormId').value = item.id;
+      document.getElementById('pgmFormJudul').value = item.judul;
+      document.getElementById('pgmFormKategori').value = item.kategori || 'Umum';
+      document.getElementById('pgmFormPrioritas').value = item.prioritas || 'Normal';
+      document.getElementById('pgmFormTanggalMulai').value = item.tanggalMulai || '';
+      document.getElementById('pgmFormTanggalBerakhir').value = item.tanggalBerakhir || '';
+      document.getElementById('pgmFormIsi').value = item.isi || '';
+      document.getElementById('judulModalFormPengumuman').innerText = 'Edit Pengumuman';
+
+      if (item.gambar) {
+        document.getElementById('pgmFormGambarPreview').innerHTML = `<p class="muted" style="font-size:11px;">Gambar saat ini: <a href="${escapeHtml(item.gambar)}" target="_blank">Lihat Gambar</a></p>`;
+      }
+      if (item.lampiran) {
+        document.getElementById('pgmFormLampiranPreview').innerHTML = `<p class="muted" style="font-size:11px;">Lampiran saat ini: <a href="${escapeHtml(item.lampiran)}" target="_blank">Lihat PDF</a></p>`;
+      }
+    }
+  }
+
+  var modal = document.getElementById('modalFormPengumuman');
+  if (modal) modal.classList.add('active');
+}
+
+function editPengumuman(id) {
+  bukaFormPengumuman(id);
+}
+
+function tutupModalFormPengumuman() {
+  var modal = document.getElementById('modalFormPengumuman');
+  if (modal) modal.classList.remove('active');
+}
+
+var targetStatusPengumumanForm = 'PUBLISHED';
+function submitPengumumanDenganStatus(st) {
+  targetStatusPengumumanForm = st;
+  var form = document.getElementById('formPengumumanSubmit');
+  if (form.checkValidity()) {
+    simpanFormPengumuman(new Event('submit'));
+  } else {
+    form.reportValidity();
+  }
+}
+
+function simpanFormPengumuman(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  var id = document.getElementById('pgmFormId').value;
+  var judul = document.getElementById('pgmFormJudul').value.trim();
+  var kategori = document.getElementById('pgmFormKategori').value;
+  var prioritas = document.getElementById('pgmFormPrioritas').value;
+  var tglMulai = document.getElementById('pgmFormTanggalMulai').value;
+  var tglBerakhir = document.getElementById('pgmFormTanggalBerakhir').value;
+  var isi = document.getElementById('pgmFormIsi').value.trim();
+
+  if (!judul || !isi) {
+    showError('Judul dan isi pengumuman wajib diisi.');
+    return;
+  }
+
+  var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+  showLoading();
+
+  var gambarFile = document.getElementById('pgmFormGambarFile').files[0];
+  var lampiranFile = document.getElementById('pgmFormLampiranFile').files[0];
+
+  var payload = {
+    judul: judul,
+    kategori: kategori,
+    prioritas: prioritas,
+    tanggalMulai: tglMulai,
+    tanggalBerakhir: tglBerakhir,
+    isi: isi,
+    status: targetStatusPengumumanForm
+  };
+
+  var processSubmit = function() {
+    if (id) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === 'success') {
+            showSuccess(res.pesan || 'Pengumuman berhasil diperbarui.');
+            tutupModalFormPengumuman();
+            muatManajemenPengumuman();
+          } else {
+            showError(res.pesan || 'Gagal memperbarui pengumuman.');
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          showError('Gagal terhubung ke server.');
+        })
+        .updatePengumuman(id, payload, token);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === 'success') {
+            showSuccess(res.pesan || 'Pengumuman berhasil dibuat.');
+            tutupModalFormPengumuman();
+            muatManajemenPengumuman();
+          } else {
+            showError(res.pesan || 'Gagal membuat pengumuman.');
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          showError('Gagal terhubung ke server.');
+        })
+        .buatPengumuman(payload, token);
+    }
+  };
+
+  var readGambar = function(next) {
+    if (gambarFile) {
+      var readerG = new FileReader();
+      readerG.onload = function(eG) {
+        var base64G = eG.target.result.split(',')[1];
+        payload.gambarData = base64G;
+        payload.gambarMime = gambarFile.type;
+        payload.gambarName = gambarFile.name;
+        next();
+      };
+      readerG.readAsDataURL(gambarFile);
+    } else {
+      next();
+    }
+  };
+
+  var readLampiran = function(next) {
+    if (lampiranFile) {
+      var readerL = new FileReader();
+      readerL.onload = function(eL) {
+        var base64L = eL.target.result.split(',')[1];
+        payload.lampiranData = base64L;
+        payload.lampiranMime = lampiranFile.type;
+        payload.lampiranName = lampiranFile.name;
+        next();
+      };
+      readerL.readAsDataURL(lampiranFile);
+    } else {
+      next();
+    }
+  };
+
+  readGambar(function() {
+    readLampiran(function() {
+      processSubmit();
+    });
+  });
+}
+
+function publishPengumumanUI(id) {
+  var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+  Swal.fire({
+    title: 'Publikasikan Pengumuman?',
+    text: 'Pengumuman ini akan langsung dapat dilihat oleh seluruh warga.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    confirmButtonText: 'Ya, Publikasikan',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === 'success') {
+            showSuccess(res.pesan);
+            muatManajemenPengumuman();
+          } else {
+            showError(res.pesan);
+          }
+        })
+        .withFailureHandler(function() { hideLoading(); showError('Gagal terhubung ke server.'); })
+        .publishPengumuman(id, token);
+    }
+  });
+}
+
+function arsipkanPengumumanUI(id) {
+  var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+  Swal.fire({
+    title: 'Nonaktifkan Pengumuman?',
+    text: 'Pengumuman akan diarsipkan dan tidak muncul lagi di halaman warga.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    confirmButtonText: 'Ya, Nonaktifkan',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === 'success') {
+            showSuccess(res.pesan);
+            muatManajemenPengumuman();
+          } else {
+            showError(res.pesan);
+          }
+        })
+        .withFailureHandler(function() { hideLoading(); showError('Gagal terhubung ke server.'); })
+        .arsipkanPengumuman(id, token);
+    }
+  });
+}
+
+function hapusPengumumanUI(id) {
+  var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+  Swal.fire({
+    title: 'Hapus Pengumuman?',
+    text: 'Data yang dihapus tidak dapat dikembalikan.',
+    icon: 'error',
+    showCancelButton: true,
+    confirmButtonColor: '#d32f2f',
+    confirmButtonText: 'Ya, Hapus',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === 'success') {
+            showSuccess(res.pesan);
+            muatManajemenPengumuman();
+          } else {
+            showError(res.pesan);
+          }
+        })
+        .withFailureHandler(function() { hideLoading(); showError('Gagal terhubung ke server.'); })
+        .hapusPengumuman(id, token);
+    }
+  });
+}
+
+// ================= FLOATING MODAL POPUP PENGUMUMAN AKTIF =================
+
+function cekDanTampilkanPopupPengumuman() {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.status === 'success' && res.data && res.data.length > 0) {
+        var unreadItem = null;
+        for (var i = 0; i < res.data.length; i++) {
+          var item = res.data[i];
+          var seenKey = 'announcement_seen_' + item.id;
+          if (!localStorage.getItem(seenKey)) {
+            unreadItem = item;
+            break;
+          }
+        }
+
+        if (unreadItem) {
+          tampilkanPopupPengumumanModal(unreadItem);
+        }
+      }
+    })
+    .getPengumumanAktif();
+}
+
+function tampilkanPopupPengumumanModal(item) {
+  currentPopupPengumumanGlobal = item;
+
+  var badgePrioClass = 'pgm-badge-normal';
+  if (item.prioritas === 'Sangat Penting') badgePrioClass = 'pgm-badge-sangat-penting';
+  else if (item.prioritas === 'Penting') badgePrioClass = 'pgm-badge-penting';
+
+  document.getElementById('popupBadgesContainer').innerHTML = `
+    <span class="pgm-badge ${badgePrioClass}">${escapeHtml(item.prioritas)}</span>
+    <span style="font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; background:rgba(var(--primary-color-rgb),0.08); color:var(--primary-color); margin-left:6px;">
+      ${escapeHtml(item.kategori || 'Umum')}
+    </span>
+  `;
+
+  document.getElementById('popupJudul').innerText = item.judul;
+
+  var gbrContainer = document.getElementById('popupGambarContainer');
+  if (item.gambar) {
+    gbrContainer.innerHTML = `<img src="${escapeHtml(item.gambar)}" class="pgm-img-preview" alt="Foto Pengumuman">`;
+  } else {
+    gbrContainer.innerHTML = '';
+  }
+
+  var previewText = item.isi.length > 180 ? item.isi.substring(0, 180) + '...' : item.isi;
+  document.getElementById('popupPreviewIsi').innerText = previewText;
+
+  var chk = document.getElementById('chkDontShowAgain');
+  if (chk) chk.checked = false;
+
+  var modal = document.getElementById('popupPengumumanModal');
+  if (modal) modal.classList.add('active');
+}
+
+function tutupPopupPengumuman(isButtonClose) {
+  var modal = document.getElementById('popupPengumumanModal');
+  if (modal) modal.classList.remove('active');
+
+  var chk = document.getElementById('chkDontShowAgain');
+  if (currentPopupPengumumanGlobal) {
+    if (isButtonClose || (chk && chk.checked)) {
+      localStorage.setItem('announcement_seen_' + currentPopupPengumumanGlobal.id, 'true');
+    }
+  }
+}
+
+function bukaDetailDariPopup() {
+  if (currentPopupPengumumanGlobal) {
+    var item = currentPopupPengumumanGlobal;
+    tutupPopupPengumuman(true);
+    bukaPengumumanWarga();
+    setTimeout(function() {
+      bukaDetailPengumuman(item.id);
+    }, 300);
+  }
+}
 
   refreshNavVisibility();
 </script>
