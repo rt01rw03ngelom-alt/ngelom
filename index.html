@@ -5954,6 +5954,17 @@
       }
     }
 
+    function tutupFormMode(formId, wrapperId) {
+      if (formId) {
+        var form = document.getElementById(formId);
+        if (form) form.style.display = 'none';
+      }
+      if (wrapperId) {
+        var wrapper = document.getElementById(wrapperId);
+        if (wrapper) wrapper.style.display = 'block';
+      }
+    }
+
     function sembunyikanSemuaLayar() {
       var screens = document.querySelectorAll('.screen, #dashboardView');
       for (var i = 0; i < screens.length; i++) {
