@@ -4503,10 +4503,13 @@
                           if (handlers.success) handlers.success(fallbackSuccess);
                           return fallbackSuccess;
                         } else {
-                          // Untuk read actions, juga provide fallback error response
+                          // Untuk read actions, provide fallback error response tanpa double-triggering handlers
                           const fallbackError = { status: 'error', pesan: 'Gagal parse data dari server. Silakan coba lagi.' };
-                          if (handlers.failure) handlers.failure(fallbackError);
-                          if (handlers.success) handlers.success(fallbackError);
+                          if (handlers.failure) {
+                            handlers.failure(fallbackError);
+                          } else if (handlers.success) {
+                            handlers.success(fallbackError);
+                          }
                           return fallbackError;
                         }
                         throw new Error("JSON_PARSE_ERROR");
@@ -12417,10 +12420,12 @@
       google.script.run
         .withSuccessHandler(function (res) {
           if (currentViewToken !== window.__activeViewToken) return;
+          console.log('[PENGUMUMAN RESPONSE]', res, typeof res);
           var container = document.getElementById('containerListPengumuman');
           container.innerHTML = '';
 
-          if (res.status === 'error') {
+          if (!res || res.status === 'error') {
+            console.error('[PENGUMUMAN SERVER ERROR]', res);
             return renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
           }
 
@@ -12642,7 +12647,8 @@
       if (!currentToken) return;
       google.script.run
         .withSuccessHandler(function (res) {
-          if (res && res.status === 'success' && res.data && res.data.length > 0) {
+          console.log('[PENGUMUMAN POPUP RESPONSE]', res, typeof res);
+          if (res && res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
             var activePgm = res.data[0]; // Ambil pengumuman aktif terbaru
             var seenKey = 'seen_pengumuman_' + activePgm.id;
             if (!localStorage.getItem(seenKey)) {
