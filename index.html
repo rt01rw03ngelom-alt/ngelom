@@ -3572,13 +3572,18 @@ const APP_VERSION = '1.3.0';
         </table>
       </div>
     </div>
+  </div>
 
-    <div class="page-header" style="margin-top:2rem;">
+  <!-- Layar Manajemen Iuran Warga -->
+  <div id="iuranWargaView" class="screen">
+    <div class="page-header">
+      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
       <h3>
         <i class="material-icons">payments</i>
         Manajemen Iuran Warga
       </h3>
     </div>
+
     <div id="iuranAdminButtons" style="display:flex; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;"></div>
 
     <div style="margin-bottom:1rem; position:relative;">
@@ -6035,6 +6040,7 @@ const APP_VERSION = '1.3.0';
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
       { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
+      { title: "Manajemen Iuran Warga", icon: "payments", roles: ["admin", "pengurus rt", "warga"], action: "bukaManajemenIuranWarga", perm: "rt_kas" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
       { title: "Pengaduan Saya", icon: "history", roles: ["admin", "pengurus rt", "warga"], action: "bukaHistori", perm: "rt_pengaduan_kirim" },
       { title: "Admin Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" },
@@ -10734,22 +10740,46 @@ var total = { p_kas: 0, p_kematian: 0, g_kas: 0, g_kematian: 0 };
     document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
-    var iuranAdminDiv = document.getElementById('iuranAdminButtons');
     if (hasPermission('rt_kas_crud')) { // Kontrol visibilitas tombol Tambah/Kurang Kas
       actionDiv.innerHTML = '<button class="btn-small success" onclick="bukaFormKas(\'Pemasukan\')">+ Tambah Pemasukan</button>'
         + '<button class="btn-small danger" onclick="bukaFormKas(\'Pengeluaran\')">+ Tambah Pengeluaran</button>';
     } else { actionDiv.innerHTML = ''; }
-    if (hasPermission('rt_iuran_manage')) { // Kontrol visibilitas tombol Kelola Iuran
-      iuranAdminDiv.innerHTML = 
-        '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button> ' +
-        '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
-    } else {
-      actionDiv.innerHTML = '';
-      iuranAdminDiv.innerHTML = '';
-    }
     muatDataKas();
-    loadTahunIuranOptions();
     toggleLaporanMode();
+  }
+
+  // ======================== BUKA MANAJEMEN IURAN WARGA ========================
+  function bukaManajemenIuranWarga() {
+    window.__activeViewToken++; // Invalidate old callbacks
+    sembunyikanSemuaLayar();
+    var view = document.getElementById('iuranWargaView');
+    if (!view) {
+      console.error('iuranWargaView tidak ditemukan');
+      return;
+    }
+    view.style.display = 'block';
+    history.pushState(
+      {
+        view: 'iuranWargaView',
+        tab: 'warga',
+        onLoad: 'bukaManajemenIuranWarga'
+      },
+      '',
+      '#iuran-warga'
+    );
+
+    var iuranAdminDiv = document.getElementById('iuranAdminButtons');
+    if (iuranAdminDiv) {
+      if (hasPermission('rt_iuran_manage')) {
+        iuranAdminDiv.innerHTML = 
+          '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button> ' +
+          '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
+      } else {
+        iuranAdminDiv.innerHTML = '';
+      }
+    }
+
+    loadTahunIuranOptions();
   }
 
   // ======================== GALERI ========================
