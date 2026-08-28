@@ -4321,6 +4321,8 @@
       <div id="formCrudPengumuman" class="card-item" style="display:none; margin-bottom:20px; padding:20px; border-left:4px solid var(--primary-color);">
         <h4 id="judulFormPengumuman" style="margin-top:0; margin-bottom:16px; font-weight:800; color:var(--text-main);">Buat Pengumuman Baru</h4>
         <input type="hidden" id="pgmId">
+        <input type="hidden" id="pgmLampiran" value="">
+        <input type="hidden" id="pgmHapusLampiranFlag" value="false">
         
         <div style="display:grid; gap:14px;">
           <div>
@@ -4333,9 +4335,51 @@
             <textarea id="pgmIsi" rows="5" class="swal2-input" style="width:100%; height:auto; padding:10px; margin:4px 0 0; font-family:inherit; resize:vertical;" placeholder="Tuliskan detail pengumuman secara rinci..."></textarea>
           </div>
 
+          <!-- SECTION LAMPIRAN FILE (OPSIONAL) -->
           <div>
-            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">URL Lampiran / Dokumen (Opsional)</label>
-            <input type="url" id="pgmLampiran" class="swal2-input" style="width:100%; margin:4px 0 0;" placeholder="https://drive.google.com/... atau link foto/dokumen">
+            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">
+              📎 Lampiran Foto / Dokumen PDF (Opsional)
+            </label>
+            
+            <!-- Container Lampiran Eksisting (Saat Edit) -->
+            <div id="pgmExistingFileContainer" style="display:none; margin-bottom:10px; padding:10px 14px; background:rgba(var(--primary-color-rgb),0.06); border:1px dashed var(--primary-color); border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-main);">
+                <span id="pgmExistingIcon">📄</span>
+                <span id="pgmExistingText">Lampiran tersimpan di database</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <a id="pgmExistingLink" href="#" target="_blank" class="btn-small" style="background:var(--primary-color); color:#fff; text-decoration:none; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px; border-radius:6px;">
+                  <i class="material-icons" style="font-size:14px;">open_in_new</i> Buka
+                </a>
+                <button type="button" class="btn-small" onclick="hapusLampiranEksisting()" style="background:#ef4444; color:#fff; padding:4px 10px; font-size:12px; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="material-icons" style="font-size:14px;">delete</i> Hapus Lampiran
+                </button>
+              </div>
+            </div>
+
+            <!-- Hidden File Input -->
+            <input type="file" id="pgmFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none;" onchange="handlePgmFileSelect(event)">
+
+            <!-- Drop / Select Zone -->
+            <div id="pgmUploadZone" onclick="document.getElementById('pgmFileInput').click()" style="border:2px dashed var(--border-color); border-radius:12px; padding:16px; text-align:center; cursor:pointer; background:var(--bg-surface); transition:all 0.2s ease;">
+              <i class="material-icons" style="font-size:32px; color:var(--primary-color); margin-bottom:4px;">cloud_upload</i>
+              <div style="font-weight:700; font-size:13px; color:var(--text-main);">Klik di sini untuk memilih file dari perangkat Anda</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Format didukung: JPG, PNG, WEBP, atau PDF (Maksimal 5 MB)</div>
+            </div>
+
+            <!-- Preview Selected File -->
+            <div id="pgmSelectedFilePreview" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(16,185,129,0.08); border:1px solid #10b981; border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span id="pgmSelectedFileIcon" style="font-size:24px;">📄</span>
+                <div>
+                  <div id="pgmSelectedFileName" style="font-weight:700; font-size:13px; color:var(--text-main);">filename.pdf</div>
+                  <div id="pgmSelectedFileSize" style="font-size:11px; color:var(--text-muted);">1.2 MB</div>
+                </div>
+              </div>
+              <button type="button" class="btn-small" onclick="resetSelectedPgmFile()" style="background:#ef4444; color:#fff; border:none; padding:4px 10px; font-size:12px; border-radius:6px; cursor:pointer;">
+                <i class="material-icons" style="font-size:14px; vertical-align:middle;">close</i> Batal Pilih File
+              </button>
+            </div>
           </div>
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -12399,6 +12443,20 @@
     // ======================== MODUL MANAJEMEN INFORMASI & PENGUMUMAN WARGA ========================
 
     var cacheDataPengumuman = [];
+    var selectedPgmFileData = null;
+
+    function isPengumumanAdminFrontend() {
+      if (!currentUser) return false;
+      var role = String(currentUser.role || 'warga').toLowerCase();
+      return role === 'admin' || 
+             role.indexOf('pengurus') !== -1 || 
+             role.indexOf('rt') !== -1 || 
+             role === 'ketua' || 
+             role === 'sekretaris' || 
+             role === 'bendahara' || 
+             hasPermission('rt_pengumuman_crud') || 
+             hasPermission('rt_pengumuman');
+    }
 
     function bukaPengumuman() {
       window.__activeViewToken++;
@@ -12406,7 +12464,7 @@
       document.getElementById('pengumumanView').style.display = 'block';
       history.pushState({ view: 'pengumumanView', tab: 'warga', onLoad: 'muatDaftarPengumuman' }, '', '#pengumuman');
 
-      const isManagement = currentUser.role === 'admin' || currentUser.role.includes('pengurus') || hasPermission('rt_pengumuman_crud');
+      const isManagement = isPengumumanAdminFrontend();
       document.getElementById('pengumumanAdminStats').style.display = isManagement ? 'grid' : 'none';
       document.getElementById('pengumumanAdminActionBar').style.display = isManagement ? 'flex' : 'none';
       tutupFormPengumuman();
@@ -12422,14 +12480,14 @@
           if (currentViewToken !== window.__activeViewToken) return;
           console.log('[PENGUMUMAN RESPONSE]', res, typeof res);
           var container = document.getElementById('containerListPengumuman');
-          container.innerHTML = '';
+          if (container) container.innerHTML = '';
 
           if (!res || res.status === 'error') {
             console.error('[PENGUMUMAN SERVER ERROR]', res);
             return renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
           }
 
-          cacheDataPengumuman = res.data || [];
+          cacheDataPengumuman = Array.isArray(res.data) ? res.data : [];
 
           // Update Statistik Admin
           if (res.stats) {
@@ -12447,6 +12505,7 @@
         })
         .withFailureHandler(function (err) {
           if (currentViewToken !== window.__activeViewToken) return;
+          console.error('[PENGUMUMAN FAILURE]', err);
           renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
         })
         .getDaftarPengumuman(currentToken);
@@ -12454,9 +12513,10 @@
 
     function renderCardPengumuman(dataList) {
       var container = document.getElementById('containerListPengumuman');
+      if (!container) return;
       container.innerHTML = '';
 
-      const isManagement = currentUser.role === 'admin' || currentUser.role.includes('pengurus') || hasPermission('rt_pengumuman_crud');
+      const isManagement = isPengumumanAdminFrontend();
 
       dataList.forEach(function (item) {
         var statusBadge = '';
@@ -12466,6 +12526,27 @@
           statusBadge = `<span style="background:rgba(245,158,11,0.1); color:#f59e0b; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:0.5px;">● DRAFT</span>`;
         } else {
           statusBadge = `<span style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:0.5px;">● NONAKTIF</span>`;
+        }
+
+        var lampiranBadge = '';
+        if (item.lampiran && item.lampiran.trim() !== '') {
+          var urlLow = item.lampiran.toLowerCase();
+          var isPdf = urlLow.endsWith('.pdf') || urlLow.includes('pdf');
+          var isImg = urlLow.endsWith('.jpg') || urlLow.endsWith('.jpeg') || urlLow.endsWith('.png') || urlLow.endsWith('.webp') || urlLow.includes('drive.google.com') || urlLow.includes('export=view');
+
+          if (isPdf) {
+            lampiranBadge = `<a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); padding:4px 8px; border-radius:6px; text-decoration:none; margin-top:6px;">
+              <i class="material-icons" style="font-size:14px;">picture_as_pdf</i> 📄 Lihat Dokumen PDF
+            </a>`;
+          } else if (isImg) {
+            lampiranBadge = `<a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--primary-color); background:rgba(var(--primary-color-rgb),0.08); border:1px solid rgba(var(--primary-color-rgb),0.2); padding:4px 8px; border-radius:6px; text-decoration:none; margin-top:6px;">
+              <i class="material-icons" style="font-size:14px;">image</i> 🖼️ Lampiran Foto
+            </a>`;
+          } else {
+            lampiranBadge = `<a href="${item.lampiran}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--primary-color); background:rgba(var(--primary-color-rgb),0.08); border:1px solid rgba(var(--primary-color-rgb),0.2); padding:4px 8px; border-radius:6px; text-decoration:none; margin-top:6px;">
+              <i class="material-icons" style="font-size:14px;">open_in_new</i> 📎 Lihat Lampiran
+            </a>`;
+          }
         }
 
         var aksiButtons = isManagement ? `
@@ -12492,13 +12573,14 @@
               <div style="font-size:16px; font-weight:800; color:var(--text-main); line-height:1.3; flex:1;">${escapeJsString(item.judul)}</div>
               <div>${statusBadge}</div>
             </div>
-            <div style="display:flex; gap:12px; font-size:12px; color:var(--text-muted); margin-bottom:10px; flex-wrap:wrap;">
+            <div style="display:flex; gap:12px; font-size:12px; color:var(--text-muted); margin-bottom:8px; flex-wrap:wrap;">
               <span><i class="material-icons" style="font-size:14px; vertical-align:middle;">event</i> ${formatIndoDate(item.dibuat_pada || item.tanggal_mulai)}</span>
               <span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> Oleh: ${item.dibuat_oleh || 'Pengurus RT'}</span>
             </div>
-            <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
               ${escapeJsString(item.isi)}
             </div>
+            ${lampiranBadge ? `<div style="margin-bottom:6px;">${lampiranBadge}</div>` : ''}
             ${aksiButtons}
           </div>`;
 
@@ -12509,24 +12591,93 @@
     function filterListPengumuman() {
       var query = (document.getElementById('cariPengumuman').value || '').toLowerCase();
       var filtered = cacheDataPengumuman.filter(function (item) {
-        return item.judul.toLowerCase().includes(query) || item.isi.toLowerCase().includes(query);
+        return (item.judul || '').toLowerCase().includes(query) || (item.isi || '').toLowerCase().includes(query);
       });
       renderCardPengumuman(filtered);
     }
+
+    // ======================== FILE ATTACHMENT HANDLERS ========================
+
+    function handlePgmFileSelect(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+
+      var validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      var ext = file.name.split('.').pop().toLowerCase();
+      var validExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
+      if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+        showError('Format file tidak didukung. Gunakan JPG, PNG, WEBP, atau PDF.');
+        event.target.value = '';
+        return;
+      }
+
+      // Max 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        showError('Ukuran file terlalu besar. Silakan pilih file dengan ukuran yang lebih kecil (maksimal 5 MB).');
+        event.target.value = '';
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        selectedPgmFileData = {
+          base64: e.target.result,
+          mimeType: file.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg'),
+          fileName: file.name
+        };
+
+        var sizeStr = file.size > 1024 * 1024 
+          ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+          : (file.size / 1024).toFixed(1) + ' KB';
+
+        var icon = ext === 'pdf' || file.type === 'application/pdf' ? '📄' : '🖼️';
+
+        document.getElementById('pgmSelectedFileIcon').innerText = icon;
+        document.getElementById('pgmSelectedFileName').innerText = file.name;
+        document.getElementById('pgmSelectedFileSize').innerText = sizeStr + ' (' + ext.toUpperCase() + ')';
+        document.getElementById('pgmSelectedFilePreview').style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetSelectedPgmFile() {
+      selectedPgmFileData = null;
+      var fileInput = document.getElementById('pgmFileInput');
+      if (fileInput) fileInput.value = '';
+      var preview = document.getElementById('pgmSelectedFilePreview');
+      if (preview) preview.style.display = 'none';
+    }
+
+    function hapusLampiranEksisting() {
+      document.getElementById('pgmHapusLampiranFlag').value = 'true';
+      document.getElementById('pgmLampiran').value = '';
+      var container = document.getElementById('pgmExistingFileContainer');
+      if (container) container.style.display = 'none';
+    }
+
+    // ======================== FORM CRUD HANDLERS ========================
 
     function bukaFormPengumumanBaru() {
       document.getElementById('pgmId').value = '';
       document.getElementById('pgmJudul').value = '';
       document.getElementById('pgmIsi').value = '';
       document.getElementById('pgmLampiran').value = '';
+      document.getElementById('pgmHapusLampiranFlag').value = 'false';
       document.getElementById('pgmTanggalMulai').value = new Date().toISOString().split('T')[0];
       document.getElementById('pgmTanggalBerakhir').value = '';
       document.getElementById('pgmStatus').value = 'AKTIF';
       document.getElementById('judulFormPengumuman').innerText = 'Buat Pengumuman Baru';
+
+      resetSelectedPgmFile();
+      var existContainer = document.getElementById('pgmExistingFileContainer');
+      if (existContainer) existContainer.style.display = 'none';
+
       bukaFormMode('formCrudPengumuman', 'wrapListPengumuman');
     }
 
     function tutupFormPengumuman() {
+      resetSelectedPgmFile();
       tutupFormMode('formCrudPengumuman', 'wrapListPengumuman');
     }
 
@@ -12534,14 +12685,30 @@
       var item = cacheDataPengumuman.find(x => x.id === id);
       if (!item) return;
 
+      resetSelectedPgmFile();
+
       document.getElementById('pgmId').value = item.id;
       document.getElementById('pgmJudul').value = item.judul;
       document.getElementById('pgmIsi').value = item.isi;
       document.getElementById('pgmLampiran').value = item.lampiran || '';
+      document.getElementById('pgmHapusLampiranFlag').value = 'false';
       document.getElementById('pgmTanggalMulai').value = item.tanggal_mulai || '';
       document.getElementById('pgmTanggalBerakhir').value = item.tanggal_berakhir || '';
       document.getElementById('pgmStatus').value = item.status || 'AKTIF';
       document.getElementById('judulFormPengumuman').innerText = 'Edit Pengumuman';
+
+      var existContainer = document.getElementById('pgmExistingFileContainer');
+      if (item.lampiran && item.lampiran.trim() !== '') {
+        var urlLow = item.lampiran.toLowerCase();
+        var isPdf = urlLow.endsWith('.pdf') || urlLow.includes('pdf');
+        document.getElementById('pgmExistingIcon').innerText = isPdf ? '📄' : '🖼️';
+        document.getElementById('pgmExistingText').innerText = isPdf ? 'Dokumen PDF tersimpan' : 'Foto tersimpan di Drive';
+        document.getElementById('pgmExistingLink').href = item.lampiran;
+        if (existContainer) existContainer.style.display = 'flex';
+      } else {
+        if (existContainer) existContainer.style.display = 'none';
+      }
+
       bukaFormMode('formCrudPengumuman', 'wrapListPengumuman');
     }
 
@@ -12550,6 +12717,7 @@
       var judul = document.getElementById('pgmJudul').value.trim();
       var isi = document.getElementById('pgmIsi').value.trim();
       var lampiran = document.getElementById('pgmLampiran').value.trim();
+      var hapusLampiranFlag = document.getElementById('pgmHapusLampiranFlag').value === 'true';
       var tglMulai = document.getElementById('pgmTanggalMulai').value;
       var tglBerakhir = document.getElementById('pgmTanggalBerakhir').value;
       var status = document.getElementById('pgmStatus').value;
@@ -12559,7 +12727,7 @@
         return;
       }
 
-      showLoading('Menyimpan pengumuman...');
+      showLoading(selectedPgmFileData ? 'Mengunggah file & menyimpan pengumuman...' : 'Menyimpan pengumuman...');
       google.script.run
         .withSuccessHandler(function (res) {
           Swal.close();
@@ -12575,7 +12743,7 @@
           Swal.close();
           showError('Terjadi kesalahan server: ' + err.message);
         })
-        .simpanPengumuman(id, judul, isi, lampiran, tglMulai, tglBerakhir, status, currentToken);
+        .simpanPengumuman(id, judul, isi, lampiran, tglMulai, tglBerakhir, status, currentToken, selectedPgmFileData, hapusLampiranFlag);
     }
 
     function hapusPengumumanData(id) {
@@ -12598,7 +12766,7 @@
                 showSuccess('Pengumuman berhasil dihapus!');
                 muatDaftarPengumuman();
               } else {
-                showError(res.pesan);
+                showError(res.pesan || 'Gagal menghapus pengumuman.');
               }
             })
             .withFailureHandler(function (err) {
@@ -12614,24 +12782,52 @@
       var item = cacheDataPengumuman.find(x => x.id === id);
       if (!item) return;
 
-      var lampiranHtml = item.lampiran ? `
-        <div style="margin-top:14px; padding:10px; background:rgba(var(--primary-color-rgb),0.05); border-radius:10px; border:1px solid var(--border-color);">
-          <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Lampiran / Dokumen:</div>
-          <a href="${item.lampiran}" target="_blank" style="color:var(--primary-color); word-break:break-all; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:4px;">
-            <i class="material-icons" style="font-size:16px;">open_in_new</i> Buka Lampiran
-          </a>
-        </div>` : '';
+      var lampiranHtml = '';
+      if (item.lampiran && item.lampiran.trim() !== '') {
+        var urlLow = item.lampiran.toLowerCase();
+        var isPdf = urlLow.endsWith('.pdf') || urlLow.includes('pdf');
+        var isImg = urlLow.endsWith('.jpg') || urlLow.endsWith('.jpeg') || urlLow.endsWith('.png') || urlLow.endsWith('.webp') || urlLow.includes('drive.google.com') || urlLow.includes('export=view');
+
+        if (isPdf) {
+          lampiranHtml = `
+            <div style="margin-top:14px; padding:12px; background:rgba(239,68,68,0.06); border-radius:10px; border:1px solid rgba(239,68,68,0.2);">
+              <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Dokumen Lampiran (PDF):</div>
+              <a href="${item.lampiran}" target="_blank" class="btn-primary" style="background:#ef4444; color:#fff; word-break:break-all; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;">
+                <i class="material-icons" style="font-size:18px;">picture_as_pdf</i> 📄 Buka Dokumen PDF (Tab Baru)
+              </a>
+            </div>`;
+        } else if (isImg) {
+          lampiranHtml = `
+            <div style="margin-top:14px; padding:12px; background:rgba(var(--primary-color-rgb),0.05); border-radius:10px; border:1px solid var(--border-color);">
+              <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">Preview Foto Lampiran:</div>
+              <div style="text-align:center; margin-bottom:8px;">
+                <img src="${item.lampiran}" alt="Lampiran Foto" style="max-width:100%; max-height:260px; border-radius:8px; object-fit:contain; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+              </div>
+              <a href="${item.lampiran}" target="_blank" style="color:var(--primary-color); word-break:break-all; font-size:12px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                <i class="material-icons" style="font-size:16px;">open_in_new</i> Buka Foto Ukuran Penuh
+              </a>
+            </div>`;
+        } else {
+          lampiranHtml = `
+            <div style="margin-top:14px; padding:12px; background:rgba(var(--primary-color-rgb),0.05); border-radius:10px; border:1px solid var(--border-color);">
+              <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Lampiran / Dokumen:</div>
+              <a href="${item.lampiran}" target="_blank" style="color:var(--primary-color); word-break:break-all; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                <i class="material-icons" style="font-size:16px;">open_in_new</i> Buka Link Lampiran
+              </a>
+            </div>`;
+        }
+      }
 
       Swal.fire({
         title: item.judul,
         background: 'var(--bg-surface)',
         html: `
           <div style="text-align:left; font-size:14px; color:var(--text-main);">
-            <div style="display:flex; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+            <div style="display:flex; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:14px; flex-wrap:wrap;">
               <span>📅 ${formatIndoDate(item.dibuat_pada || item.tanggal_mulai)}</span>
               <span>👤 ${item.dibuat_oleh || 'Pengurus RT'}</span>
             </div>
-            <div style="line-height:1.6; white-space:pre-wrap; max-height:300px; overflow-y:auto; padding-right:5px;">
+            <div style="line-height:1.6; white-space:pre-wrap; max-height:280px; overflow-y:auto; padding-right:5px;">
               ${escapeJsString(item.isi)}
             </div>
             ${lampiranHtml}
