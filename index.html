@@ -1321,10 +1321,12 @@
       padding: 16px;
       box-sizing: border-box;
     }
+
     #modalPreviewLampiranPengumuman.active {
       display: flex !important;
       animation: fadeInModal 0.25s ease-out forwards;
     }
+
     .attachment-preview-modal {
       background: var(--bg-surface, #ffffff);
       color: var(--text-main, #1f2937);
@@ -1338,6 +1340,7 @@
       overflow: hidden;
       border: 1px solid var(--border-color, #e5e7eb);
     }
+
     .attachment-preview-header {
       padding: 14px 20px;
       background: var(--bg-surface-subtle, #f9fafb);
@@ -1346,6 +1349,7 @@
       align-items: center;
       justify-content: space-between;
     }
+
     .attachment-preview-title {
       font-size: 15px;
       font-weight: 700;
@@ -1357,6 +1361,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
     .attachment-preview-close {
       background: transparent;
       border: none;
@@ -1371,10 +1376,12 @@
       justify-content: center;
       transition: all 0.2s;
     }
+
     .attachment-preview-close:hover {
       background: rgba(239, 68, 68, 0.1);
       color: #ef4444;
     }
+
     .attachment-preview-body {
       padding: 16px;
       overflow-y: auto;
@@ -1386,13 +1393,15 @@
       min-height: 250px;
       background: var(--bg-body, #f3f4f6);
     }
+
     .attachment-preview-body img {
       max-width: 100%;
       max-height: 70vh;
       object-fit: contain;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
     .attachment-preview-body object,
     .attachment-preview-body iframe,
     .attachment-preview-body embed {
@@ -1402,12 +1411,14 @@
       border-radius: 8px;
       background: #fff;
     }
+
     .attachment-preview-body video,
     .attachment-preview-body audio {
       width: 100%;
       max-width: 700px;
       border-radius: 8px;
     }
+
     .attachment-preview-table-container {
       width: 100%;
       overflow-x: auto;
@@ -1416,11 +1427,13 @@
       border: 1px solid var(--border-color, #e5e7eb);
       border-radius: 8px;
     }
+
     .attachment-preview-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
     }
+
     .attachment-preview-table th {
       position: sticky;
       top: 0;
@@ -1431,14 +1444,17 @@
       font-weight: 700;
       z-index: 2;
     }
+
     .attachment-preview-table td {
       padding: 8px 12px;
       border-bottom: 1px solid var(--border-color, #e5e7eb);
       color: var(--text-main, #374151);
     }
+
     .attachment-preview-table tr:nth-child(even) {
-      background: rgba(0,0,0,0.02);
+      background: rgba(0, 0, 0, 0.02);
     }
+
     .attachment-sheet-tabs {
       display: flex;
       gap: 6px;
@@ -1447,6 +1463,7 @@
       overflow-x: auto;
       padding-bottom: 4px;
     }
+
     .attachment-sheet-tab {
       padding: 6px 14px;
       font-size: 12px;
@@ -1458,11 +1475,13 @@
       color: var(--text-main, #333);
       white-space: nowrap;
     }
+
     .attachment-sheet-tab.active {
       background: var(--primary-color, #2563eb);
       color: #fff;
       border-color: var(--primary-color, #2563eb);
     }
+
     .attachment-docx-container {
       width: 100%;
       background: #ffffff;
@@ -1473,8 +1492,9 @@
       max-height: 70vh;
       overflow-y: auto;
       text-align: left;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     }
+
     .attachment-preview-footer {
       padding: 12px 20px;
       background: var(--bg-surface-subtle, #f9fafb);
@@ -4444,18 +4464,21 @@
     <!-- LAYAR MANAJEMEN INFORMASI & PENGUMUMAN WARGA -->
     <div id="pengumumanView" class="screen">
       <div class="page-header">
-        <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
+        <i class="material-icons" style="cursor:pointer; color:var(--primary-color);"
+          onclick="kembaliKeDashboard()">arrow_back</i>
         <div>
           <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
             <i class="material-icons" style="color:var(--primary-color);">campaign</i>
             Manajemen Informasi & Pengumuman Warga
           </h3>
-          <span style="font-size:12px; color:var(--text-muted);">Kelola informasi dan pemberitahuan resmi untuk seluruh warga.</span>
+          <span style="font-size:12px; color:var(--text-muted);">Kelola informasi dan pemberitahuan resmi untuk seluruh
+            warga.</span>
         </div>
       </div>
 
       <!-- SUMMARY STATS (Khusus Admin / Pengurus RT) -->
-      <div id="pengumumanAdminStats" class="kas-summary" style="margin-bottom:18px; display:none; grid-template-columns: repeat(4, 1fr); gap:10px;">
+      <div id="pengumumanAdminStats" class="kas-summary"
+        style="margin-bottom:18px; display:none; grid-template-columns: repeat(4, 1fr); gap:10px;">
         <div class="summary-card" style="padding:12px; border-radius:14px;">
           <div class="summary-icon" style="width:36px; height:36px; background:rgba(59,130,246,0.1); color:#3b82f6;">
             <i class="material-icons">campaign</i>
@@ -4495,73 +4518,98 @@
       </div>
 
       <!-- ACTION BAR ADMIN / PENGURUS -->
-      <div id="pengumumanAdminActionBar" style="display:none; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <div id="pengumumanAdminActionBar"
+        style="display:none; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
         <div style="font-weight:700; font-size:15px; color:var(--text-main);">Daftar Pengumuman Resmi</div>
-        <button class="btn-primary" onclick="bukaFormPengumumanBaru()" style="display:flex; align-items:center; gap:6px; padding:10px 18px; border-radius:12px;">
+        <button class="btn-primary" onclick="bukaFormPengumumanBaru()"
+          style="display:flex; align-items:center; gap:6px; padding:10px 18px; border-radius:12px;">
           <i class="material-icons">add_circle</i> Buat Pengumuman
         </button>
       </div>
 
       <!-- FORM CRUD PENGUMUMAN (INLINE CARD MODE) -->
-      <div id="formCrudPengumuman" class="card-item" style="display:none; margin-bottom:20px; padding:20px; border-left:4px solid var(--primary-color);">
-        <h4 id="judulFormPengumuman" style="margin-top:0; margin-bottom:16px; font-weight:800; color:var(--text-main);">Buat Pengumuman Baru</h4>
+      <div id="formCrudPengumuman" class="card-item"
+        style="display:none; margin-bottom:20px; padding:20px; border-left:4px solid var(--primary-color);">
+        <h4 id="judulFormPengumuman" style="margin-top:0; margin-bottom:16px; font-weight:800; color:var(--text-main);">
+          Buat Pengumuman Baru</h4>
         <input type="hidden" id="pgmId">
         <input type="hidden" id="pgmLampiran" value="">
         <input type="hidden" id="pgmHapusLampiranFlag" value="false">
-        
+
         <div style="display:grid; gap:14px;">
           <div>
-            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Judul Pengumuman <span style="color:red;">*</span></label>
-            <input type="text" id="pgmJudul" class="swal2-input" style="width:100%; margin:4px 0 0;" placeholder="Contoh: Pemberitahuan Pemadaman Air Bersih">
+            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Judul
+              Pengumuman <span style="color:red;">*</span></label>
+            <input type="text" id="pgmJudul" class="swal2-input" style="width:100%; margin:4px 0 0;"
+              placeholder="Contoh: Pemberitahuan Pemadaman Air Bersih">
           </div>
-          
+
           <div>
-            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Isi Pengumuman <span style="color:red;">*</span></label>
-            <textarea id="pgmIsi" rows="5" class="swal2-input" style="width:100%; height:auto; padding:10px; margin:4px 0 0; font-family:inherit; resize:vertical;" placeholder="Tuliskan detail pengumuman secara rinci..."></textarea>
+            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Isi Pengumuman
+              <span style="color:red;">*</span></label>
+            <textarea id="pgmIsi" rows="5" class="swal2-input"
+              style="width:100%; height:auto; padding:10px; margin:4px 0 0; font-family:inherit; resize:vertical;"
+              placeholder="Tuliskan detail pengumuman secara rinci..."></textarea>
           </div>
 
           <!-- SECTION LAMPIRAN FILE (OPSIONAL) -->
           <div>
-            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">
+            <label class="input-label"
+              style="font-weight:700; font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">
               📎 Lampiran Foto / Dokumen PDF (Opsional)
             </label>
-            
+
             <!-- Container Lampiran Eksisting (Saat Edit) -->
-            <div id="pgmExistingFileContainer" style="display:none; margin-bottom:10px; padding:10px 14px; background:rgba(var(--primary-color-rgb),0.06); border:1px dashed var(--primary-color); border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-              <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-main);">
+            <div id="pgmExistingFileContainer"
+              style="display:none; margin-bottom:10px; padding:10px 14px; background:rgba(var(--primary-color-rgb),0.06); border:1px dashed var(--primary-color); border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div
+                style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-main);">
                 <span id="pgmExistingIcon">📄</span>
                 <span id="pgmExistingText">Lampiran tersimpan di database</span>
               </div>
               <div style="display:flex; gap:8px;">
-                <button type="button" id="pgmExistingBtn" onclick="previewPengumumanAttachment(document.getElementById('pgmLampiran').value, 'Lampiran Pengumuman')" class="btn-small" style="background:var(--primary-color); color:#fff; text-decoration:none; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px; border-radius:6px; border:none; cursor:pointer;">
+                <button type="button" id="pgmExistingBtn"
+                  onclick="previewPengumumanAttachment(document.getElementById('pgmLampiran').value, 'Lampiran Pengumuman')"
+                  class="btn-small"
+                  style="background:var(--primary-color); color:#fff; text-decoration:none; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px; border-radius:6px; border:none; cursor:pointer;">
                   <i class="material-icons" style="font-size:14px;">visibility</i> Preview
                 </button>
-                <button type="button" class="btn-small" onclick="hapusLampiranEksisting()" style="background:#ef4444; color:#fff; padding:4px 10px; font-size:12px; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                <button type="button" class="btn-small" onclick="hapusLampiranEksisting()"
+                  style="background:#ef4444; color:#fff; padding:4px 10px; font-size:12px; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
                   <i class="material-icons" style="font-size:14px;">delete</i> Hapus Lampiran
                 </button>
               </div>
             </div>
 
             <!-- Hidden File Input -->
-            <input type="file" id="pgmFileInput" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,video/*,audio/*" style="display:none;" onchange="handlePgmFileSelect(event)">
+            <input type="file" id="pgmFileInput"
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,video/*,audio/*"
+              style="display:none;" onchange="handlePgmFileSelect(event)">
 
             <!-- Drop / Select Zone -->
-            <div id="pgmUploadZone" onclick="document.getElementById('pgmFileInput').click()" style="border:2px dashed var(--border-color); border-radius:12px; padding:16px; text-align:center; cursor:pointer; background:var(--bg-surface); transition:all 0.2s ease;">
-              <i class="material-icons" style="font-size:32px; color:var(--primary-color); margin-bottom:4px;">cloud_upload</i>
-              <div style="font-weight:700; font-size:13px; color:var(--text-main);">Klik di sini untuk memilih file dari perangkat Anda</div>
-              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Format didukung: Gambar, PDF, Office (Word/Excel/PPT), Video, Audio, Teks (Maksimal 10 MB)</div>
+            <div id="pgmUploadZone" onclick="document.getElementById('pgmFileInput').click()"
+              style="border:2px dashed var(--border-color); border-radius:12px; padding:16px; text-align:center; cursor:pointer; background:var(--bg-surface); transition:all 0.2s ease;">
+              <i class="material-icons"
+                style="font-size:32px; color:var(--primary-color); margin-bottom:4px;">cloud_upload</i>
+              <div style="font-weight:700; font-size:13px; color:var(--text-main);">Klik di sini untuk memilih file dari
+                perangkat Anda</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Format didukung: Gambar, PDF, Office
+                (Word/Excel/PPT), Video, Audio, Teks (Maksimal 10 MB)</div>
             </div>
 
             <!-- Preview Selected File -->
-            <div id="pgmSelectedFilePreview" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(16,185,129,0.08); border:1px solid #10b981; border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div id="pgmSelectedFilePreview"
+              style="display:none; margin-top:10px; padding:10px 14px; background:rgba(16,185,129,0.08); border:1px solid #10b981; border-radius:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
               <div style="display:flex; align-items:center; gap:10px;">
                 <span id="pgmSelectedFileIcon" style="font-size:24px;">📄</span>
                 <div>
-                  <div id="pgmSelectedFileName" style="font-weight:700; font-size:13px; color:var(--text-main);">filename.pdf</div>
+                  <div id="pgmSelectedFileName" style="font-weight:700; font-size:13px; color:var(--text-main);">
+                    filename.pdf</div>
                   <div id="pgmSelectedFileSize" style="font-size:11px; color:var(--text-muted);">1.2 MB</div>
                 </div>
               </div>
-              <button type="button" class="btn-small" onclick="resetSelectedPgmFile()" style="background:#ef4444; color:#fff; border:none; padding:4px 10px; font-size:12px; border-radius:6px; cursor:pointer;">
+              <button type="button" class="btn-small" onclick="resetSelectedPgmFile()"
+                style="background:#ef4444; color:#fff; border:none; padding:4px 10px; font-size:12px; border-radius:6px; cursor:pointer;">
                 <i class="material-icons" style="font-size:14px; vertical-align:middle;">close</i> Batal Pilih File
               </button>
             </div>
@@ -4569,17 +4617,20 @@
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div>
-              <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Tanggal Mulai Tampil</label>
+              <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Tanggal Mulai
+                Tampil</label>
               <input type="date" id="pgmTanggalMulai" class="swal2-input" style="width:100%; margin:4px 0 0;">
             </div>
             <div>
-              <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Tanggal Berakhir (Expired)</label>
+              <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Tanggal
+                Berakhir (Expired)</label>
               <input type="date" id="pgmTanggalBerakhir" class="swal2-input" style="width:100%; margin:4px 0 0;">
             </div>
           </div>
 
           <div>
-            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Status Publikasi</label>
+            <label class="input-label" style="font-weight:700; font-size:12px; color:var(--text-muted);">Status
+              Publikasi</label>
             <select id="pgmStatus" class="swal2-input" style="width:100%; margin:4px 0 0;">
               <option value="AKTIF">AKTIF (Dapat dibaca seluruh warga)</option>
               <option value="DRAFT">DRAFT (Disimpan sementara)</option>
@@ -4588,8 +4639,10 @@
           </div>
 
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-            <button class="btn-small" onclick="tutupFormPengumuman()" style="background:var(--border-color); color:var(--text-main);">Batal</button>
-            <button class="btn-primary" onclick="simpanDataPengumuman()" style="padding:8px 20px;">Simpan & Terbitkan</button>
+            <button class="btn-small" onclick="tutupFormPengumuman()"
+              style="background:var(--border-color); color:var(--text-main);">Batal</button>
+            <button class="btn-primary" onclick="simpanDataPengumuman()" style="padding:8px 20px;">Simpan &
+              Terbitkan</button>
           </div>
         </div>
       </div>
@@ -4597,31 +4650,43 @@
       <!-- WRAPPER LIST DATA PENGUMUMAN -->
       <div id="wrapListPengumuman">
         <div style="display:flex; gap:10px; margin-bottom:16px;">
-          <input type="text" id="cariPengumuman" class="swal2-input" style="margin:0; flex:1; font-size:13px;" placeholder="Cari judul atau isi pengumuman..." onkeyup="filterListPengumuman()">
+          <input type="text" id="cariPengumuman" class="swal2-input" style="margin:0; flex:1; font-size:13px;"
+            placeholder="Cari judul atau isi pengumuman..." onkeyup="filterListPengumuman()">
         </div>
         <div id="containerListPengumuman" style="display:grid; gap:14px;"></div>
       </div>
     </div>
 
     <!-- POPUP NOTIFIKASI MELAYANG (WARGA) -->
-    <div id="popupPengumumanWarga" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-      <div style="background:var(--bg-surface); border:1px solid var(--border-color); width:100%; max-width:480px; border-radius:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); overflow:hidden; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-        <div style="background:linear-gradient(135deg, var(--primary-color), var(--primary-dark)); padding:16px 20px; color:white; display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:15px; letter-spacing:0.3px;">
+    <div id="popupPengumumanWarga"
+      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+      <div
+        style="background:var(--bg-surface); border:1px solid var(--border-color); width:100%; max-width:480px; border-radius:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); overflow:hidden; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div
+          style="background:linear-gradient(135deg, var(--primary-color), var(--primary-dark)); padding:16px 20px; color:white; display:flex; justify-content:space-between; align-items:center;">
+          <div
+            style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:15px; letter-spacing:0.3px;">
             <i class="material-icons">campaign</i> PENGUMUMAN RESMI RT
           </div>
-          <i class="material-icons" style="cursor:pointer; font-size:22px; opacity:0.8;" onclick="tutupPopupPengumuman()">close</i>
+          <i class="material-icons" style="cursor:pointer; font-size:22px; opacity:0.8;"
+            onclick="tutupPopupPengumuman()">close</i>
         </div>
         <div style="padding:20px;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <span id="popupBadgeTgl" style="font-size:11px; background:rgba(var(--primary-color-rgb),0.1); color:var(--primary-color); padding:3px 8px; border-radius:6px; font-weight:700;">-</span>
+            <span id="popupBadgeTgl"
+              style="font-size:11px; background:rgba(var(--primary-color-rgb),0.1); color:var(--primary-color); padding:3px 8px; border-radius:6px; font-weight:700;">-</span>
             <span id="popupBadgePenulis" style="font-size:11px; color:var(--text-muted); font-weight:500;">-</span>
           </div>
-          <h3 id="popupJudulPengumuman" style="font-size:18px; font-weight:800; color:var(--text-main); margin:0 0 10px; line-height:1.3;">-</h3>
-          <div id="popupSnippetIsi" style="font-size:14px; color:var(--text-muted); line-height:1.5; margin-bottom:20px; max-height:120px; overflow-y:auto;">-</div>
+          <h3 id="popupJudulPengumuman"
+            style="font-size:18px; font-weight:800; color:var(--text-main); margin:0 0 10px; line-height:1.3;">-</h3>
+          <div id="popupSnippetIsi"
+            style="font-size:14px; color:var(--text-muted); line-height:1.5; margin-bottom:20px; max-height:120px; overflow-y:auto;">
+            -</div>
           <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button class="btn-small" onclick="tutupPopupPengumuman()" style="background:var(--border-color); color:var(--text-main);">Nanti</button>
-            <button class="btn-primary" id="btnBacaSelengkapnyaPopup" style="padding:8px 18px;">Baca Selengkapnya</button>
+            <button class="btn-small" onclick="tutupPopupPengumuman()"
+              style="background:var(--border-color); color:var(--text-main);">Nanti</button>
+            <button class="btn-primary" id="btnBacaSelengkapnyaPopup" style="padding:8px 18px;">Baca
+              Selengkapnya</button>
           </div>
         </div>
       </div>
@@ -4632,7 +4697,7 @@
   <script>
     // ======================== CLOUD HOSTING ADAPTER ========================
     // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzEA8XHujNFRK3Z09GwNcuq1Yu4np-hjnAp-9lZ7G0wuy42P1W8Gic8JB485Upnj-AoQQ/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2Eadk8BzK1JroOi62Gl9USaONdeilaUFuFmxwapTfSF4UpFegCPQJWcit2URhonWqww/exec";
 
     // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
     const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -12653,14 +12718,14 @@
     function isPengumumanAdminFrontend() {
       if (!currentUser) return false;
       var role = String(currentUser.role || 'warga').toLowerCase();
-      return role === 'admin' || 
-             role.indexOf('pengurus') !== -1 || 
-             role.indexOf('rt') !== -1 || 
-             role === 'ketua' || 
-             role === 'sekretaris' || 
-             role === 'bendahara' || 
-             hasPermission('rt_pengumuman_crud') || 
-             hasPermission('rt_pengumuman');
+      return role === 'admin' ||
+        role.indexOf('pengurus') !== -1 ||
+        role.indexOf('rt') !== -1 ||
+        role === 'ketua' ||
+        role === 'sekretaris' ||
+        role === 'bendahara' ||
+        hasPermission('rt_pengumuman_crud') ||
+        hasPermission('rt_pengumuman');
     }
 
     function bukaPengumuman() {
@@ -12680,6 +12745,7 @@
       const currentViewToken = window.__activeViewToken;
       renderSkeleton('containerListPengumuman', 3);
 
+      var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
       google.script.run
         .withSuccessHandler(function (res) {
           if (currentViewToken !== window.__activeViewToken) return;
@@ -12713,7 +12779,7 @@
           console.error('[PENGUMUMAN FAILURE]', err);
           renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
         })
-        .getDaftarPengumuman(currentToken);
+        .getDaftarPengumuman(token);
     }
 
     function getDriveDownloadUrl(url) {
@@ -12797,7 +12863,7 @@
     var activeBlobObjectUrl = null;
 
     // Esc Key Listener untuk Tutup Modal
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         var modal = document.getElementById('modalPreviewLampiranPengumuman');
         if (modal && modal.classList.contains('active')) {
@@ -12866,7 +12932,7 @@
       }
       var body = document.getElementById('attachmentPreviewBody');
       if (body) body.innerHTML = '';
-      
+
       if (activeBlobObjectUrl) {
         URL.revokeObjectURL(activeBlobObjectUrl);
         activeBlobObjectUrl = null;
@@ -12930,7 +12996,7 @@
         // FETCH FILE BLOB UNTUK DOKUMEN (PDF, EXCEL, DOCX, TEXT)
         var response = await fetch(fileUrl);
         if (!response.ok) throw new Error('Gagal mengambil file dari server (HTTP ' + response.status + ')');
-        
+
         var blob = await response.blob();
         var arrayBuffer = await blob.arrayBuffer();
 
@@ -12967,7 +13033,7 @@
           if (workbook.SheetNames.length === 0) throw new Error('File Excel tidak berisi sheet.');
 
           var tabsHtml = '<div class="attachment-sheet-tabs">';
-          workbook.SheetNames.forEach(function(sheetName, index) {
+          workbook.SheetNames.forEach(function (sheetName, index) {
             tabsHtml += `<button class="attachment-sheet-tab ${index === 0 ? 'active' : ''}" onclick="renderExcelSheet('${sheetName}')">${sanitasiHtml(sheetName)}</button>`;
           });
           tabsHtml += '</div>';
@@ -13032,7 +13098,7 @@ ${sanitasiHtml(textContent)}
       if (!window.currentWorkbookData) return;
       var worksheet = window.currentWorkbookData.Sheets[sheetName];
       var htmlTable = XLSX.utils.sheet_to_html(worksheet, { header: '', footer: '' });
-      
+
       var container = document.getElementById('excelSheetContainer');
       if (container) {
         container.innerHTML = htmlTable;
@@ -13043,7 +13109,7 @@ ${sanitasiHtml(textContent)}
       }
 
       var tabs = document.querySelectorAll('.attachment-sheet-tab');
-      tabs.forEach(function(tab) {
+      tabs.forEach(function (tab) {
         if (tab.innerText === sheetName) tab.classList.add('active');
         else tab.classList.remove('active');
       });
@@ -13170,8 +13236,10 @@ ${sanitasiHtml(textContent)}
         <!-- Konten preview akan dirender di sini secara internal -->
       </div>
       <div class="attachment-preview-footer" id="attachmentPreviewFooter">
-        <span style="font-size:12px; color:var(--text-muted);" id="attachmentPreviewMeta">Portal RT01-RW03 Native Viewer</span>
-        <button type="button" class="btn-secondary" style="padding:6px 16px; font-size:12px;" onclick="tutupPreviewLampiran()">Tutup</button>
+        <span style="font-size:12px; color:var(--text-muted);" id="attachmentPreviewMeta">Portal RT01-RW03 Native
+          Viewer</span>
+        <button type="button" class="btn-secondary" style="padding:6px 16px; font-size:12px;"
+          onclick="tutupPreviewLampiran()">Tutup</button>
       </div>
     </div>
   </div>
