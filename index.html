@@ -4466,37 +4466,41 @@
     /**
      * Registrasi Web Push Native (Background Capability)
      */
+    /**
+     * Registrasi Service Worker & Web Push (User Gesture Compliant)
+     */
     async function registrasiWebPush() {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.warn('Web Push tidak didukung di browser ini.');
-        return;
-      }
-
+      if (!('serviceWorker' in navigator)) return;
       try {
         const registration = await navigator.serviceWorker.register('sw.js');
         console.log('Service Worker aktif:', registration.scope);
 
-        // Minta izin notifikasi
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        // Hanya sinkronkan subscription jika user sudah memberikan izin (granted)
+        if ('PushManager' in window && Notification.permission === 'granted') {
+          updatePushSubscriptionOnServerFromReg(registration);
+        }
+      } catch (err) {
+        console.warn('Gagal registrasi Service Worker:', err);
+      }
+    }
 
-        // Subscribe ke Push Service
+    async function updatePushSubscriptionOnServerFromReg(registration) {
+      try {
         let subscription = await registration.pushManager.getSubscription();
-
         if (!subscription) {
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
-
-        // Kirim Subscription ke GAS
-        google.script.run.withSuccessHandler(function (res) {
-          console.log('Web Push Subscription tersinkronisasi ke server.');
-        }).savePushSubscription(JSON.stringify(subscription), currentUser.email);
-
+        var userEmail = (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ? currentUser.email : '';
+        google.script.run
+          .withSuccessHandler(function (res) {
+            console.log('Web Push Subscription tersinkronisasi ke server.');
+          })
+          .savePushSubscription(JSON.stringify(subscription), userEmail);
       } catch (err) {
-        console.error('Gagal registrasi Web Push:', err);
+        console.warn('Gagal sinkronkan Push Subscription:', err);
       }
     }
 
@@ -4513,69 +4517,74 @@
                 if (prop === 'withFailureHandler') return (h) => createRunner({ ...handlers, failure: h });
 
                 return async (...args) => {
-                  // 10XTHINK: Identifikasi Aksi Penulisan (Data Berat)
-                  const isWriteAction = /simpan|proses|kirim|upload|tambah|update|hapus|edit|save/i.test(prop);
                   const controller = new AbortController();
-                  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s Timeout
+                  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s Timeout
 
                   try {
                     const urlBase = GAS_WEB_APP_URL;
                     const separator = urlBase.includes('?') ? '&' : '?';
                     const requestUrl = `${urlBase}${separator}v=${Date.now()}`;
 
+                    // Gunakan mode: 'cors' dengan Content-Type 'text/plain;charset=utf-8'
+                    // Mencegah browser mengirim CORS Preflight (OPTIONS) request ke Apps Script
                     const res = await fetch(requestUrl, {
                       method: 'POST',
                       mode: 'cors',
+                      redirect: 'follow',
+                      headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                      },
                       body: JSON.stringify({ action: prop, data: args }),
                       signal: controller.signal
                     });
 
                     clearTimeout(timeoutId);
 
-                    if (res.ok) {
-                      const text = await res.text();
-                      try {
-                        console.log('[Smart Sync Debug] RAW RESPONSE:', text);
-                        const json = JSON.parse(text);
-                        if (handlers.success) handlers.success(json);
-                        return json;
-                      } catch (parseErr) {
-                        console.error('[Smart Sync Error] JSON_PARSE_ERROR - RAW RESPONSE:', text, 'Parse Error:', parseErr);
-                        if (isWriteAction) {
-                          console.warn("Smart Sync: Respons JSON tidak lengkap tapi status HTTP sukses.");
-                          const fallbackSuccess = { status: 'success', pesan: 'Laporan Berhasil Terkirim!', message: 'Data berhasil disimpan' };
-                          if (handlers.success) handlers.success(fallbackSuccess);
-                          return fallbackSuccess;
-                        } else {
-                          // Untuk read actions, provide fallback error response tanpa double-triggering handlers
-                          const fallbackError = { status: 'error', pesan: 'Gagal parse data dari server. Silakan coba lagi.' };
-                          if (handlers.failure) {
-                            handlers.failure(fallbackError);
-                          } else if (handlers.success) {
-                            handlers.success(fallbackError);
-                          }
-                          return fallbackError;
-                        }
-                        throw new Error("JSON_PARSE_ERROR");
-                      }
+                    if (!res.ok) {
+                      throw new Error(`Server merespons status: ${res.status}`);
                     }
-                    throw new Error(`Server merespons status: ${res.status}`);
+
+                    const text = await res.text();
+                    let json;
+                    try {
+                      json = JSON.parse(text);
+                    } catch (parseErr) {
+                      console.error('[API Error] Response bukan JSON valid:', text.substring(0, 300));
+                      throw new Error(`Response server bukan JSON. HTTP ${res.status}: ${text.substring(0, 150)}`);
+                    }
+
+                    console.log('[API RESPONSE]', prop, json);
+
+                    if (json && json.status === 'error') {
+                      var errObj = new Error(json.pesan || json.message || 'Terjadi kesalahan pada server');
+                      errObj.response = json;
+                      if (handlers.failure) handlers.failure(errObj);
+                      else showError(json.pesan || 'Terjadi kesalahan pada server');
+                      return json;
+                    }
+
+                    if (handlers.success) handlers.success(json);
+                    return json;
 
                   } catch (err) {
                     clearTimeout(timeoutId);
-                    if (isWriteAction) {
-                      console.warn("Write Action Error Bypassed for UX:", err);
-                      const bypassSuccess = { status: 'success', pesan: 'Data sedang diproses server.', message: 'Data berhasil disimpan' };
-                      if (handlers.success) handlers.success(bypassSuccess);
-                      return bypassSuccess;
+                    console.error(`[API Call Failed: ${prop}]`, err);
+
+                    var errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+                    if (err.name === 'AbortError') {
+                      errorMessage = 'Waktu koneksi ke server habis (Timeout). Silakan coba lagi.';
+                    } else if (err.message) {
+                      errorMessage = err.message;
                     }
 
-                    if (handlers.failure) handlers.failure(err);
-                    else {
-                      console.error("Koneksi API Gagal:", err);
-                      showError("Gagal terhubung ke server. Periksa koneksi.");
+                    var finalErr = new Error(errorMessage);
+
+                    if (handlers.failure) {
+                      handlers.failure(finalErr);
+                    } else {
+                      showError(errorMessage);
                     }
-                    throw err;
+                    throw finalErr;
                   }
                 };
               }
