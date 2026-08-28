@@ -12680,41 +12680,42 @@
       const currentViewToken = window.__activeViewToken;
       renderSkeleton('containerListPengumuman', 3);
 
-      google.script.run
-        .withSuccessHandler(function (res) {
-          if (currentViewToken !== window.__activeViewToken) return;
-          console.log('[PENGUMUMAN RESPONSE]', res, typeof res);
-          var container = document.getElementById('containerListPengumuman');
-          if (container) container.innerHTML = '';
+        var token = currentToken || (currentUser && currentUser.token) || localStorage.getItem('sessionToken');
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (currentViewToken !== window.__activeViewToken) return;
+            console.log('[PENGUMUMAN RESPONSE]', res, typeof res);
+            var container = document.getElementById('containerListPengumuman');
+            if (container) container.innerHTML = '';
 
-          if (!res || res.status === 'error') {
-            console.error('[PENGUMUMAN SERVER ERROR]', res);
-            return renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
-          }
+            if (!res || res.status === 'error') {
+              console.error('[PENGUMUMAN SERVER ERROR]', res);
+              return renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
+            }
 
-          cacheDataPengumuman = Array.isArray(res.data) ? res.data : [];
+            cacheDataPengumuman = Array.isArray(res.data) ? res.data : [];
 
-          // Update Statistik Admin
-          if (res.stats) {
-            if (document.getElementById('statTotalPengumuman')) document.getElementById('statTotalPengumuman').innerText = res.stats.total || 0;
-            if (document.getElementById('statAktifPengumuman')) document.getElementById('statAktifPengumuman').innerText = res.stats.aktif || 0;
-            if (document.getElementById('statDraftPengumuman')) document.getElementById('statDraftPengumuman').innerText = res.stats.draft || 0;
-            if (document.getElementById('statNonaktifPengumuman')) document.getElementById('statNonaktifPengumuman').innerText = res.stats.nonaktif || 0;
-          }
+            // Update Statistik Admin
+            if (res.stats) {
+              if (document.getElementById('statTotalPengumuman')) document.getElementById('statTotalPengumuman').innerText = res.stats.total || 0;
+              if (document.getElementById('statAktifPengumuman')) document.getElementById('statAktifPengumuman').innerText = res.stats.aktif || 0;
+              if (document.getElementById('statDraftPengumuman')) document.getElementById('statDraftPengumuman').innerText = res.stats.draft || 0;
+              if (document.getElementById('statNonaktifPengumuman')) document.getElementById('statNonaktifPengumuman').innerText = res.stats.nonaktif || 0;
+            }
 
-          if (!cacheDataPengumuman || cacheDataPengumuman.length === 0) {
-            return renderEmptyState('containerListPengumuman', 'Belum ada pengumuman resmi yang diterbitkan.');
-          }
+            if (!cacheDataPengumuman || cacheDataPengumuman.length === 0) {
+              return renderEmptyState('containerListPengumuman', 'Belum ada pengumuman resmi yang diterbitkan.');
+            }
 
-          renderCardPengumuman(cacheDataPengumuman);
-        })
-        .withFailureHandler(function (err) {
-          if (currentViewToken !== window.__activeViewToken) return;
-          console.error('[PENGUMUMAN FAILURE]', err);
-          renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
-        })
-        .getDaftarPengumuman(currentToken);
-    }
+            renderCardPengumuman(cacheDataPengumuman);
+          })
+          .withFailureHandler(function (err) {
+            if (currentViewToken !== window.__activeViewToken) return;
+            console.error('[PENGUMUMAN FAILURE]', err);
+            renderErrorState('containerListPengumuman', 'muatDaftarPengumuman()');
+          })
+          .getDaftarPengumuman(token);
+      }
 
     function getDriveDownloadUrl(url) {
       if (!url) return '#';
