@@ -2819,7 +2819,7 @@
 <script>
   // ======================== CLOUD HOSTING ADAPTER ========================
   // Pastikan URL ini adalah URL /exec dari deployment terbaru Anda
-  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbxaqfmZuja_qm9No4dCaHDCbhkSpO32ddkkAaUWMxYdFCNZZ0nNq1CaaQQznS0PFOimVg/exec";
+  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbw4XMmamkccb0GUwi6eZ4L-zCaAlYaYHJAbZsY0x2qJHRYkMpur9S0NiEtZS0Oa88v7pw/exec";
 
   // ENGINE NOTIFIKASI LATAR BELAKANG (NATIVE WEB PUSH)
   const VAPID_PUBLIC_KEY = 'BHzPkFcMroyzSXgnhm-282eYGLbUxdlaeFRusTZZE8GFL6MbFTaf501CW8n5lwRRvtDVwJ0bGLMKisHqgwysE3k';
@@ -3032,7 +3032,7 @@
     { key: 'rt_kas_crud', label: 'Kelola Kas RT' },
     { key: 'rt_galeri', label: 'Melihat Galeri RT' },
     { key: 'rt_galeri_crud', label: 'Kelola Galeri RT' },
-    { key: 'rt_iuran_manage', label: 'Kelola Checklist & Kategori Iuran Warga' },
+    { key: 'rt_iuran_manage', label: 'Kelola Iuran Warga' },
     { key: 'pkk_jadwal', label: 'Melihat Jadwal PKK' },
     { key: 'pkk_jadwal_crud', label: 'Kelola Jadwal PKK' },
     { key: 'pkk_kader', label: 'Melihat Kader PKK' },
@@ -6456,10 +6456,7 @@ function bukaJadwal() {
     document.getElementById('uNama').value = userToEdit.nama;
     document.getElementById('uEmail').value = userToEdit.email;
     document.getElementById('uRole').value = userToEdit.role.toLowerCase();
-    document.getElementById('uPassword').value = '';
-    document.getElementById('uPassword').placeholder = 'Kosongkan untuk mempertahankan password';
     generatePermissionCheckboxes(userToEdit.permissions || []);
-    document.getElementById('judulFormUser').innerText = 'Edit Akses User';
     bukaFormMode('formCrudUser', 'wrapListUser');
   }
 
@@ -6521,8 +6518,6 @@ function bukaJadwal() {
     document.getElementById('uId').value = '';
     document.getElementById('uNama').value = '';
     document.getElementById('uEmail').value = '';
-    document.getElementById('uPassword').value = '';
-    document.getElementById('uPassword').placeholder = 'Password';
     document.getElementById('uRole').value = 'warga';
     generatePermissionCheckboxes([]);
     document.getElementById('judulFormUser').innerText = 'Tambah User';
@@ -7698,7 +7693,10 @@ function bukaJadwal() {
     headerHtml += '<th>Aksi</th>';
     thead.innerHTML = headerHtml;
     tbody.innerHTML = '';
-    var canManageIuran = hasPermission('rt_iuran_manage');
+    var isAdmin = false;
+    if (currentUser.role === 'admin' || currentUser.role === 'pengurus rt') {
+      isAdmin = true;
+    }
     for (var idx = 0; idx < rows.length; idx++) {
       var row = rows[idx];
       var tr = document.createElement('tr');
@@ -7711,7 +7709,7 @@ function bukaJadwal() {
       tdNama.innerText = row.nama;
       tr.appendChild(tdNama);
       var tdKategori = document.createElement('td');
-      if (canManageIuran) {
+      if (isAdmin) {
         var select = document.createElement('select');
         select.style.width = '100%';
         select.style.padding = '4px 6px';
@@ -7744,7 +7742,7 @@ function bukaJadwal() {
       for (var bln = 0; bln < 12; bln++) {
         var td = document.createElement('td');
         td.style.textAlign = 'center';
-        if (canManageIuran) {
+        if (isAdmin) {
           var chk = document.createElement('input');
           chk.type = 'checkbox'; 
           chk.style.width = '24px'; /* Lebih besar agar mudah ditekan jari */
@@ -7775,7 +7773,7 @@ function bukaJadwal() {
         tr.appendChild(td);
       }
       var tdAksi = document.createElement('td');
-      if (canManageIuran) {
+      if (isAdmin) {
         var editBtn = document.createElement('button');
         editBtn.className = 'btn-small warning';
         editBtn.innerHTML = '<i class="material-icons" style="font-size:14px;">edit</i>';
