@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.1';
+    const APP_VERSION = '1.2.2';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -3032,7 +3032,7 @@
     { key: 'rt_kas_crud', label: 'Kelola Kas RT' },
     { key: 'rt_galeri', label: 'Melihat Galeri RT' },
     { key: 'rt_galeri_crud', label: 'Kelola Galeri RT' },
-    { key: 'rt_iuran_manage', label: 'Kelola Iuran Warga' },
+    { key: 'rt_iuran_manage', label: 'Kelola Checklist & Data Iuran Warga' },
     { key: 'pkk_jadwal', label: 'Melihat Jadwal PKK' },
     { key: 'pkk_jadwal_crud', label: 'Kelola Jadwal PKK' },
     { key: 'pkk_kader', label: 'Melihat Kader PKK' },
@@ -7693,10 +7693,7 @@ function bukaJadwal() {
     headerHtml += '<th>Aksi</th>';
     thead.innerHTML = headerHtml;
     tbody.innerHTML = '';
-    var isAdmin = false;
-    if (currentUser.role === 'admin' || currentUser.role === 'pengurus rt') {
-      isAdmin = true;
-    }
+    var isAdmin = hasPermission('rt_iuran_manage');
     for (var idx = 0; idx < rows.length; idx++) {
       var row = rows[idx];
       var tr = document.createElement('tr');
@@ -8052,7 +8049,6 @@ function bukaJadwal() {
       iuranAdminDiv.innerHTML = '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button>'
         + '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
     } else {
-      actionDiv.innerHTML = '';
       iuranAdminDiv.innerHTML = '';
     }
     muatDataKas();
