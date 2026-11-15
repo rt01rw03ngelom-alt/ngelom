@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.2';
+    const APP_VERSION = '1.2.12';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -523,6 +523,46 @@
       justify-content: space-between;
       position: relative;
       z-index: 1;
+    }
+
+    .header-role-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 14px 0 0 14px;
+      padding: 7px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 13px;
+      line-height: 1.2;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-role-indicator strong {
+      margin-left: 5px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .header-role-dot {
+      flex: 0 0 10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 0 12px rgba(255, 255, 255, 0.9);
+      animation: roleActivePulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes roleActivePulse {
+      50% { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12), 0 0 16px rgba(255, 255, 255, 1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .header-role-dot { animation: none; }
     }
 
     .header-logo {
@@ -1334,12 +1374,13 @@
     /* Compact & Modern Iuran Table for Mobile */
     .iuran-table {
       width: 100%;
-      min-width: 1050px;
+      min-width: 1100px;
       font-size: 16px;
       border-collapse: separate;
       border-spacing: 0;
       margin: 0 auto;
       table-layout: fixed;
+      overflow: visible;
     }
 
     /* Sticky Kolom Nama (Kolom 1) */
@@ -1362,7 +1403,7 @@
       max-width: 180px !important;
       white-space: normal;
       word-break: break-word;
-      font-weight: 800; /* Teks Nama lebih tebal */
+      font-weight: 500;
       color: var(--text-main);
       border-right: 1px solid var(--border-color);
       padding: 15px 12px !important; /* Padding lebih lega */
@@ -1392,6 +1433,33 @@
     .iuran-table th:nth-child(2) {
       background-color: var(--bg-app) !important;
       z-index: 20 !important; 
+    }
+
+    .iuran-table th:nth-child(1) {
+      font-weight: 700;
+    }
+
+    .iuran-table td:nth-child(1) {
+      font-weight: 400 !important;
+      font-size: 14px;
+    }
+
+    .iuran-table th:nth-child(15),
+    .iuran-table td:nth-child(15) {
+      width: 100px !important;
+      min-width: 100px !important;
+      max-width: 100px !important;
+      white-space: nowrap;
+      overflow: visible !important;
+    }
+
+    .iuran-table td:nth-child(15) .btn-small {
+      padding: 6px 8px;
+      margin-right: 4px;
+    }
+
+    .iuran-table td:nth-child(15) .btn-small:last-child {
+      margin-right: 0;
     }
 
     /* Peningkatan hit target checkbox */
@@ -1430,9 +1498,39 @@
       letter-spacing: 0.5px;
     }
 
+    .iuran-table tr.iuran-category-heading > td {
+      position: relative !important;
+      left: auto !important;
+      z-index: 1 !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      background: var(--bg-app) !important;
+      border: 0 !important;
+    }
+
+    .iuran-table .iuran-category-label {
+      position: sticky;
+      left: 0;
+      z-index: 15;
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      padding: 8px 12px;
+      border-radius: 0 10px 10px 0;
+      background: var(--primary-color);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
     @media (max-width: 500px) {
       .iuran-table {
-        min-width: 900px;
+        min-width: 980px;
         font-size: 15px;
       }
 
@@ -1455,6 +1553,13 @@
       .iuran-table td:nth-child(n+3):nth-child(-n+14) {
         width: 45px;
         padding: 8px 2px !important;
+      }
+
+      .iuran-table th:nth-child(15),
+      .iuran-table td:nth-child(15) {
+        width: 96px !important;
+        min-width: 96px !important;
+        max-width: 96px !important;
       }
 
       .iuran-table input[type="checkbox"] {
@@ -1730,6 +1835,14 @@
     body.dark-mode .iuran-table tr.row-lunas td {
       background-color: rgba(16, 185, 129, 0.35) !important;
     } 
+    .iuran-table tr.row-lunas td:nth-child(1),
+    .iuran-table tr.row-lunas td:nth-child(2) {
+      background-color: #c3eedf !important;
+    }
+    body.dark-mode .iuran-table tr.row-lunas td:nth-child(1),
+    body.dark-mode .iuran-table tr.row-lunas td:nth-child(2) {
+      background-color: #195b53 !important;
+    }
 
     /* Prefix Rp untuk Input Nominal */
     .input-group-prefix {
@@ -1894,6 +2007,10 @@
           <div class="header-toggle-btn" onclick="logout()" title="Keluar">
             <i class="material-icons">power_settings_new</i>
           </div>
+        </div>
+        <div class="header-role-indicator" id="headerRoleIndicator" style="display:none;" aria-label="Role akun aktif">
+          <span class="header-role-dot" aria-hidden="true"></span>
+          <span>Anda di <strong id="headerRoleLabel">Warga</strong></span>
         </div>
       </div>
     </div>
@@ -2736,6 +2853,10 @@
         <!-- Opsi akan diisi otomatis dari database -->
       </select>
       <button class="btn-small" onclick="muatTabelIuran()">Tampilkan</button>
+      <label for="filterKategoriIuran">Kategori:</label>
+      <select id="filterKategoriIuran" style="width:auto; max-width:100%;" onchange="cariWargaIuran()">
+        <option value="">Semua Kategori</option>
+      </select>
     </div>
     <div class="table-wrapper">
       <table class="iuran-table" id="tabelIuran">
@@ -3021,6 +3142,7 @@
     { key: 'rt_jadwal_crud', label: 'Kelola Jadwal RT' },
     { key: 'rt_ronda', label: 'Melihat Ronda' },
     { key: 'rt_ronda_crud', label: 'Kelola Ronda' },
+    { key: 'rt_ronda_absen', label: 'Kelola Absensi Ronda (Datang & Pulang)' },
     { key: 'rt_user', label: 'Melihat User' },
     { key: 'rt_user_crud', label: 'Kelola User/Role' },
     { key: 'rt_kontak', label: 'Melihat Kontak' },
@@ -4025,6 +4147,7 @@
           if (res && res.status === 'success') {
             currentUser = res;
             currentToken = res.token;
+            updateHeaderRoleIndicator();
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
             syncTokenToIDB(res.token); // Sinkronisasi ke IDB
 
@@ -4129,6 +4252,7 @@
         if (res.status === 'success') {
           currentUser = res;
           currentToken = res.token;
+          updateHeaderRoleIndicator();
           // Perbaikan: Update nama di dashboard saat login sukses
           var nameEl = document.getElementById('welcomeUserName');
           if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
@@ -4455,6 +4579,26 @@
   // Refactor updateNavActiveState lama agar memanggil fungsi baru
   function updateNavActiveState(tabName) {
     setAplikasiActiveTab(tabName);
+  }
+
+  function updateHeaderRoleIndicator() {
+    var badge = document.getElementById('headerRoleIndicator');
+    var label = document.getElementById('headerRoleLabel');
+    if (!badge || !label || !currentUser || !currentUser.role) return;
+
+    var role = String(currentUser.role).trim().toLowerCase();
+    var knownLabels = {
+      'warga': 'Warga',
+      'admin': 'Admin',
+      'pengurus rt': 'Pengurus RT',
+      'pengurus pkk': 'Pengurus PKK',
+      'pengurus karang taruna': 'Pengurus Karang Taruna'
+    };
+    var displayRole = knownLabels[role] || role.replace(/\b\w/g, function(character) {
+      return character.toUpperCase();
+    });
+    label.textContent = displayRole;
+    badge.style.display = 'inline-flex';
   }
 
   function pilihMenu(tabName) {
@@ -5409,7 +5553,7 @@ function bukaJadwal() {
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
       showError('Gagal memuat data ronda: ' + err.message);
-    }).getRonda(bulan, tahun);
+    }).getRonda(bulan, tahun, currentToken);
   }
 
   // ======================== OPTIMASI BANNER RONDA (10XTHINK REWRITE) ========================
@@ -5681,7 +5825,11 @@ function bukaJadwal() {
 
     list.innerHTML = '';
     if (filtered.length > 0) {
-      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>';
+      var canManageRondaAbsensi = hasPermission('rt_ronda_absen');
+      var columnCount = canManageRondaAbsensi ? 6 : 4;
+      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th>';
+      if (canManageRondaAbsensi) html += '<th>Datang</th><th>Pulang</th>';
+      html += '<th>Aksi</th></tr></thead><tbody>';
       var lastMonthLabel = '';
 
       filtered.forEach(function(item) {
@@ -5697,7 +5845,7 @@ function bukaJadwal() {
         if (isYearly) {
           var currentMonthLabel = months[iMonth - 1] + ' ' + iYear;
           if (currentMonthLabel !== lastMonthLabel) {
-            html += `<tr><td colspan="4" class="month-divider" id="month-header-${iMonth}"><i class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:5px;">calendar_month</i>${currentMonthLabel}</td></tr>`;
+            html += `<tr><td colspan="${columnCount}" class="month-divider" id="month-header-${iMonth}"><i class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:5px;">calendar_month</i>${currentMonthLabel}</td></tr>`;
             lastMonthLabel = currentMonthLabel;
           }
         }
@@ -5727,16 +5875,38 @@ function bukaJadwal() {
               <i class="material-icons" style="font-size:14px;">delete</i>
             </button>
           </div>` : '-';
+        var absensiHtml = function(jenis) {
+          var attendanceKey = jenis === 'datang' ? 'absensiDatang' : 'absensiPulang';
+          var attendance = item[attendanceKey] || {};
+          var names = petugasRaw.split(/[,;\r\n]+/).map(function(name) { return name.trim(); }).filter(Boolean);
+          if (!names.length || (names.length === 1 && names[0].toLowerCase() === 'ditiadakan') ||
+              (item.kelompok || '').toLowerCase() === 'libur') return '-';
+          return '<div style="display:grid; gap:6px; min-width:110px;">' + names.map(function(name) {
+            var checked = attendance[name] === true ? ' checked' : '';
+            return `<label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-size:12px; font-weight:500;">
+              <input class="ronda-attendance-checkbox" type="checkbox" data-row="${item.row}" data-date="${escapeHtml(item.tanggal)}" data-group="${escapeHtml(item.kelompok)}" data-person="${escapeHtml(name)}" data-kind="${jenis}"${checked} style="width:18px; height:18px; margin:0; accent-color:var(--primary-color);">
+              <span>${escapeHtml(name)}</span>
+            </label>`;
+          }).join('') + '</div>';
+        };
         
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
           <td style="white-space: nowrap; width: 1%;"><strong>${item.kelompok}</strong></td>
           <td>${petugasList}</td>
+          ${canManageRondaAbsensi ? `<td>${absensiHtml('datang')}</td><td>${absensiHtml('pulang')}</td>` : ''}
           <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
       });
       html += '</tbody></table></div>';
       list.innerHTML = html;
+      if (canManageRondaAbsensi) {
+        list.querySelectorAll('.ronda-attendance-checkbox').forEach(function(checkbox) {
+          checkbox.addEventListener('change', function() {
+            simpanAbsensiRonda(this);
+          });
+        });
+      }
     } else {
       list.innerHTML = `
         <div class="card-item" style="text-align:center; padding:40px 20px;">
@@ -5749,6 +5919,42 @@ function bukaJadwal() {
       console.error("FilterRonda Logic Error:", e);
       list.innerHTML = '<div class="muted">Terdapat kesalahan tipe data pada database Ronda.</div>';
     }
+  }
+
+  function simpanAbsensiRonda(checkbox) {
+    if (!hasPermission('rt_ronda_absen')) {
+      checkbox.checked = !checkbox.checked;
+      showError('Anda tidak memiliki akses untuk mengelola absensi ronda.');
+      return;
+    }
+
+    var wasChecked = !checkbox.checked;
+    var checked = checkbox.checked;
+    var row = Number(checkbox.dataset.row);
+    var date = checkbox.dataset.date;
+    var group = checkbox.dataset.group;
+    var person = checkbox.dataset.person;
+    var kind = checkbox.dataset.kind;
+    checkbox.disabled = true;
+
+    google.script.run.withSuccessHandler(function(res) {
+      checkbox.disabled = false;
+      if (!res || res.status !== 'success') {
+        checkbox.checked = wasChecked;
+        showError(res && res.pesan ? res.pesan : 'Gagal menyimpan absensi ronda.');
+        return;
+      }
+      var record = currentRondaData.find(function(item) { return Number(item.row) === row; });
+      if (record) {
+        var key = kind === 'datang' ? 'absensiDatang' : 'absensiPulang';
+        if (!record[key]) record[key] = {};
+        record[key][person] = checked;
+      }
+    }).withFailureHandler(function(err) {
+      checkbox.disabled = false;
+      checkbox.checked = wasChecked;
+      showError('Gagal menyimpan absensi ronda: ' + err.message);
+    }).setRondaAbsensi(row, date, group, person, kind, checked, currentToken);
   }
 
   function scrollToCurrentMonth() {
@@ -7668,7 +7874,8 @@ function bukaJadwal() {
         }
       }
       iuranData = rows;
-      renderTabelIuran(rows, tahun);
+      muatOpsiKategoriIuran(rows);
+      cariWargaIuran();
       if (callback) callback();
     }).catch(function(err) {
       Swal.close(); // Ensure loading is closed if this fails
@@ -7677,12 +7884,63 @@ function bukaJadwal() {
     });
   }
 
+  function prioritasKategoriIuran(kategori) {
+    var normalized = kategori.toLowerCase().replace(/[\s_-]/g, '');
+    if (normalized.indexOf('pkl') !== -1) return 0;
+    if (normalized.indexOf('jalanraya') !== -1) return 1;
+    if (normalized.indexOf('gang4a') !== -1 || normalized.indexOf('gg4a') !== -1) return 2;
+    if (normalized.indexOf('gang4b') !== -1 || normalized.indexOf('gg4b') !== -1) return 3;
+    return kategori ? 4 : 5;
+  }
+
+  function bandingkanKategoriIuran(a, b) {
+    var prioritasA = prioritasKategoriIuran(a);
+    var prioritasB = prioritasKategoriIuran(b);
+    if (prioritasA !== prioritasB) return prioritasA - prioritasB;
+    return a.localeCompare(b, 'id');
+  }
+
+  function muatOpsiKategoriIuran(rows) {
+    var select = document.getElementById('filterKategoriIuran');
+    if (!select) return;
+
+    var selectedValue = select.value;
+    var kategoriSet = new Set();
+    daftarKategori.forEach(function(kategori) {
+      var nama = (kategori.nama || '').trim();
+      if (nama) kategoriSet.add(nama);
+    });
+    rows.forEach(function(row) {
+      var nama = (row.kategori || '').trim();
+      if (nama) kategoriSet.add(nama);
+    });
+
+    select.innerHTML = '';
+    var semuaOption = document.createElement('option');
+    semuaOption.value = '';
+    semuaOption.text = 'Semua Kategori';
+    select.appendChild(semuaOption);
+
+    var kategoriNames = Array.from(kategoriSet).sort(bandingkanKategoriIuran);
+    kategoriNames.forEach(function(nama) {
+      var option = document.createElement('option');
+      option.value = nama;
+      option.text = nama;
+      select.appendChild(option);
+    });
+
+    select.value = kategoriSet.has(selectedValue) ? selectedValue : '';
+  }
+
   function cariWargaIuran() {
     var keyword = document.getElementById('iuranSearchInput').value.toLowerCase();
     var tahun = parseInt(document.getElementById('tahunIuranSelect').value);
+    var kategoriTerpilih = document.getElementById('filterKategoriIuran').value;
     if (!iuranData) return;
     var filtered = iuranData.filter(function(row) {
-      return (row.nama || '').toLowerCase().includes(keyword);
+      var cocokNama = (row.nama || '').toLowerCase().includes(keyword);
+      var cocokKategori = !kategoriTerpilih || (row.kategori || '').trim() === kategoriTerpilih;
+      return cocokNama && cocokKategori;
     });
     renderTabelIuran(filtered, tahun);
   }
@@ -7699,8 +7957,34 @@ function bukaJadwal() {
     thead.innerHTML = headerHtml;
     tbody.innerHTML = '';
     var isAdmin = hasPermission('rt_iuran_manage');
-    for (var idx = 0; idx < rows.length; idx++) {
-      var row = rows[idx];
+    var kategoriGroups = new Map();
+    rows.forEach(function(row) {
+      var kategori = (row.kategori || '').trim();
+      if (!kategoriGroups.has(kategori)) kategoriGroups.set(kategori, []);
+      kategoriGroups.get(kategori).push(row);
+    });
+    var kategoriKeys = Array.from(kategoriGroups.keys()).sort(bandingkanKategoriIuran);
+    var orderedRows = [];
+    kategoriKeys.forEach(function(kategori) {
+      orderedRows = orderedRows.concat(kategoriGroups.get(kategori));
+    });
+    var kategoriSebelumnya = null;
+    for (var idx = 0; idx < orderedRows.length; idx++) {
+      var row = orderedRows[idx];
+      var kategoriBaris = (row.kategori || '').trim();
+      if (kategoriBaris !== kategoriSebelumnya) {
+        var groupRow = document.createElement('tr');
+        groupRow.className = 'iuran-category-heading';
+        var groupCell = document.createElement('td');
+        groupCell.colSpan = 15;
+        var groupLabel = document.createElement('span');
+        groupLabel.className = 'iuran-category-label';
+        groupLabel.innerText = kategoriBaris || 'Tanpa Kategori';
+        groupCell.appendChild(groupLabel);
+        groupRow.appendChild(groupCell);
+        tbody.appendChild(groupRow);
+        kategoriSebelumnya = kategoriBaris;
+      }
       var tr = document.createElement('tr');
       
       // Highlight jika lunas setahun (semua 12 bulan bernilai > 0)
