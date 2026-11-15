@@ -1334,55 +1334,15 @@
     /* Compact & Modern Iuran Table for Mobile */
     .iuran-table {
       width: 100%;
-      min-width: 1050px; /* Diperlebar sedikit agar teks tidak berdesakan */
-      font-size: 16px; /* Ukuran standar aksesibilitas */
-      border-collapse: separate; 
-      border-spacing: 0; 
+      min-width: 1050px;
+      font-size: 16px;
+      border-collapse: separate;
+      border-spacing: 0;
       margin: 0 auto;
-      table-layout: fixed; /* Memastikan lebar kolom presisi */
-    }
-
-    /* Perbaikan Responsivitas Tabel Iuran untuk Layar HP Sangat Kecil */
-    @media (max-width: 500px) {
-      .iuran-table {
-        min-width: 900px; /* Tetap pertahankan lebar minimum agar scroll aktif */
-        font-size: 15px; 
-        border-collapse: separate;
-      }
-      
-      /* Perkecil kolom sticky agar area scroll lebih luas di layar HP */
-      .iuran-table th:nth-child(1),
-      .iuran-table td:nth-child(1) {
-        min-width: 150px; /* Cukup lebar untuk Nama di HP */
-        max-width: 150px;
-      }
-      
-      .iuran-table th:nth-child(2),
-      .iuran-table td:nth-child(2) {
-        left: 150px; /* Sesuai lebar kolom 1 */
-        min-width: 110px;
-        max-width: 110px;
-      }
-      
-      /* Kolom bulan lebih ramping dan rapat */
-      .iuran-table td:nth-child(n+3):nth-child(-n+14) {
-        width: 45px;
-        padding: 8px 2px !important;
-      }
-      .iuran-table input[type="checkbox"] {
-        width: 26px !important; /* Hit target lebih besar untuk jari orang tua */
-        height: 26px !important;
-      }
-    }
-
-    /* Sticky Kolom Nama (Kolom 1) */
-    .iuran-table {
-      width: 100%;
-      min-width: 980px;
-      border-collapse: collapse;
       table-layout: fixed;
     }
 
+    /* Sticky Kolom Nama (Kolom 1) */
     .iuran-table th,
     .iuran-table td {
       box-sizing: border-box;
@@ -1397,9 +1357,9 @@
       z-index: 10;
       background-color: var(--bg-surface) !important; /* Latar belakang solid agar tidak tembus */
       background-clip: padding-box;
-      width: 180px;
-      min-width: 180px;
-      max-width: 180px;
+      width: 180px !important;
+      min-width: 180px !important;
+      max-width: 180px !important;
       white-space: normal;
       word-break: break-word;
       font-weight: 800; /* Teks Nama lebih tebal */
@@ -1416,9 +1376,9 @@
       z-index: 9;
       background-color: var(--bg-surface) !important;
       background-clip: padding-box;
-      width: 130px;
-      min-width: 130px;
-      max-width: 130px;
+      width: 170px !important;
+      min-width: 170px !important;
+      max-width: 170px !important;
       font-size: 14px;
       color: var(--text-muted);
       /* Efek bayangan tipis sebagai pemisah visual saat discroll */
@@ -1442,11 +1402,14 @@
     }
 
     body.dark-mode .iuran-table th:nth-child(1),
-    body.dark-mode .iuran-table td:nth-child(1),
+    body.dark-mode .iuran-table td:nth-child(1) {
+      background-color: var(--bg-surface) !important;
+      border-right-color: var(--border-color) !important;
+    }
     body.dark-mode .iuran-table th:nth-child(2),
     body.dark-mode .iuran-table td:nth-child(2) {
       background-color: var(--bg-surface) !important;
-      border-right-color: var(--border-color) !important;
+      border-right-color: var(--primary-color) !important;
     }
 
     .iuran-table td {
@@ -1465,6 +1428,39 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 500px) {
+      .iuran-table {
+        min-width: 900px;
+        font-size: 15px;
+      }
+
+      .iuran-table th:nth-child(1),
+      .iuran-table td:nth-child(1) {
+        width: 150px !important;
+        min-width: 150px !important;
+        max-width: 150px !important;
+      }
+
+      .iuran-table th:nth-child(2),
+      .iuran-table td:nth-child(2) {
+        left: 150px !important;
+        width: 140px !important;
+        min-width: 140px !important;
+        max-width: 140px !important;
+      }
+
+      .iuran-table th:nth-child(n+3):nth-child(-n+14),
+      .iuran-table td:nth-child(n+3):nth-child(-n+14) {
+        width: 45px;
+        padding: 8px 2px !important;
+      }
+
+      .iuran-table input[type="checkbox"] {
+        width: 26px !important;
+        height: 26px !important;
+      }
     }
 
     .table-wrapper {
@@ -7731,12 +7727,14 @@ function bukaJadwal() {
           opt.text = daftarKategori[k].nama + ' (Rp ' + daftarKategori[k].nominal.toLocaleString('id-ID') + ')';
           if (row.kategori === daftarKategori[k].nama) {
             opt.selected = true;
+            select.title = opt.text;
           }
           select.appendChild(opt);
         }
         (function(rowData, thn) {
           select.addEventListener('change', function() {
             rowData.kategori = this.value;
+            this.title = this.options[this.selectedIndex].text;
             google.script.run.updateKategoriWarga(rowData.nama, thn, this.value);
           });
         })(row, tahun);
