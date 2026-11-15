@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.12';
+    const APP_VERSION = '1.2.16';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -525,32 +525,33 @@
       z-index: 1;
     }
 
-    .header-role-indicator {
+    .header-active-menu {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-      margin: 14px 0 0 14px;
-      padding: 7px 14px;
+      gap: 6px;
+      margin: 8px 0 0;
+      padding: 4px 9px;
       border: 1px solid rgba(255, 255, 255, 0.28);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.14);
       color: #fff;
-      font-size: 13px;
+      font-size: 11px;
       line-height: 1.2;
       position: relative;
       z-index: 1;
+      max-width: 100%;
     }
 
-    .header-role-indicator strong {
-      margin-left: 5px;
-      font-size: 14px;
+    .header-active-menu strong {
+      margin-left: 3px;
+      font-size: 12px;
       font-weight: 700;
     }
 
-    .header-role-dot {
-      flex: 0 0 10px;
-      width: 10px;
-      height: 10px;
+    .header-active-dot {
+      flex: 0 0 7px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #fff;
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 0 12px rgba(255, 255, 255, 0.9);
@@ -562,7 +563,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .header-role-dot { animation: none; }
+      .header-active-dot { animation: none; }
     }
 
     .header-logo {
@@ -1993,7 +1994,7 @@
       <div class="header-title">
         <div style="display:flex; align-items:center; flex:1;">
           <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo" class="header-logo">
-          <div style="display:flex; flex-direction:column;">
+          <div style="display:flex; flex-direction:column; align-items:flex-start;">
             <span style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1.2;">Portal RT</span>
             <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - Desa Ngelom</span>
           </div>
@@ -2008,10 +2009,10 @@
             <i class="material-icons">power_settings_new</i>
           </div>
         </div>
-        <div class="header-role-indicator" id="headerRoleIndicator" style="display:none;" aria-label="Role akun aktif">
-          <span class="header-role-dot" aria-hidden="true"></span>
-          <span>Anda di <strong id="headerRoleLabel">Warga</strong></span>
-        </div>
+      </div>
+      <div class="header-active-menu" id="headerActiveMenu" style="display:none;" aria-label="Menu aktif">
+        <span class="header-active-dot" aria-hidden="true"></span>
+        <span>Anda di <strong id="headerActiveMenuLabel">Warga</strong></span>
       </div>
     </div>
 
@@ -4147,7 +4148,6 @@
           if (res && res.status === 'success') {
             currentUser = res;
             currentToken = res.token;
-            updateHeaderRoleIndicator();
           window.resolveLoginReady(); // Resolve the login promise here (Point 2)
             syncTokenToIDB(res.token); // Sinkronisasi ke IDB
 
@@ -4252,7 +4252,6 @@
         if (res.status === 'success') {
           currentUser = res;
           currentToken = res.token;
-          updateHeaderRoleIndicator();
           // Perbaikan: Update nama di dashboard saat login sukses
           var nameEl = document.getElementById('welcomeUserName');
           if(nameEl) nameEl.innerText = 'Halo, ' + (res.nama || 'Warga') + '!';
@@ -4569,6 +4568,7 @@
 
       // 4. Update Global State
       currentTab = targetTabId;
+      updateHeaderActiveMenu(targetTabId);
       
       console.log(`Navigation State: ${targetTabId} is now locked active.`);
     } catch (err) {
@@ -4581,23 +4581,22 @@
     setAplikasiActiveTab(tabName);
   }
 
-  function updateHeaderRoleIndicator() {
-    var badge = document.getElementById('headerRoleIndicator');
-    var label = document.getElementById('headerRoleLabel');
-    if (!badge || !label || !currentUser || !currentUser.role) return;
+  function updateHeaderActiveMenu(tabName) {
+    var badge = document.getElementById('headerActiveMenu');
+    var label = document.getElementById('headerActiveMenuLabel');
+    if (!badge || !label || !currentUser) return;
 
-    var role = String(currentUser.role).trim().toLowerCase();
+    var tab = String(tabName || currentTab || 'warga').trim().toLowerCase();
     var knownLabels = {
       'warga': 'Warga',
-      'admin': 'Admin',
-      'pengurus rt': 'Pengurus RT',
-      'pengurus pkk': 'Pengurus PKK',
-      'pengurus karang taruna': 'Pengurus Karang Taruna'
+      'pkk': 'PKK',
+      'karangtaruna': 'Karang Taruna',
+      'profil': 'Profil'
     };
-    var displayRole = knownLabels[role] || role.replace(/\b\w/g, function(character) {
+    var displayTab = knownLabels[tab] || tab.replace(/\b\w/g, function(character) {
       return character.toUpperCase();
     });
-    label.textContent = displayRole;
+    label.textContent = displayTab;
     badge.style.display = 'inline-flex';
   }
 
@@ -7105,7 +7104,8 @@ function bukaJadwal() {
   function hitungTotalKematian(data) {
     var total = 0;
     for (var i = 0; i < data.length; i++) {
-      if (data[i].jenis === 'Pemasukan' && data[i].kategori === 'Kematian') {
+      var kategori = String(data[i].kategori || '').toLowerCase().trim();
+      if (data[i].jenis === 'Pemasukan' && kategori.indexOf('kematian') !== -1) {
         total += data[i].jumlah;
       }
     }
