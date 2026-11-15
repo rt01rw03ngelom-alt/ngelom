@@ -2539,7 +2539,7 @@
   <div id="kasView" class="screen">
     <div class="page-header">
       <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
-      <h3>Laporan Keuangan Warga</h3>
+      <h3>Laporan Kas Warga</h3>
     </div>
 
     <div class="kas-summary">
@@ -2717,7 +2717,11 @@
       </div>
     </div>
 
-    <div class="page-header" style="margin-top:2rem;">
+  </div>
+
+  <div id="iuranView" class="screen">
+    <div class="page-header">
+      <i class="material-icons" style="cursor:pointer; color:var(--primary-color);" onclick="kembaliKeDashboard()">arrow_back</i>
       <h3>
         <i class="material-icons">payments</i>
         Manajemen Iuran Warga
@@ -3644,6 +3648,8 @@
     // 2. Jika di halaman Kas detail, refresh tabelnya
     if (document.getElementById('kasView').style.display === 'block') {
       muatDataKas(callback);
+    } else if (document.getElementById('iuranView').style.display === 'block') {
+      muatTabelIuran(callback);
     } else if (document.getElementById('ktKasView').style.display === 'block') {
       ktMuatDataKas(); if(callback) callback();
     } else {
@@ -4558,6 +4564,7 @@
       { title: "Daftar Kader Pengurus", icon: "account_tree", roles: ["admin", "pengurus rt", "warga"], action: "bukaKontak", perm: "rt_kontak" },
       { title: "Kirim Pengaduan", icon: "rate_review", roles: ["admin", "pengurus rt", "warga"], action: "bukaFormPengaduan", perm: "rt_pengaduan_kirim" },
       { title: "Laporan Kas Warga", icon: "account_balance_wallet", roles: ["admin", "pengurus rt", "warga"], action: "bukaKas", perm: "rt_kas" },
+      { title: "Manajemen Iuran Warga", icon: "payments", roles: ["admin"], action: "bukaIuran", perm: "rt_iuran_manage" },
       { title: "Galeri Kegiatan", icon: "photo_library", roles: ["admin", "pengurus rt", "warga"], action: "bukaGaleri", perm: "rt_galeri" },
       { title: "Laporan Pengaduan", icon: "admin_panel_settings", roles: ["admin", "pengurus rt"], action: "bukaLaporanAdmin", perm: "rt_pengaduan_admin" }
     ],
@@ -7042,7 +7049,7 @@ function bukaJadwal() {
     var tbodyG = document.getElementById('tbodyPengeluaran');
     tbodyP.innerHTML = '';
     tbodyG.innerHTML = '';
-    var isAdmin = hasPermission('rt_iuran_manage');
+    var isAdmin = hasPermission('rt_kas_crud');
     for (var p = 0; p < pemasukanList.length; p++) {
       var item = pemasukanList[p];
       var row = tbodyP.insertRow();
@@ -7613,7 +7620,7 @@ function bukaJadwal() {
     }).getTahunIuranList();
   }
 
-  function muatTabelIuran() {
+  function muatTabelIuran(callback) {
     var tahun = parseInt(document.getElementById('tahunIuranSelect').value);
     // Reset pencarian saat ganti tahun
     var searchInput = document.getElementById('iuranSearchInput');
@@ -7666,9 +7673,11 @@ function bukaJadwal() {
       }
       iuranData = rows;
       renderTabelIuran(rows, tahun);
+      if (callback) callback();
     }).catch(function(err) {
       Swal.close(); // Ensure loading is closed if this fails
       showError('Gagal memuat data iuran: ' + (err && err.message ? err.message : err));
+      if (callback) callback();
     });
   }
 
@@ -8040,20 +8049,26 @@ function bukaJadwal() {
     document.getElementById('kasView').style.display = 'block';
     history.pushState({view: 'kasView', tab: 'warga', onLoad: 'muatDataKas'}, '', '#kas');
     var actionDiv = document.getElementById('actionButtonsKas');
-    var iuranAdminDiv = document.getElementById('iuranAdminButtons');
     if (hasPermission('rt_kas_crud')) { // Kontrol visibilitas tombol Tambah/Kurang Kas
       actionDiv.innerHTML = '<button class="btn-small success" onclick="bukaFormKas(\'Pemasukan\')">+ Tambah Pemasukan</button>'
         + '<button class="btn-small danger" onclick="bukaFormKas(\'Pengeluaran\')">+ Tambah Pengeluaran</button>';
     } else { actionDiv.innerHTML = ''; }
-    if (hasPermission('rt_iuran_manage')) { // Kontrol visibilitas tombol Kelola Iuran
+    muatDataKas();
+    toggleLaporanMode();
+  }
+
+  function bukaIuran() {
+    sembunyikanSemuaLayar();
+    document.getElementById('iuranView').style.display = 'block';
+    history.pushState({view: 'iuranView', tab: 'warga', onLoad: 'loadTahunIuranOptions'}, '', '#iuran');
+    var iuranAdminDiv = document.getElementById('iuranAdminButtons');
+    if (hasPermission('rt_iuran_manage')) {
       iuranAdminDiv.innerHTML = '<button class="btn-small" onclick="bukaFormKategoriIuran()">Kelola Kategori Iuran</button>'
         + '<button class="btn-small" onclick="bukaFormWarga()">Kelola Nama Warga</button>';
     } else {
       iuranAdminDiv.innerHTML = '';
     }
-    muatDataKas();
     loadTahunIuranOptions();
-    toggleLaporanMode();
   }
 
   // ======================== GALERI ========================
