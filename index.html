@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.29';
+    const APP_VERSION = '1.2.30';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -2074,7 +2074,7 @@
           <span style="font-size:13px; color:var(--text-muted); font-weight:500;">Warga RT01/RW03 Desa Ngelom</span>
         </div>
       </div>
-      <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr 1fr;">
+      <div class="kas-summary" style="margin-top:0; grid-template-columns: 1fr;">
         <div id="summaryCard1" class="summary-card" style="padding:12px; border-radius:15px;">
           <div class="summary-icon" style="width:36px; height:36px;">
             <i class="material-icons">payments</i>
@@ -4797,7 +4797,7 @@
       if (rb) { rb.style.display = 'flex'; muatRondaHariIni(false); }
       if (summaryContainer) {
         summaryContainer.style.display = 'grid';
-        summaryContainer.style.gridTemplateColumns = '1fr 1fr';
+        summaryContainer.style.gridTemplateColumns = '1fr';
       }
       if (val1) val1.style.fontSize = '1.2rem';
       // Kembalikan ke nilai kas RT yang sudah ada di memori
