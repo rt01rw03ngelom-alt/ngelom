@@ -9,7 +9,7 @@
 
   <script>
     // ==== App version checker (hard update) ====
-    const APP_VERSION = '1.2.16';
+    const APP_VERSION = '1.2.29';
     (function () {
       try {
         const key = 'rt-app-version';
@@ -525,33 +525,35 @@
       z-index: 1;
     }
 
-    .header-active-menu {
+    .header-role-indicator {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      margin: 8px 0 0;
-      padding: 4px 9px;
+      gap: 9px;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      margin: 0;
+      padding: 5px 10px;
       border: 1px solid rgba(255, 255, 255, 0.28);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.14);
       color: #fff;
       font-size: 11px;
       line-height: 1.2;
-      position: relative;
       z-index: 1;
-      max-width: 100%;
+      white-space: nowrap;
     }
 
-    .header-active-menu strong {
-      margin-left: 3px;
-      font-size: 12px;
+    .header-role-indicator strong {
+      margin-left: 5px;
+      font-size: 14px;
       font-weight: 700;
     }
 
-    .header-active-dot {
-      flex: 0 0 7px;
-      width: 7px;
-      height: 7px;
+    .header-role-dot {
+      flex: 0 0 10px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #fff;
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 0 12px rgba(255, 255, 255, 0.9);
@@ -563,7 +565,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .header-active-dot { animation: none; }
+      .header-role-dot { animation: none; }
     }
 
     .header-logo {
@@ -575,6 +577,33 @@
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       margin-right: 12px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: flex-start;
+      flex: 1;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .header-brand-mark {
+      position: relative;
+      display: flex;
+      flex: 0 0 44px;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .header-brand-mark .header-logo {
+      margin-right: 0;
+    }
+
+    .header-brand-name {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding-top: 2px;
     }
 
 
@@ -1992,9 +2021,15 @@
         <span class="shooting-star" style="top:30px; right:90%; animation-delay:0.5s; animation-duration:2.5s;"></span>
       </div>
       <div class="header-title">
-        <div style="display:flex; align-items:center; flex:1;">
-          <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo" class="header-logo">
-          <div style="display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="header-brand">
+          <div class="header-brand-mark">
+            <img src="https://drive.google.com/thumbnail?id=11fh_T74_ljF_WPq7EJddDvAuFFMpiRXz&sz=w256" alt="Logo" class="header-logo">
+            <div class="header-role-indicator" id="headerRoleIndicator" style="display:none;" aria-label="Menu aktif">
+              <span class="header-role-dot" aria-hidden="true"></span>
+              <span>Anda di <strong id="headerRoleLabel">Warga</strong></span>
+            </div>
+          </div>
+          <div class="header-brand-name">
             <span style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1.2;">Portal RT</span>
             <span style="font-size:11px; opacity:0.85; font-weight:500;">RT01/RW03 - Desa Ngelom</span>
           </div>
@@ -2009,10 +2044,6 @@
             <i class="material-icons">power_settings_new</i>
           </div>
         </div>
-      </div>
-      <div class="header-active-menu" id="headerActiveMenu" style="display:none;" aria-label="Menu aktif">
-        <span class="header-active-dot" aria-hidden="true"></span>
-        <span>Anda di <strong id="headerActiveMenuLabel">Warga</strong></span>
       </div>
     </div>
 
@@ -4582,22 +4613,22 @@
   }
 
   function updateHeaderActiveMenu(tabName) {
-    var badge = document.getElementById('headerActiveMenu');
-    var label = document.getElementById('headerActiveMenuLabel');
-    if (!badge || !label || !currentUser) return;
+    var badge = document.getElementById('headerRoleIndicator');
+    var label = document.getElementById('headerRoleLabel');
+    if (!badge || !label) return;
 
-    var tab = String(tabName || currentTab || 'warga').trim().toLowerCase();
-    var knownLabels = {
-      'warga': 'Warga',
-      'pkk': 'PKK',
-      'karangtaruna': 'Karang Taruna',
-      'profil': 'Profil'
+    var menuLabels = {
+      warga: 'Warga',
+      pkk: 'PKK',
+      karangtaruna: 'Karang Taruna',
+      profil: 'Profil'
     };
-    var displayTab = knownLabels[tab] || tab.replace(/\b\w/g, function(character) {
+    var normalizedTab = String(tabName || '').trim().toLowerCase();
+    var activeMenu = menuLabels[normalizedTab] || normalizedTab.replace(/\b\w/g, function(character) {
       return character.toUpperCase();
     });
-    label.textContent = displayTab;
-    badge.style.display = 'inline-flex';
+    label.textContent = activeMenu;
+    badge.style.display = activeMenu ? 'inline-flex' : 'none';
   }
 
   function pilihMenu(tabName) {
@@ -4770,9 +4801,7 @@
       }
       if (val1) val1.style.fontSize = '1.2rem';
       // Kembalikan ke nilai kas RT yang sudah ada di memori
-      if (kasBackendTotalsGlobal) {
-        updateRingkasanUI(kasBackendTotalsGlobal);
-      }
+      if (allKasData.length) updateRingkasanUI();
     } else {
       // Hilangkan ringkasan untuk menu PKK agar beranda lebih bersih dan fokus pada menu
       if (summaryContainer) summaryContainer.style.display = 'none';
@@ -5542,12 +5571,15 @@ function bukaJadwal() {
     
     google.script.run.withSuccessHandler(function(res) {
       Swal.close(); // Close loading modal
-      if (res.status === 'success') {
-        currentRondaData = res.data || [];
+      if (res && res.status === 'success' && Array.isArray(res.data)) {
+        currentRondaData = res.data;
         filterRonda();
+        if (Array.isArray(res.absensiWarnings) && res.absensiWarnings.length) {
+          showWarning('Jadwal ronda berhasil dimuat, tetapi ada data absensi lama yang formatnya tidak valid. Status tersebut tidak ditampilkan. Periksa kolom D/E sebelum mengisi absensi pada jadwal terkait.');
+        }
       } else { 
         list.innerHTML = '';
-        showError(res.pesan); 
+        showError(res && res.pesan ? res.pesan : 'Format data jadwal ronda dari server tidak valid.');
       }
     }).withFailureHandler(function(err) {
       Swal.close(); // Close loading modal
@@ -5634,7 +5666,7 @@ function bukaJadwal() {
     };
 
     // 1. Filter: Jadwal Minggu Ini (Yg terdekat dengan hari ini dalam range Sen-Min)
-    pickedRondaWeek1 = data.find(it => { 
+    const rondaMingguIni = data.find(it => { 
       const d = parse(it.tanggal);
       return d >= monThisWeek && d <= sunThisWeek && it.tanggal >= todayStr;
     }) || data.find(it => { 
@@ -5643,7 +5675,7 @@ function bukaJadwal() {
     });
 
     // 2. Filter: Jadwal Minggu Depan (Strict)
-    pickedRondaWeek2 = data.find(it => {
+    const rondaMingguDepan = data.find(it => {
       const d = parse(it.tanggal);
       return d >= monNextWeek && d <= sunNextWeek;
     }) || { 
@@ -5653,22 +5685,53 @@ function bukaJadwal() {
       isLibur: true
     };
 
+    const gabungkanPetugas = function(entry) {
+      if (!entry) return entry;
+      const names = new Set();
+      data.filter(function(item) {
+        return item.tanggal === entry.tanggal && item.kelompok === entry.kelompok;
+      }).forEach(function(item) {
+        const petugas = Array.isArray(item.petugas)
+          ? item.petugas
+          : String(item.petugas || '').split(/[,;\n\r]+/);
+        petugas.forEach(function(name) {
+          const trimmedName = String(name || '').trim();
+          if (trimmedName && !/^-+$/.test(trimmedName) && trimmedName.toLowerCase() !== 'ditiadakan') names.add(trimmedName);
+        });
+      });
+      const lokasi = data.filter(function(item) {
+        return item.tanggal === entry.tanggal && item.kelompok === entry.kelompok;
+      }).map(function(item) {
+        return String(item.lokasi || item.tempat || '').trim();
+      }).find(Boolean) || String(entry.lokasi || entry.tempat || '').trim();
+      return Object.assign({}, entry, { petugas: Array.from(names).join('\n'), lokasi: lokasi });
+    };
+    pickedRondaWeek1 = gabungkanPetugas(rondaMingguIni);
+    pickedRondaWeek2 = gabungkanPetugas(rondaMingguDepan);
+
     // UI RENDERING ENGINE
     const formatSlide = (entry, label) => {
       if (!entry) return `<div class="muted" style="text-align:center; padding:10px;">${label}: Belum Ada Jadwal</div>`;
       const pRaw = String(entry.petugas || "");
-      const names = pRaw.split(/\r?\n/).filter(x => x.trim() !== "").map(p => 
-        `<span style="background:var(--bg-app); border:1px solid var(--border-color); padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; margin:2px 2px 0 0; display:inline-block;">${p}</span>`
+      const names = pRaw.split(/\r?\n/).filter(x => x.trim() !== "" && !/^-+$/.test(x.trim())).map(p => 
+        `<span style="background:var(--bg-app); border:1px solid var(--border-color); padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; margin:2px 2px 0 0; display:inline-block;">${escapeHtml(p)}</span>`
       ).join("");
       
       const dObj = parse(entry.tanggal);
       const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][dObj.getDay()];
-      const isToday = entry.tanggal === todayStr;
+      const lokasi = entry.kelompok && String(entry.kelompok).toUpperCase() !== 'LIBUR'
+        ? getLokasiRonda(entry)
+        : String(entry.lokasi || entry.tempat || '').trim();
+      const lokasiHtml = lokasi
+        && lokasi !== '-'
+        ? `<div style="display:flex; align-items:center; gap:4px; margin-top:4px; color:var(--primary-color); font-size:11px; font-weight:700;"><i class="material-icons" style="font-size:15px;">location_on</i>${escapeHtml(lokasi)}</div>`
+        : '';
 
       return `
-        <div style="border-left:4px solid ${isToday ? 'var(--primary-color)' : 'rgba(var(--primary-color-rgb),0.2)'}; padding-left:10px; margin-bottom:5px;">
+        <div style="border-left:4px solid var(--primary-color); padding-left:10px; margin-bottom:5px;">
           <div style="font-size:12px; font-weight:800; color:var(--text-main);">${hari}, Tgl ${entry.tanggal.split('-')[2]} • ${entry.kelompok}</div>
-          <div style="margin-top:4px;">${(entry.kelompok === 'LIBUR') ? '<span class="muted" style="font-size:10px;">Ditiadakan</span>' : (names || '<span class="muted" style="font-size:10px;">Ditiadakan</span>')}</div>
+          ${lokasiHtml}
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:${lokasi ? '6px' : '4px'};">${(entry.kelompok === 'LIBUR') ? '<span class="muted" style="font-size:10px;">Ditiadakan</span>' : (names || '<span class="muted" style="font-size:10px;">Ditiadakan</span>')}</div>
         </div>`;
     };
 
@@ -5692,11 +5755,15 @@ function bukaJadwal() {
     const updateTime = `${daysIndo[now.getDay()]}, ${now.getDate()} ${monthIndo[now.getMonth()]} ${now.getFullYear()}`;
 
     const formatEntry = (entry) => {
-      if (!entry) return `Data tidak tersedia`;
+      if (!entry) return 'Data tidak tersedia';
       const p = entry.tanggal.split('-');
-      const d = new Date(p[0], p[1]-1, p[2]);
-      const list = String(entry.petugas || "Ditiadakan").split(/\r?\n/).filter(n => n.trim() !== "").join(", ");
-      return `${daysIndo[d.getDay()]}, Tgl ${p[2]} - ${entry.kelompok}\n  Petugas: ${list}`;
+      const d = new Date(p[0], p[1] - 1, p[2]);
+      const names = (Array.isArray(entry.petugas) ? entry.petugas : String(entry.petugas || 'Ditiadakan').split(/[,;\n\r]+/))
+        .map(function(name) { return String(name || '').trim(); })
+        .filter(Boolean);
+      const list = names.join(', ') || 'Ditiadakan';
+      const location = getLokasiRonda(entry);
+      return `${daysIndo[d.getDay()]}, Tgl ${p[2]} - ${entry.kelompok || '-'} (Tempat Jaga: ${location})\n  Petugas: ${list}`;
     };
 
     const monthW2 = monthIndo[new Date(pickedRondaWeek2.tanggal.split('-')[0], pickedRondaWeek2.tanggal.split('-')[1]-1, pickedRondaWeek2.tanggal.split('-')[2]).getMonth()];
@@ -5709,7 +5776,7 @@ function bukaJadwal() {
     waText += `${formatEntry(pickedRondaWeek2)}\n\n`;
     waText += `_Informasi ini dibagikan melalui Portal RT01/RW03._`;
 
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
     window.open(waUrl, '_blank');
   }
 
@@ -5784,6 +5851,29 @@ function bukaJadwal() {
     };
   }
 
+  function getLokasiRonda(item) {
+    if (!item) return '-';
+    const weekMatch = String(item.kelompok || '').match(/\bminggu\s+(ganjil|genap|[ivxlcdm]+|\d+)\b/i);
+    if (weekMatch) {
+      const weekToken = weekMatch[1].toLowerCase();
+      let weekNumber = null;
+      if (weekToken === 'ganjil') weekNumber = 1;
+      else if (weekToken === 'genap') weekNumber = 2;
+      else if (/^\d+$/.test(weekToken)) weekNumber = parseInt(weekToken, 10);
+      else {
+        const romanValues = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+        weekNumber = 0;
+        for (let i = 0; i < weekToken.length; i++) {
+          const value = romanValues[weekToken[i]];
+          const nextValue = romanValues[weekToken[i + 1]] || 0;
+          weekNumber += value < nextValue ? -value : value;
+        }
+      }
+      if (weekNumber > 0) return weekNumber % 2 ? 'Gang 4 A' : 'Gang 4 B';
+    }
+    return String(item.lokasi || item.tempat || '-').trim() || '-';
+  }
+
   function filterRonda() {
     try {
     var keyword = document.getElementById('rondaSearchInput').value.toLowerCase();
@@ -5819,16 +5909,20 @@ function bukaJadwal() {
     var filtered = currentRondaData.filter(function(item) {
       var petugasStr = Array.isArray(item.petugas) ? item.petugas.join(" ") : String(item.petugas || "");
       return petugasStr.toLowerCase().includes(keyword) || 
-             (item.kelompok || '').toLowerCase().includes(keyword);
+             (item.kelompok || '').toLowerCase().includes(keyword) ||
+             String(item.lokasi || item.tempat || '').toLowerCase().includes(keyword);
     });
 
     list.innerHTML = '';
     if (filtered.length > 0) {
-      var canManageRondaAbsensi = hasPermission('rt_ronda_absen');
-      var columnCount = canManageRondaAbsensi ? 6 : 4;
-      var html = '<table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Petugas</th>';
-      if (canManageRondaAbsensi) html += '<th>Datang</th><th>Pulang</th>';
-      html += '<th>Aksi</th></tr></thead><tbody>';
+      var canManageAbsensi = hasPermission('rt_ronda_absen');
+      var columnCount = 5;
+      var html = `<div class="card-item" style="margin-bottom:12px; padding:12px 16px; display:flex; align-items:center; gap:8px; color:var(--text-main);">
+        <i class="material-icons" style="color:var(--primary-color);">location_on</i>
+        <span><strong>Lokasi ronda:</strong> Minggu ganjil — Gang 4 A &nbsp;|&nbsp; Minggu genap — Gang 4 B</span>
+      </div>
+      <table><thead><tr><th>Tanggal</th><th>Kelompok</th><th>Lokasi</th><th>Petugas</th><th>Aksi</th></tr></thead><tbody>`;
+      var attendanceCards = [];
       var lastMonthLabel = '';
 
       filtered.forEach(function(item) {
@@ -5859,12 +5953,29 @@ function bukaJadwal() {
         }
 
         var petugasRaw = Array.isArray(item.petugas) ? item.petugas.join("\n") : String(item.petugas || "");
+        var namaPetugas = petugasRaw.split(/[,;\n\r]+/).map(function(nama) {
+          return nama.trim();
+        }).filter(function(nama) {
+          return nama && !/^-+$/.test(nama) && nama.toLowerCase() !== 'ditiadakan';
+        });
         // Tampilan Jadwal Ronda Lebih Bagus (Chips)
         var petugasList = petugasRaw ? '<div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">' + 
-          petugasRaw.split(/\r?\n/).filter(p => p.trim() !== "").map(p => 
+          petugasRaw.split(/[,;\n\r]+/).filter(p => p.trim() !== "" && !/^-+$/.test(p.trim())).map(p => 
           `<span class="status-badge" style="background:var(--bg-app); color:var(--text-main); border:1px solid var(--border-color); display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; white-space: nowrap; gap: 4px;">
-            <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${p}
+            <i class="material-icons" style="font-size:14px; color:var(--primary-color);">account_circle</i> ${escapeHtml(p)}
           </span>`).join('') + '</div>' : '-';
+        var lokasi = escapeHtml(getLokasiRonda(item));
+        var renderAbsensi = function(jenis) {
+          if (!namaPetugas.length) return '<span class="muted">-</span>';
+          var status = jenis === 'datang' ? item.absensiDatang : item.absensiPulang;
+          return namaPetugas.map(function(nama) {
+            var checked = status && status[nama] === true ? ' checked' : '';
+            return `<label style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; box-sizing:border-box; margin:0; padding:6px 4px; white-space:normal; cursor:pointer; border-bottom:1px solid var(--border-color);">
+              <span style="flex:1; text-align:left;">${escapeHtml(nama)}</span>
+              <input type="checkbox" aria-label="Absensi ${jenis} ${escapeHtml(nama)}" data-row="${Number(item.row)}" data-date="${escapeHtml(item.tanggal)}" data-group="${escapeHtml(item.kelompok)}" data-person="${escapeHtml(nama)}" data-kind="${jenis}" onchange="simpanAbsensiRonda(this)"${checked} style="flex:0 0 18px; width:18px; min-width:18px; height:18px; padding:0; margin:0; accent-color:var(--primary-color); cursor:pointer;">
+            </label>`;
+          }).join('');
+        };
         var aksi = hasPermission('rt_ronda_crud') ? 
           `<div style="display: flex; gap: 4px; flex-wrap: nowrap;">
             <button class="btn-small" onclick="editRonda(${item.row},'${item.tanggal}','${item.kelompok.replace(/'/g,"\\'")}','${item.petugas.replace(/'/g,"\\'").replace(/\n/g,"\\n")}')">
@@ -5874,38 +5985,37 @@ function bukaJadwal() {
               <i class="material-icons" style="font-size:14px;">delete</i>
             </button>
           </div>` : '-';
-        var absensiHtml = function(jenis) {
-          var attendanceKey = jenis === 'datang' ? 'absensiDatang' : 'absensiPulang';
-          var attendance = item[attendanceKey] || {};
-          var names = petugasRaw.split(/[,;\r\n]+/).map(function(name) { return name.trim(); }).filter(Boolean);
-          if (!names.length || (names.length === 1 && names[0].toLowerCase() === 'ditiadakan') ||
-              (item.kelompok || '').toLowerCase() === 'libur') return '-';
-          return '<div style="display:grid; gap:6px; min-width:110px;">' + names.map(function(name) {
-            var checked = attendance[name] === true ? ' checked' : '';
-            return `<label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-size:12px; font-weight:500;">
-              <input class="ronda-attendance-checkbox" type="checkbox" data-row="${item.row}" data-date="${escapeHtml(item.tanggal)}" data-group="${escapeHtml(item.kelompok)}" data-person="${escapeHtml(name)}" data-kind="${jenis}"${checked} style="width:18px; height:18px; margin:0; accent-color:var(--primary-color);">
-              <span>${escapeHtml(name)}</span>
-            </label>`;
-          }).join('') + '</div>';
-        };
-        
+        if (canManageAbsensi) {
+          attendanceCards.push(`<article class="card-item" style="margin-bottom:12px; padding:14px;">
+            <h4 style="margin:0 0 10px; color:var(--text-main);">${escapeHtml(item.tanggal)} · ${escapeHtml(item.kelompok)}</h4>
+            <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px;">
+              <div style="min-width:0; padding:10px; border:1px solid var(--border-color); border-radius:10px;">
+                <strong style="display:block; margin-bottom:8px;">Datang</strong>
+                ${renderAbsensi('datang')}
+              </div>
+              <div style="min-width:0; padding:10px; border:1px solid var(--border-color); border-radius:10px;">
+                <strong style="display:block; margin-bottom:8px;">Pulang</strong>
+                ${renderAbsensi('pulang')}
+              </div>
+            </div>
+          </article>`);
+        }
         html += `<tr ${rowStyle}>
           <td style="white-space: nowrap; width: 1%;">${item.tanggal}</td>
           <td style="white-space: nowrap; width: 1%;"><strong>${item.kelompok}</strong></td>
+          <td>${lokasi}</td>
           <td>${petugasList}</td>
-          ${canManageRondaAbsensi ? `<td>${absensiHtml('datang')}</td><td>${absensiHtml('pulang')}</td>` : ''}
           <td style="white-space: nowrap; width: 1%;">${aksi}</td>
         </tr>`;
       });
-      html += '</tbody></table></div>';
-      list.innerHTML = html;
-      if (canManageRondaAbsensi) {
-        list.querySelectorAll('.ronda-attendance-checkbox').forEach(function(checkbox) {
-          checkbox.addEventListener('change', function() {
-            simpanAbsensiRonda(this);
-          });
-        });
+      html += '</tbody></table>';
+      if (canManageAbsensi) {
+        html += `<section style="margin-top:18px;">
+          <h3 style="margin:0 0 12px; color:var(--text-main);">Absensi Ronda</h3>
+          ${attendanceCards.join('')}
+        </section>`;
       }
+      list.innerHTML = html;
     } else {
       list.innerHTML = `
         <div class="card-item" style="text-align:center; padding:40px 20px;">
@@ -7092,9 +7202,10 @@ function bukaJadwal() {
     var totalPemasukan = 0;
     var totalPengeluaran = 0;
     for (var i = 0; i < data.length; i++) {
+      if (String(data[i].kategori || '').toLowerCase().indexOf('kematian') !== -1) continue;
       if (data[i].jenis === 'Pemasukan') {
         totalPemasukan += data[i].jumlah;
-      } else {
+      } else if (data[i].jenis === 'Pengeluaran') {
         totalPengeluaran += data[i].jumlah;
       }
     }
@@ -7104,30 +7215,16 @@ function bukaJadwal() {
   function hitungTotalKematian(data) {
     var total = 0;
     for (var i = 0; i < data.length; i++) {
-      var kategori = String(data[i].kategori || '').toLowerCase().trim();
-      if (data[i].jenis === 'Pemasukan' && kategori.indexOf('kematian') !== -1) {
-        total += data[i].jumlah;
-      }
+      if (String(data[i].kategori || '').toLowerCase().indexOf('kematian') === -1) continue;
+      if (data[i].jenis === 'Pemasukan') total += data[i].jumlah;
+      else if (data[i].jenis === 'Pengeluaran') total -= data[i].jumlah;
     }
     return Number(total.toFixed(2));
   }
 
-  function updateRingkasanUI(backendTotals) {
-    // Prefer pakai total dari backend (lebih akurat dari sisi kategori/akumulasi)
-    // backendTotals totalSaldo/totalUangKematian bisa saja string.
+  function updateRingkasanUI() {
     var totalSaldo = hitungTotalSaldo(allKasData);
     var totalKematian = hitungTotalKematian(allKasData);
-
-    if (backendTotals) {
-      if (backendTotals.totalSaldo !== null && backendTotals.totalSaldo !== undefined) {
-        var parsedSaldo = parseFloat(backendTotals.totalSaldo);
-        if (isFinite(parsedSaldo)) totalSaldo = parsedSaldo;
-      }
-      if (backendTotals.totalUangKematian !== null && backendTotals.totalUangKematian !== undefined) {
-        var parsedKematian = parseFloat(backendTotals.totalUangKematian);
-        if (isFinite(parsedKematian)) totalKematian = parsedKematian;
-      }
-    }
 
     // Selalu update elemen di dalam layar laporan Kas (kasView)
     var totalKasEl2 = document.getElementById('totalKasIuran');
@@ -7144,17 +7241,12 @@ function bukaJadwal() {
     }
   }
 
-  var kasBackendTotalsGlobal = null;
-
   function muatDataKas(callback) {
     // Aktifkan skeleton pada semua elemen saldo RT
     const targets = ['totalKasIuranValue', 'totalKonsumsiRondaIuranValue', 'totalKasIuran', 'totalKonsumsiRondaIuran'];
     targets.forEach(id => {
       const el = document.getElementById(id);
-      if (el) {
-        el.classList.add('skeleton-text');
-        el.innerText = '0.000.000';
-      }
+      if (el) el.classList.add('skeleton-text');
     });
 
     google.script.run.withSuccessHandler(function(res) {
@@ -7163,20 +7255,12 @@ function bukaJadwal() {
         if (el) el.classList.remove('skeleton-text');
       });
 
-      var backendTotals = null;
-      if (res && res.status === 'success') {
-        allKasData = res.data || [];
-        var ts = res.totalSaldo;
-        var tk = res.totalUangKematian;
-        backendTotals = {
-          totalSaldo: (isFinite(parseFloat(ts)) ? parseFloat(ts) : null),
-          totalUangKematian: (isFinite(parseFloat(tk)) ? parseFloat(tk) : null)
-        };
-      } else {
-        allKasData = [];
+      if (!res || res.status !== 'success' || !Array.isArray(res.data)) {
+        showError(res && res.pesan ? res.pesan : 'Respons data kas dari server tidak valid.');
+        return;
       }
-      kasBackendTotalsGlobal = backendTotals;
 
+      allKasData = res.data;
 
       var pemasukanList = [];
       var pengeluaranList = [];
@@ -7192,13 +7276,17 @@ function bukaJadwal() {
       originalPengeluaranList = pengeluaranList;
       filterTabelTransaksi();
       muatRekapPeriode();
-      updateRingkasanUI(backendTotals);
+      updateRingkasanUI();
       var selectedYear = parseInt(document.getElementById('tahunKasSelect').value);
       renderGrafikKas(selectedYear);
       if (callback) {
         callback();
       }
     }).withFailureHandler(function(err) {
+      targets.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('skeleton-text');
+      });
       Swal.close(); // Close loading modal
       showError('Gagal memuat data kas: ' + err.message);
     }).getKasWarga();
@@ -7348,7 +7436,7 @@ function bukaJadwal() {
 
   function muatGrafikKas() {
     var tahun = parseInt(document.getElementById('tahunKasSelect').value);
-    updateRingkasanUI(kasBackendTotalsGlobal);
+    updateRingkasanUI();
     renderGrafikKas(tahun);
   }
 
